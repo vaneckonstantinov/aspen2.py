@@ -1,3 +1,4 @@
+include COPYRIGHT
 include ez_setup.py
 include version.txt
 include aspen_core/request_processor/mime.types
