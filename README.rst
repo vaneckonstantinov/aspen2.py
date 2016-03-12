@@ -1,33 +1,29 @@
-Aspen is a Python web framework. Simplates are the main attraction.
+Core request handling for Aspen. See `aspen.py`_, `Flask-Aspen`_, and
+`django-aspen`_ for framework wrappers.
+
+.. _aspen.py: https://github.com/AspenWeb/aspen.py
+.. _django-aspen: https://github.com/AspenWeb/django-aspen
+.. _Flask-Aspen: https://github.com/AspenWeb/Flask-Aspen
 
 Installation, Testing, and License
 ==================================
 
-``aspen`` is available on `GitHub`_ and on `PyPI`_::
+``aspen-core`` is available on `GitHub`_ and on `PyPI`_::
 
-    $ pip install aspen
+    $ pip install aspen-core
 
 We test against 64-bit Python 2.7 on Linux: |travis|
 
 And we test against 32- and 64-bit Python 2.7 on Windows: |appveyor|
 
-``aspen`` is MIT-licensed.
+``aspen-core`` is MIT-licensed.
 
 
-.. _GitHub: https://github.com/gratipay/aspen.py
-.. _PyPI: https://pypi.python.org/pypi/aspen
-.. |travis| image:: https://img.shields.io/travis/gratipay/aspen.py/master.svg
-   :target: https://travis-ci.org/gratipay/aspen.py
+.. _GitHub: https://github.com/AspenWeb/aspen-core.py
+.. _PyPI: https://pypi.python.org/pypi/aspen-core
+.. |travis| image:: https://img.shields.io/travis/AspenWeb/aspen-core.py/master.svg
+   :target: https://travis-ci.org/AspenWeb/aspen-core.py
    :alt: Linux build status
-.. |appveyor| image:: https://img.shields.io/appveyor/ci/gratipay/aspen-py/master.svg
-   :target: https://ci.appveyor.com/project/gratipay/aspen-py
+.. |appveyor| image:: https://img.shields.io/appveyor/ci/Changaco/aspen-core-py/master.svg
+   :target: https://ci.appveyor.com/project/Changaco/aspen-core-py
    :alt: Windows build status
-
-
-Documentation and further information
-=====================================
-
-on the main `site`_ : http://aspen.io/
-
-.. _site: http://aspen.io/
-

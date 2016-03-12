@@ -22,17 +22,15 @@ classifiers = [ 'Development Status :: 4 - Beta'
               , 'Topic :: Internet :: WWW/HTTP :: WSGI :: Application'
                ]
 
-setup( author = 'Gratipay, LLC'
-     , author_email = 'support@gratipay.com'
+setup( author = 'Chad Whitacre et al.'
      , classifiers = classifiers
-     , description = ('Aspen is a Python web framework. '
-                      'Simplates are the main attraction.')
-     , name = 'aspen'
-     , packages = find_packages(exclude=['aspen.tests', 'aspen.tests.*'])
-     , url = 'http://aspen.io/'
+     , description = 'Core request handling for Aspen.'
+     , name = 'aspen-core'
+     , packages = find_packages()
+     , url = 'https://github.com/AspenWeb/aspen-core.py'
      , version = version
      , zip_safe = False
-     , package_data = {'aspen': ['configuration/mime.types']}
+     , package_data = {'aspen_core': ['request_processor/mime.types']}
      , install_requires = ASPEN_DEPS
      , tests_require = TEST_DEPS
       )
