@@ -1,9 +1,6 @@
 """
-aspen.simplates.renderers
-+++++++++++++++++++++++++
-
 This module implements pluggable content rendering.
-                                                                              #
+
 See user docs here:
 
     http://aspen.io/simplates/rendered/
@@ -14,23 +11,23 @@ content page, with the default renderer per page computed from its media type.
 Template resources derive their media type from the file extension. Negotiated
 resources have no file extension by definition, so they specify the media type
 of their content pages in the resource itself, on the so-called "specline" of
-each content page, like so:
+each content page, like so::
 
-    ^L
-    ^L text/plain
+    [---]
+    [---] text/plain
     Greetings, program!
-    ^L text/html
+    [---] text/html
     <h1>Greetings, program!</h1>
 
 
 A Renderer is instantiated by a Factory, which is a class that is itself
-instantied with one argument:
+instantied with one argument::
 
     configuration   an Aspen configuration object
 
 
 Instances of each Renderer subclass are callables that take five arguments and
-return a function (confused yet?). The five arguments are:
+return a function (confused yet?). The five arguments are::
 
     factory         the Factory creating this object
     filepath        the filesystem path of the resource in question
@@ -43,7 +40,7 @@ Each Renderer instance is a callable that takes a context dictionary and
 returns a bytestring of rendered content. The heavy lifting is done in the
 render_content method.
 
-Here's how to implement and register your own renderer:
+Here's how to implement and register your own renderer::
 
     from aspen.simplates.renderers import Renderer, Factory
 
@@ -58,13 +55,13 @@ Here's how to implement and register your own renderer:
 
 
 Put that in your startup script. Now you can use it in a negotiated or rendered
-resource:
+resource::
 
-    ^L #!excited-about-cheese
+    [---] via excited-about-cheese
     I like cheese!
 
 
-Out will come:
+Out will come::
 
     I like CHEESE!!!!!!!
 
@@ -160,7 +157,7 @@ class Renderer(object):
     def render_content(self, context):
         """Override. Context is a dict.
 
-        You can use these attributes:
+        You can use these attributes::
 
             self.raw        the raw bytes of the content page
             self.compiled   the result of self.compile (generally a template in

@@ -25,9 +25,6 @@ class PathPart(unicode):
 
 class Path(Mapping):
     """Represent the path of a resource.
-
-    This is populated by aspen.gauntlet.virtual_paths.
-
     """
 
     def __init__(self, raw):
