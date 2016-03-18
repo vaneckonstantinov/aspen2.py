@@ -25,13 +25,13 @@ classifiers = [ 'Development Status :: 4 - Beta'
 setup( author = 'Chad Whitacre et al.'
      , author_email = 'team@aspen.io'
      , classifiers = classifiers
-     , description = 'Core request handling for Aspen.'
-     , name = 'aspen-core'
+     , description = 'A filesystem router for Python web frameworks'
+     , name = 'aspen'
      , packages = find_packages()
-     , url = 'https://github.com/AspenWeb/aspen-core.py'
+     , url = 'https://github.com/AspenWeb/aspen.py'
      , version = version
      , zip_safe = False
-     , package_data = {'aspen_core': ['request_processor/mime.types']}
+     , package_data = {'aspen': ['request_processor/mime.types']}
      , install_requires = ASPEN_DEPS
      , tests_require = TEST_DEPS
       )

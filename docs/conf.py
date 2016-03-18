@@ -31,7 +31,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'Aspen Core'
+project = u'Aspen'
 copyright = u'2016, Chad Whitacre, Paul Jimenez, and others'
 
 # The full version, including alpha/beta/rc tags.
@@ -68,7 +68,7 @@ htmlhelp_basename = 'Aspendoc'
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('index', 'Aspen-Core.tex', u'Aspen Core Documentation',
+  ('index', 'Aspen.tex', u'Aspen Documentation',
    u'Chad Whitacre, Paul Jimenez, and others', 'manual'),
 ]
 
@@ -78,7 +78,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'aspen-core', u'Aspen Core Documentation',
+    ('index', 'aspen', u'Aspen Documentation',
      [u'Chad Whitacre, Paul Jimenez, and others'], 1)
 ]
 
@@ -89,9 +89,9 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  ('index', 'Aspen-Core', u'Aspen Core Documentation',
-   u'Chad Whitacre, Paul Jimenez, and others', 'Aspen Core',
-   'Core request handler of Aspen.',
+  ('index', 'Aspen', u'Aspen Documentation',
+   u'Chad Whitacre, Paul Jimenez, and others', 'Aspen',
+   'A filesystem router for Python web frameworks.',
    'Miscellaneous'),
 ]
 

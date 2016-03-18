@@ -26,7 +26,7 @@ TEST_DEPS = [
 
 ENV_ARGS = [
     '-m', 'virtualenv',
-    '--prompt=[aspen-core]',
+    '--prompt=[aspen]',
     ]
 
 
