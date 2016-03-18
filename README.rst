@@ -24,6 +24,6 @@ And we test against 32- and 64-bit Python 2.7 on Windows: |appveyor|
 .. |travis| image:: https://img.shields.io/travis/AspenWeb/aspen-core.py/master.svg
    :target: https://travis-ci.org/AspenWeb/aspen-core.py
    :alt: Linux build status
-.. |appveyor| image:: https://img.shields.io/appveyor/ci/Changaco/aspen-core-py/master.svg
-   :target: https://ci.appveyor.com/project/Changaco/aspen-core-py
+.. |appveyor| image:: https://img.shields.io/appveyor/ci/AspenWeb/aspen-core-py/master.svg
+   :target: https://ci.appveyor.com/project/AspenWeb/aspen-core-py
    :alt: Windows build status
