@@ -1,7 +1,3 @@
-"""
-aspen.resources.dynamic_resource
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -150,12 +146,12 @@ class Simplate(object):
 
     def render(self, accept, context):
         """
-        get the response to a request for this page
+        Get the response to a request for this page::
 
-        accept - an HTTP Accept: header asking for this page
-        context - a dict of execution context values you wish to supply
-                  * Note that these are overriden by values that are carried
-                  over from the execution of the zeroth page
+            accept - an HTTP Accept: header asking for this page
+            context - a dict of execution context values you wish to supply
+                      * Note that these are overriden by values that are carried
+                      over from the execution of the zeroth page
         """
 
         # copy the state dict to avoid accidentally mutating it
@@ -184,7 +180,7 @@ class Simplate(object):
 
         If there's one page, it's a template.
         If there's more than one page, the first page is always python and the last is always a template.
-        If there's more than two pages, the second page is python _unless it has a specline_, which makes it a template
+        If there's more than two pages, the second page is python *unless it has a specline*, which makes it a template
 
         """
 

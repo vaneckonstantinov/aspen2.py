@@ -1,7 +1,3 @@
-"""
-aspen.utils
-+++++++++++
-"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -76,7 +72,7 @@ def by_regex(regex_tuples, default=True):
     requested URI, then the flow is applied or not based on if filter? is True
     or False.
 
-    For example:
+    For example::
 
         from aspen.flows.filter import by_regex
 
