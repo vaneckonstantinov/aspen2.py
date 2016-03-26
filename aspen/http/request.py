@@ -57,7 +57,7 @@ def extract_rfc2396_params(path):
         params = Mapping()
         segment = path_decode(parts[0])
         for p in parts[1:]:
-            if '=' in p:
+            if b'=' in p:
                 k, v = p.split(b'=', 1)
             else:
                 k, v = p, b''
