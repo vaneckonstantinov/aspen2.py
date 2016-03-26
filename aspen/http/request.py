@@ -27,10 +27,10 @@ class Path(Mapping):
     """Represent the path of a resource.
     """
 
-    def __init__(self, raw):
+    def __init__(self, raw, split_path=extract_rfc2396_params):
         self.raw = raw
         self.decoded = urllib.unquote(raw).decode('UTF-8')
-        self.parts = extract_rfc2396_params(raw)
+        self.parts = split_path(raw)
 
 
 def extract_rfc2396_params(path):
