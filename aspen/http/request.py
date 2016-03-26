@@ -45,6 +45,8 @@ def extract_rfc2396_params(path):
     /frisbee;color=red;size=small/logo;sponsor=w3c;color=black/image.jpg
     and each path segment gets its own params.
 
+    https://tools.ietf.org/html/rfc3986#section-3.3
+
     * path should be raw so we don't split or operate on a decoded character
     * output is decoded
     """
