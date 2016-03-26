@@ -45,14 +45,14 @@ class Mapping(dict):
         This removes the last value from the list for name and returns it. If
         there was only one value in the list then the key is removed from the
         mapping. If name is not present and default is given, that is returned
-        instead.
+        instead. Otherwise, self.keyerror is called.
 
         """
         if name not in self:
             if default is not NO_DEFAULT:
                 return default
             else:
-                dict.pop(self, name) # KeyError
+                self.keyerror(name)
         values = dict.__getitem__(self, name)
         value = values.pop()
         if not values:
