@@ -12,12 +12,16 @@ import urllib
 from .mapping import Mapping
 
 
+def path_decode(bs):
+    return urllib.unquote(bs).decode('UTF-8')
+
+
 class PathPart(unicode):
     """A string with a mapping for extra data about it."""
 
     __slots__ = ['params']
 
-    def __new__(cls, value, params):
+    def __new__(cls, value, params=None):
         obj = super(PathPart, cls).__new__(cls, value)
         obj.params = params
         return obj
@@ -29,7 +33,7 @@ class Path(Mapping):
 
     def __init__(self, raw, split_path=extract_rfc2396_params):
         self.raw = raw
-        self.decoded = urllib.unquote(raw).decode('UTF-8')
+        self.decoded = path_decode(raw)
         self.parts = split_path(raw)
 
 
@@ -45,22 +49,25 @@ def extract_rfc2396_params(path):
     * output is decoded
     """
     pathsegs = path.lstrip(b'/').split(b'/')
-    def decode(input):
-        return urllib.unquote(input).decode('UTF-8')
-
     segments_with_params = []
     for component in pathsegs:
         parts = component.split(b';')
         params = Mapping()
-        segment = decode(parts[0])
+        segment = path_decode(parts[0])
         for p in parts[1:]:
             if '=' in p:
                 k, v = p.split(b'=', 1)
             else:
                 k, v = p, b''
-            params.add(decode(k), decode(v))
+            params.add(path_decode(k), path_decode(v))
         segments_with_params.append(PathPart(segment, params))
     return segments_with_params
+
+
+def split_path_no_params(path):
+    """This splits a path into parts on "/" only (no split on ";" or ",").
+    """
+    return [PathPart(path_decode(s)) for s in path.lstrip(b'/').split(b'/')]
 
 
 class Querystring(Mapping):
