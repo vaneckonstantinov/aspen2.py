@@ -17,6 +17,8 @@ class Mapping(dict):
     clobbers to the list, while subscript access returns the last item. Think
     about it.
 
+    WARNING: this isn't thread-safe
+
     """
 
     def __getitem__(self, name):
