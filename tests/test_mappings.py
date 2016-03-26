@@ -132,14 +132,3 @@ def test_mapping_popall_removes_the_item():
     m['foo'] = 3
     m.popall('foo')
     assert 'foo' not in m
-
-
-def test_default_mapping_is_case_insensitive():
-    m = Mapping()
-    m['Foo'] = 1
-    m['foo'] = 1
-    m['fOO'] = 1
-    m['FOO'] = 1
-    expected = [1]
-    actual = m.all('foo')
-    assert actual == expected
