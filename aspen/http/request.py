@@ -27,16 +27,6 @@ class PathPart(unicode):
         return obj
 
 
-class Path(Mapping):
-    """Represent the path of a resource.
-    """
-
-    def __init__(self, raw, split_path=extract_rfc2396_params):
-        self.raw = raw
-        self.decoded = path_decode(raw)
-        self.parts = split_path(raw)
-
-
 def extract_rfc2396_params(path):
     """RFC2396 section 3.3 says that path components of a URI can have
     'a sequence of parameters, indicated by the semicolon ";" character.'
@@ -70,6 +60,16 @@ def split_path_no_params(path):
     """This splits a path into parts on "/" only (no split on ";" or ",").
     """
     return [PathPart(path_decode(s)) for s in path.lstrip(b'/').split(b'/')]
+
+
+class Path(Mapping):
+    """Represent the path of a resource.
+    """
+
+    def __init__(self, raw, split_path=extract_rfc2396_params):
+        self.raw = raw
+        self.decoded = path_decode(raw)
+        self.parts = split_path(raw)
 
 
 class Querystring(Mapping):
