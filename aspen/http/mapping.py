@@ -20,18 +20,22 @@ class Mapping(dict):
     """
 
     def __getitem__(self, name):
-        """Given a name, return the last value or raise Response(400).
+        """Given a name, return the last value or call self.keyerror.
         """
         try:
             return dict.__getitem__(self, name)[-1]
         except KeyError:
-            from .. import Response
-            raise Response(400, "Missing key: %s" % repr(name))
+            self.keyerror(name)
 
     def __setitem__(self, name, value):
         """Given a name and value, clobber any existing values.
         """
         dict.__setitem__(self, name, [value])
+
+    def keyerror(self, key):
+        """Called when a key is missing. Default implementation simply reraises.
+        """
+        raise
 
     def pop(self, name, default=NO_DEFAULT):
         """Given a name, return a value.
@@ -61,8 +65,7 @@ class Mapping(dict):
         try:
             return dict.__getitem__(self, name)
         except KeyError:
-            from .. import Response
-            raise Response(400)
+            self.keyerror(name)
 
     def get(self, name, default=None):
         """Override to only return the last value.

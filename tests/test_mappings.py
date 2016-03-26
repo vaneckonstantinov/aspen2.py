@@ -6,7 +6,6 @@ from __future__ import unicode_literals
 
 from pytest import raises
 
-from aspen import Response
 from aspen.http.mapping import Mapping
 
 
@@ -81,13 +80,14 @@ def test_mapping_deleting_a_key_removes_it_entirely():
     del m['foo']
     assert 'foo' not in m
 
-def test_accessing_missing_key_raises_Response():
+def test_accessing_missing_key_calls_keyerror():
     m = Mapping()
-    raises(Response, lambda k: m[k], 'foo')
-
-def test_mapping_calling_ones_with_missing_key_raises_Response():
-    m = Mapping()
-    raises(Response, m.ones, 'foo')
+    class Foobar(Exception): pass
+    def raise_foobar(self):
+        raise Foobar
+    m.keyerror = raise_foobar
+    raises(Foobar, lambda k: m[k], 'foo')
+    raises(Foobar, m.ones, 'foo')
 
 def test_mapping_pop_returns_the_last_item():
     m = Mapping()
