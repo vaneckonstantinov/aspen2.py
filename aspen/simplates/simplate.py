@@ -3,12 +3,12 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+from io import BytesIO
 import re
 import sys
 
 import mimeparse
 
-from ..backcompat import StringIO
 from .pagination import split_and_escape, parse_specline, Page
 
 renderer_re = re.compile(r'[a-z0-9.-_]+$')
@@ -43,7 +43,7 @@ def _decode(raw):
 
     encoding = None
     fulltext = b''
-    sio = StringIO(raw)
+    sio = BytesIO(raw)
     for line in (sio.readline(), sio.readline()):
         potential = get_declaration(line)
         if potential is not None:
