@@ -22,8 +22,7 @@ default_indices = lambda: ['index.html', 'index.json', 'index',
 
     # 'name':               (default,               from_unicode)
 KNOBS = \
-    { 'base_url':           ('',                    parse.identity)
-    , 'changes_reload':     (False,                 parse.yes_no)
+    { 'changes_reload':     (False,                 parse.yes_no)
     , 'charset_dynamic':    ('UTF-8',               parse.charset)
     , 'charset_static':     (None,                  parse.charset)
     , 'indices':            (default_indices,       parse.list_)
