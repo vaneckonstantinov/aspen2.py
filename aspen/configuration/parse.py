@@ -49,25 +49,13 @@ def yes_no(s):
     raise ValueError("must be either yes/true/1 or no/false/0")
 
 def list_(value):
-    """Return a tuple of (bool, list).
-
-    The bool indicates whether to extend the existing config with the list, or
-    replace it.
-
-    """
-    extend = value.startswith('+')
-    if extend:
-        value = value[1:]
-
-    # populate out with a single copy
-    # of each non-empty item, preserving order
+    # populate out with a single copy of each non-empty item, preserving order
     out = []
     for v in value.split(','):
         v = v.strip()
         if v and not v in out:
             out.append(v)
-
-    return (extend, out)
+    return out
 
 def renderer(value):
     if value not in RENDERERS:

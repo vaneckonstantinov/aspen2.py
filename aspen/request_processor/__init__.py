@@ -11,22 +11,9 @@ from collections import defaultdict
 
 from algorithm import Algorithm
 
-from . import parse
 from .typecasting import defaults as default_typecasters
-from ..utils import ascii_dammit
+from ..configuration import ConfigurationError, configure, parse
 from ..simplates.renderers import factories
-
-
-class ConfigurationError(StandardError):
-    """This is an error in any part of our configuration.
-    """
-
-    def __init__(self, msg):
-        StandardError.__init__(self)
-        self.msg = msg
-
-    def __str__(self):
-        return self.msg
 
 
 default_indices = lambda: ['index.html', 'index.json', 'index',
@@ -75,51 +62,6 @@ class RequestProcessor(object):
                                  , **kw
                                   )
 
-
-    def _set(self, name, hydrated, flat, context, name_in_context):
-        """Set value at self.name, calling hydrated if it's callable.
-        """
-        if callable(hydrated):
-            hydrated = hydrated()  # Call it if we can.
-        setattr(self, name, hydrated)
-        if name_in_context:
-            assert isinstance(flat, unicode) # sanity check
-            name_in_context = " %s=%s" % (name_in_context, flat)
-        out = "  %-22s %-30s %-24s"
-        return out % (name, hydrated, context + name_in_context)
-
-    def set(self, name, raw, from_unicode, context, name_in_context):
-        error = None
-        try:
-            value = raw
-            if isinstance(value, str):
-                value = raw.decode('US-ASCII')
-            hydrated = from_unicode(value)
-        except UnicodeDecodeError as error:
-            value = ascii_dammit(value)
-            error_detail = "Configuration values must be US-ASCII."
-        except ValueError as error:
-            error_detail = error.args[0]
-
-        if error is not None:
-            msg = "Got a bad value '%s' for %s %s:"
-            msg %= (value, context, name_in_context)
-            if error_detail:
-                msg += " " + error_detail + "."
-            raise ConfigurationError(msg)
-
-        # special-case lists, so we can layer them
-        if from_unicode is parse.list_:
-            extend, new_value = hydrated
-            if extend:
-                old_value = getattr(self, name)
-                hydrated = old_value + new_value
-            else:
-                hydrated = new_value
-
-        args = (name, hydrated, value, context, name_in_context)
-        return self._set(*args)
-
     def configure(self, **kwargs):
         """Takes a dictionary of strings/unicodes to strings/unicodes.
         """
@@ -142,19 +84,7 @@ class RequestProcessor(object):
         # Configure from defaults, environment, and kwargs.
         # =================================================
 
-        for name, (default, func) in sorted(KNOBS.items()):
-
-            # set the default value for this variable
-            self._set(name, default, None, "default", '')
-
-            # set from the environment
-            envvar = 'ASPEN_' + name.upper()
-            value = os.environ.get(envvar, '').strip()
-
-            # set from kwargs
-            value = kwargs.get(name)
-            if value is not None:
-                self.set(name, value, func, "kwargs", name)
+        configure(KNOBS, self.__dict__, 'ASPEN_', kwargs)
 
 
         # Set some attributes.
