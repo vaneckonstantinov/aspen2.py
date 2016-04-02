@@ -17,21 +17,27 @@ class Mapping(dict):
     clobbers to the list, while subscript access returns the last item. Think
     about it.
 
+    WARNING: this isn't thread-safe
+
     """
 
     def __getitem__(self, name):
-        """Given a name, return the last value or raise Response(400).
+        """Given a name, return the last value or call self.keyerror.
         """
         try:
             return dict.__getitem__(self, name)[-1]
         except KeyError:
-            from .. import Response
-            raise Response(400, "Missing key: %s" % repr(name))
+            self.keyerror(name)
 
     def __setitem__(self, name, value):
         """Given a name and value, clobber any existing values.
         """
         dict.__setitem__(self, name, [value])
+
+    def keyerror(self, key):
+        """Called when a key is missing. Default implementation simply reraises.
+        """
+        raise
 
     def pop(self, name, default=NO_DEFAULT):
         """Given a name, return a value.
@@ -39,14 +45,14 @@ class Mapping(dict):
         This removes the last value from the list for name and returns it. If
         there was only one value in the list then the key is removed from the
         mapping. If name is not present and default is given, that is returned
-        instead.
+        instead. Otherwise, self.keyerror is called.
 
         """
         if name not in self:
             if default is not NO_DEFAULT:
                 return default
             else:
-                dict.pop(self, name) # KeyError
+                self.keyerror(name)
         values = dict.__getitem__(self, name)
         value = values.pop()
         if not values:
@@ -61,8 +67,7 @@ class Mapping(dict):
         try:
             return dict.__getitem__(self, name)
         except KeyError:
-            from .. import Response
-            raise Response(400)
+            self.keyerror(name)
 
     def get(self, name, default=None):
         """Override to only return the last value.
@@ -86,39 +91,3 @@ class Mapping(dict):
             if n not in lowered:
                 lowered.append(n)
         return [self[name] for name in lowered]
-
-
-class CaseInsensitiveMapping(Mapping):
-
-    def __init__(self, *a, **kw):
-        if a:
-            d = a[0]
-            items = d.iteritems if hasattr(d, 'iteritems') else d
-            for k, v in items():
-                self[k] = v
-        for k, v in kw.iteritems():
-            self[k] = v
-
-    def __contains__(self, name):
-        return Mapping.__contains__(self, name.title())
-
-    def __getitem__(self, name):
-        return Mapping.__getitem__(self, name.title())
-
-    def __setitem__(self, name, value):
-        return Mapping.__setitem__(self, name.title(), value)
-
-    def add(self, name, value):
-        return Mapping.add(self, name.title(), value)
-
-    def get(self, name, default=None):
-        return Mapping.get(self, name.title(), default)
-
-    def all(self, name):
-        return Mapping.all(self, name.title())
-
-    def pop(self, name):
-        return Mapping.pop(self, name.title())
-
-    def popall(self, name):
-        return Mapping.popall(self, name.title())
