@@ -4,11 +4,6 @@ aspen module
 
 .. automodule:: aspen
 
-backcompat
-==========
-
-.. automodule:: aspen.backcompat
-
 exceptions
 ==========
 
