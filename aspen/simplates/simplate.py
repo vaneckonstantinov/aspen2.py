@@ -5,7 +5,6 @@ from __future__ import unicode_literals
 
 from io import BytesIO
 import re
-import sys
 
 import mimeparse
 
@@ -31,7 +30,7 @@ def _decode(raw):
        the first couple lines of the data, or in ASCII.  Non-ASCII data without
        an encoding specified will cause UnicodeDecodeError to be raised.
     """
-    assert type(raw) is (bytes if sys.version_info[0] == 3 else str)  # sanity check
+    assert type(raw) is bytes  # sanity check
 
     decl_re = re.compile(r'^[ \t\f]*#.*coding[:=][ \t]*([-\w.]+)')
 
