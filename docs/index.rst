@@ -4,6 +4,16 @@ aspen module
 
 .. automodule:: aspen
 
+configuration
+=============
+
+.. automodule:: aspen.configuration
+
+parse
+-----
+
+.. automodule:: aspen.configuration.parse
+
 exceptions
 ==========
 
@@ -38,11 +48,6 @@ dispatcher
 ----------
 
 .. automodule:: aspen.request_processor.dispatcher
-
-parse
------
-
-.. automodule:: aspen.request_processor.parse
 
 typecasting
 -----------

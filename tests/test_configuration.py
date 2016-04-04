@@ -115,27 +115,23 @@ def test_parse_yes_no_other_is_ValueError():
 
 def test_parse_list_handles_one():
     actual = parse.list_(u'foo')
-    assert actual == (False, ['foo'])
+    assert actual == ['foo']
 
 def test_parse_list_handles_two():
     actual = parse.list_(u'foo,bar')
-    assert actual == (False, ['foo', 'bar'])
+    assert actual == ['foo', 'bar']
 
 def test_parse_list_handles_spaces():
     actual = parse.list_(u' foo ,   bar ')
-    assert actual == (False, ['foo', 'bar'])
+    assert actual == ['foo', 'bar']
 
 def test_parse_list_handles_some_spaces():
     actual = parse.list_(u'foo,   bar, baz , buz ')
-    assert actual == (False, ['foo', 'bar', 'baz', 'buz'])
+    assert actual == ['foo', 'bar', 'baz', 'buz']
 
 def test_parse_list_uniquifies():
     actual = parse.list_(u'foo,foo,bar')
-    assert actual == (False, ['foo', 'bar'])
-
-def test_parse_list_extends():
-    actual = parse.list_(u'+foo')
-    assert actual == (True, ['foo'])
+    assert actual == ['foo', 'bar']
 
 
 def test_parse_renderer_good():
