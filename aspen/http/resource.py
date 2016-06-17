@@ -8,21 +8,18 @@ class Static(object):
     """
 
     def __init__(self, request_processor, fspath, raw, media_type):
-        self.request_processor = request_processor
+        assert type(raw) is bytes  # sanity check
         self.raw = raw
         self.media_type = media_type
         if media_type == 'application/json':
-            self.media_type = self.request_processor.media_type_json
+            self.media_type = request_processor.media_type_json
+        if self.media_type.startswith('text/'):  # XXX this is bad
+            self.charset = request_processor.charset_static
+        else:
+            self.charset = None
 
     def render(self, context):
-        output = Output()
-        # XXX Perform HTTP caching here.
-        assert type(self.raw) is str # sanity check
-        output.body = self.raw
-        output.media_type = self.media_type
-        if self.media_type.startswith('text/'):
-            output.charset = self.request_processor.charset_static
-        return output
+        return Output(body=self.raw, media_type=self.media_type, charset=self.charset)
 
 
 class Dynamic(Simplate):
