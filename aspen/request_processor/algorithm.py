@@ -35,7 +35,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 from . import dispatcher, typecasting
-from .. import resources, output
+from .. import resources
 from ..http.request import Path, Querystring
 
 
@@ -70,6 +70,11 @@ def load_resource_from_filesystem(request_processor, dispatch_result):
     return {'resource': resources.get(request_processor, dispatch_result.match)}
 
 
-def render_resource(state, request_processor, resource):
-    state.setdefault('output', output.Output(charset=request_processor.charset_dynamic))
+def render_resource(state, resource):
     return {'output': resource.render(state)}
+
+
+def encode_output(output, request_processor):
+    if isinstance(output.body, unicode):
+        output.charset = request_processor.charset_dynamic
+        output.body = output.body.encode(output.charset)

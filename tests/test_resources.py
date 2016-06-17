@@ -34,10 +34,10 @@ def test_charset_static_None(harness):
 def test_charset_dynamic_barely_working(harness):
     output = harness.simple( '[---]\n[---]\nGreetings, program!'
                            , 'index.html.spt'
-                           , request_processor_configuration={'charset_dynamic': 'CHEESECODE'}
+                           , request_processor_configuration={'charset_dynamic': 'ascii'}
                             )
     assert output.media_type == 'text/html'
-    assert output.charset == 'CHEESECODE'
+    assert output.charset == 'ascii'
 
 def test_resource_pages_work(harness):
     actual = harness.simple("[---]\nfoo = 'bar'\n[--------]\nGreetings, %(foo)s!").body

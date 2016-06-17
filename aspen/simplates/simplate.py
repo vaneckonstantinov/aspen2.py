@@ -8,6 +8,7 @@ import re
 
 import mimeparse
 
+from ..output import Output
 from .pagination import split_and_escape, parse_specline, Page
 
 renderer_re = re.compile(r'[a-z0-9.-_]+$')
@@ -155,6 +156,10 @@ class Simplate(object):
 
         # copy the state dict to avoid accidentally mutating it
         context = dict(context)
+        # find matching media type
+        media_type = self.best_match(accept)
+        # create Output object and put it in the context
+        output = context['output'] = Output(media_type=media_type)
         # override it with values from the first page
         context.update(self.pages[0])
         # use this as the context to execute the second page in
@@ -164,14 +169,12 @@ class Simplate(object):
             # templates will only see variables named in __all__
             context = dict([ (k, context[k]) for k in context['__all__'] ])
 
-        # find matching media type
-        media_type = self.best_match(accept)
         # load that renderer
         render = self.renderers[media_type]
         # render it
-        body = render(context)
+        output.body = render(context)
 
-        return media_type, body
+        return output
 
 
     def parse_into_pages(self, decoded):

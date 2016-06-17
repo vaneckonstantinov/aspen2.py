@@ -38,14 +38,12 @@ def test_cant_implicitly_override_state(harness):
 
 
 def test_can_explicitly_override_state(harness):
-    output = harness.simple("[---]\n"
-        "class Output: body=media_type=charset=code=299\n"
-        "state['output'] = Output()\n"
-        "[---]\n"
-        "bar"
+    state = harness.simple("[---]\n"
+        "state['resource'] = 'foo'\n"
+        "[---]\n",
+        want='state'
     )
-    assert output.code == 299
-    assert output.body == 'bar'
+    assert state['resource'] == 'foo'
 
 
 def test_but_python_sections_exhibit_module_scoping_behavior(harness):

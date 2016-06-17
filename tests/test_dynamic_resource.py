@@ -7,7 +7,6 @@ from pytest import raises, yield_fixture
 
 from aspen import resources
 from aspen.http.resource import Dynamic
-from aspen.output import Output
 from aspen.request_processor import dispatcher
 from aspen.simplates.pagination import Page
 from aspen.simplates.renderers.stdlib_template import Factory as TemplateFactory
@@ -119,7 +118,6 @@ def _get_state(harness, *a, **kw):
 def _render(state):
     resource = resources.load(state['request_processor'], state['dispatch_result'].match, 0)
     state['resource'] = resource
-    state['output'] = state.get('output', Output())
     return resource.render(state)
 
 SIMPLATE = """\
@@ -129,14 +127,6 @@ Greetings, program!
 [---] text/html
 <h1>Greetings, program!</h1>
 """
-
-def test_render_renders(harness):
-    harness.fs.www.mk(('index.spt', SIMPLATE))
-    output = Output()
-    state = _get_state(harness, filepath='index.spt', contents=SIMPLATE)
-    state['output'] = output
-    actual = _render(state)
-    assert actual is output
 
 def test_render_is_happy_not_to_negotiate(harness):
     harness.fs.www.mk(('index.spt', SIMPLATE))
@@ -149,16 +139,6 @@ def test_render_sets_media_type_when_it_doesnt_negotiate(harness):
     state = _get_state(harness, filepath='index.spt', contents=SIMPLATE)
     output = _render(state)
     assert output.media_type == "text/plain"
-    assert output.charset is None
-
-def test_render_doesnt_reset_media_type_when_not_negotiating(harness):
-    harness.fs.www.mk(('index.spt', SIMPLATE))
-    state = _get_state(harness, filepath='index.spt', contents=SIMPLATE)
-    output = Output()
-    output.media_type = 'never/mind'
-    state['output'] =output
-    actual = _render(state).media_type
-    assert actual == "never/mind"
 
 def test_render_is_happy_not_to_negotiate_with_defaults(harness):
     harness.fs.www.mk(('index.spt', '''[---]\n[---]\nGreetings, program!\n'''))
@@ -186,21 +166,6 @@ def test_render_sets_media_type_when_it_negotiates(harness):
     state['accept_header'] = 'text/html'
     output = _render(state)
     assert output.media_type == "text/html"
-    assert output.charset is None
-
-def test_render_doesnt_reset_media_type_when_negotiating(harness):
-    harness.fs.www.mk(('index.spt', SIMPLATE))
-    state = _get_state(harness, filepath='index.spt', contents=SIMPLATE)
-    state['accept_header'] = 'text/html'
-    output = Output()
-    output.media_type = 'never/mind'
-    state['output'] = output
-    actual = _render(state).media_type
-    output = Output()
-    output.media_type = 'never/mind'
-    state['output'] = output
-    actual = _render(state).media_type
-    assert actual == "never/mind"
 
 def test_render_raises_if_direct_negotiation_fails(harness):
     harness.fs.www.mk(('index.spt', SIMPLATE))
