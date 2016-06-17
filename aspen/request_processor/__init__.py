@@ -23,7 +23,7 @@ default_indices = lambda: ['index.html', 'index.json', 'index',
     # 'name':               (default,               from_unicode)
 KNOBS = \
     { 'changes_reload':     (False,                 parse.yes_no)
-    , 'charset_dynamic':    ('UTF-8',               parse.charset)
+    , 'charset_dynamic':    ('UTF-8',               parse.codec)
     , 'charset_static':     (None,                  parse.charset)
     , 'indices':            (default_indices,       parse.list_)
     , 'media_type_default': ('text/plain',          parse.media_type)

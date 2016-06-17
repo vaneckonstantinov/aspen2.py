@@ -10,6 +10,7 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import codecs
 import re
 
 from ..simplates.renderers import RENDERERS
@@ -34,6 +35,10 @@ def identity(value):
 def media_type(media_type):
     # XXX for now. Read a spec
     return media_type.encode('US-ASCII')
+
+def codec(value):
+    codecs.lookup(value)
+    return value
 
 def charset(value):
     if charset_re.match(value) is None:
