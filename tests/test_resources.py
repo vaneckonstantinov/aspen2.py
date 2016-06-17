@@ -23,6 +23,14 @@ def test_charset_static_barely_working(harness):
     assert output.media_type == 'text/html'
     assert output.charset == 'OOG'
 
+def test_charset_static_None(harness):
+    output = harness.simple( 'Greetings, program!'
+                           , 'index.html'
+                           , request_processor_configuration={'charset_static': None}
+                            )
+    assert output.media_type == 'text/html'
+    assert output.charset is None
+
 def test_charset_dynamic_barely_working(harness):
     output = harness.simple( '[---]\n[---]\nGreetings, program!'
                            , 'index.html.spt'
