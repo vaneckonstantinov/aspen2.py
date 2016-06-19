@@ -346,7 +346,7 @@ def dispatch(indices, media_type_default, pathparts, uripath, startdir):
 
     if result.status == DispatchStatus.okay:
         if result.match.endswith(os.path.sep):
-            raise UnindexedDirectory()
+            raise UnindexedDirectory(result.match)
 
     elif result.status == DispatchStatus.non_leaf:                                # trailing slash
         location = uripath + '/'
