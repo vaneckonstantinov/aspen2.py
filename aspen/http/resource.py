@@ -1,6 +1,6 @@
 from ..output import Output
-from ..request_processor import dispatcher
-from ..simplates.simplate import Simplate, SimplateException
+from ..request_processor.dispatcher import NotFound
+from ..simplates.simplate import NegotiationFailure, Simplate
 
 
 class Static(object):
@@ -46,11 +46,8 @@ class Dynamic(Simplate):
             accept = state.get('accept_header')
         try:
             return super(Dynamic, self).render(accept, state)
-        except SimplateException as e:
-            # find an Accept header
-            if dispatch_accept is not None:  # indirect negotiation
-                raise dispatcher.IndirectNegotiationFailure()
-            else:                            # direct negotiation
-                message = "Couldn't satisfy %s. The following media types are available: %s."
-                message %= (accept, ', '.join(e.available_types))
-                raise dispatcher.DirectNegotiationFailure(message.encode('US-ASCII'))
+        except NegotiationFailure:
+            if dispatch_accept is not None:
+                # e.g. client requested `/foo.json` but `/foo.spt` has no JSON page
+                raise NotFound()
+            raise

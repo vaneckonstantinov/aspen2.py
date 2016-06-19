@@ -21,8 +21,6 @@ class NotFound(DispatchError):
     def __init__(self, message=''):
         DispatchError.__init__(self, message if message else "not found")
 
-class IndirectNegotiationFailure(NotFound): pass
-class DirectNegotiationFailure(NotFound): pass
 class AttemptedBreakout(NotFound): pass
 class UnindexedDirectory(NotFound): pass
 class Redirect(DispatchError): pass
