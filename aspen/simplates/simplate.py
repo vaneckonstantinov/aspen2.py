@@ -154,16 +154,17 @@ class Simplate(object):
                       over from the execution of the zeroth page
         """
 
-        # copy the state dict to avoid accidentally mutating it
-        context = dict(context)
         # find matching media type
         media_type = self.best_match(accept)
-        # create Output object and put it in the context
+        # create Output object and put it in the state
         output = context['output'] = Output(media_type=media_type)
+        # copy the state dict to avoid accidentally mutating it
+        context = dict(context)
         # override it with values from the first page
         context.update(self.pages[0])
         # use this as the context to execute the second page in
         exec(self.pages[1], context)
+        output = context['state']['output']
 
         if '__all__' in context:
             # templates will only see variables named in __all__
