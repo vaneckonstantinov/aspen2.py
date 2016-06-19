@@ -164,7 +164,11 @@ class Simplate(object):
         context.update(self.pages[0])
         # use this as the context to execute the second page in
         exec(self.pages[1], context)
+        # refetch output, this allows the second page to override it
         output = context['state']['output']
+        # skip rendering if the second page has already filled output.body
+        if output.body:
+            return output
 
         if '__all__' in context:
             # templates will only see variables named in __all__
