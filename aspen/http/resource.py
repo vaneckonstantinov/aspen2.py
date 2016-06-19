@@ -1,6 +1,6 @@
 from ..output import Output
 from ..request_processor import dispatcher
-from ..simplates.simplate import Simplate, SimplateDefaults, SimplateException
+from ..simplates.simplate import Simplate, SimplateException
 
 
 class Static(object):
@@ -28,23 +28,15 @@ class Static(object):
 class Dynamic(Simplate):
     """Model a dynamic HTTP resource using simplates.
 
-       Most defaults are in request_processor, so make SimplateDefaults from that.
-
        Make .request_processor available as it has been historically.
 
        Figure out which accept header to use.
-
-       Append a charset to text Content-Types if one is known.
-
 
     """
 
     def __init__(self, request_processor, fs, raw, default_media_type):
         self.request_processor = request_processor
-        initial_context = { 'request_processor': request_processor }
-        defaults = SimplateDefaults(request_processor.default_renderers_by_media_type,
-                                    request_processor.renderer_factories,
-                                    initial_context)
+        defaults = request_processor.simplate_defaults
         super(Dynamic, self).__init__(defaults, fs, raw, default_media_type)
 
 
