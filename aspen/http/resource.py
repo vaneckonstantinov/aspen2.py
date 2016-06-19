@@ -13,10 +13,13 @@ class Static(object):
         self.media_type = media_type
         if media_type == 'application/json':
             self.media_type = request_processor.media_type_json
-        if self.media_type.startswith('text/'):  # XXX this is bad
-            self.charset = request_processor.charset_static
-        else:
-            self.charset = None
+        self.charset = None
+        if request_processor.charset_static:
+            try:
+                raw.decode(request_processor.charset_static)
+                self.charset = request_processor.charset_static
+            except UnicodeDecodeError:
+                pass
 
     def render(self, context):
         return Output(body=self.raw, media_type=self.media_type, charset=self.charset)

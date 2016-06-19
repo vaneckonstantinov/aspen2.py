@@ -24,7 +24,7 @@ default_indices = lambda: ['index.html', 'index.json', 'index',
 KNOBS = \
     { 'changes_reload':     (False,                 parse.yes_no)
     , 'charset_dynamic':    ('UTF-8',               parse.codec)
-    , 'charset_static':     (None,                  parse.charset)
+    , 'charset_static':     (None,                  parse.codec)
     , 'indices':            (default_indices,       parse.list_)
     , 'media_type_default': ('text/plain',          parse.media_type)
     , 'media_type_json':    ('application/json',    parse.media_type)
