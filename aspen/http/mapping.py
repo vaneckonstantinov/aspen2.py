@@ -48,12 +48,12 @@ class Mapping(dict):
         instead. Otherwise, self.keyerror is called.
 
         """
-        if name not in self:
+        try:
+            values = dict.__getitem__(self, name)
+        except KeyError:
             if default is not NO_DEFAULT:
                 return default
-            else:
-                self.keyerror(name)
-        values = dict.__getitem__(self, name)
+            self.keyerror(name)
         value = values.pop()
         if not values:
             del self[name]
