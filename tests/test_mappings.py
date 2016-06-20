@@ -116,6 +116,11 @@ def test_mapping_pop_removes_the_item_if_that_was_the_last_value():
     actual = m.keys()
     assert actual == expected
 
+def test_mapping_pop_raises_KeyError_by_default():
+    m = Mapping()
+    with raises(KeyError):
+        m.pop('foo')
+
 def test_mapping_popall_returns_a_list():
     m = Mapping()
     m['foo'] = 1
