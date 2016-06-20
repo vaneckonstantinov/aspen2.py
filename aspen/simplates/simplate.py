@@ -167,7 +167,7 @@ class Simplate(object):
         # refetch output, this allows the second page to override it
         output = context['state']['output']
         # skip rendering if the second page has already filled output.body
-        if output.body:
+        if output.body is not None:
             return output
 
         if '__all__' in context:
