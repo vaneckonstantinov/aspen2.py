@@ -17,7 +17,7 @@ def test_non_ascii_bytes_fail_without_encoding(harness):
     """)
 
 def test_non_ascii_bytes_work_with_encoding(harness):
-    expected = u'א'
+    expected = u'א'.encode('utf8')
     actual = harness.simple(b"""
         # encoding=utf8
         [------------------]
@@ -28,7 +28,7 @@ def test_non_ascii_bytes_work_with_encoding(harness):
     assert actual == expected
 
 def test_the_exec_machinery_handles_two_encoding_lines_properly(harness):
-    expected = u'א'
+    expected = u'א'.encode('utf8')
     actual = harness.simple(b"""\
         # encoding=utf8
         # encoding=ascii

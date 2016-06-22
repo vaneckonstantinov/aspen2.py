@@ -1,3 +1,4 @@
+from ..output import Output
 from ..request_processor import dispatcher
 from ..simplates.simplate import Simplate, SimplateDefaults, SimplateException
 
@@ -7,25 +8,21 @@ class Static(object):
     """
 
     def __init__(self, request_processor, fspath, raw, media_type):
-        self.request_processor = request_processor
+        assert type(raw) is bytes  # sanity check
         self.raw = raw
         self.media_type = media_type
         if media_type == 'application/json':
-            self.media_type = self.request_processor.media_type_json
+            self.media_type = request_processor.media_type_json
+        self.charset = None
+        if request_processor.charset_static:
+            try:
+                raw.decode(request_processor.charset_static)
+                self.charset = request_processor.charset_static
+            except UnicodeDecodeError:
+                pass
 
     def render(self, context):
-        output = context['output']
-        # XXX Perform HTTP caching here.
-        assert type(self.raw) is str # sanity check
-        output.body = self.raw
-        output.media_type = self.media_type
-        if self.media_type.startswith('text/'):
-            charset = self.request_processor.charset_static
-            if charset is None:
-                pass # Let the consumer guess.
-            else:
-                output.charset = charset
-        return output
+        return Output(body=self.raw, media_type=self.media_type, charset=self.charset)
 
 
 class Dynamic(Simplate):
@@ -56,12 +53,7 @@ class Dynamic(Simplate):
         if accept is None:
             accept = state.get('accept_header')
         try:
-            media_type, body = super(Dynamic, self).render(accept, state)
-            output = state['output']
-            output.body = body
-            if not output.media_type:
-                output.media_type = media_type
-            return output
+            return super(Dynamic, self).render(accept, state)
         except SimplateException as e:
             # find an Accept header
             if dispatch_accept is not None:  # indirect negotiation

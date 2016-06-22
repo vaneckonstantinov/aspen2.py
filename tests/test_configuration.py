@@ -80,14 +80,6 @@ def test_configuration_ignores_blank_indexfilenames():
 
 # Tests of parsing perversities
 
-def test_parse_charset_good():
-    actual = parse.charset(u'UTF-8')
-    assert actual == 'UTF-8'
-
-def test_parse_charset_bad():
-    raises(ValueError, parse.charset, u'')
-
-
 def test_parse_yes_no_yes_is_True():
     assert parse.yes_no(u'yEs')
 

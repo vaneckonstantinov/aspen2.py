@@ -16,20 +16,36 @@ def test_barely_working(harness):
     assert output.media_type == 'text/html'
 
 def test_charset_static_barely_working(harness):
-    output = harness.simple( 'Greetings, program!'
+    output = harness.simple( 'Greetings, program!'.encode('utf16')
                            , 'index.html'
-                           , request_processor_configuration={'charset_static': 'OOG'}
+                           , request_processor_configuration={'charset_static': 'utf16'}
                             )
     assert output.media_type == 'text/html'
-    assert output.charset == 'OOG'
+    assert output.charset == 'utf16'
+
+def test_charset_static_checks_encoding(harness):
+    output = harness.simple( 'Greetings, program!'.encode('utf16')
+                           , 'index.html'
+                           , request_processor_configuration={'charset_static': 'utf8'}
+                            )
+    assert output.media_type == 'text/html'
+    assert output.charset is None
+
+def test_charset_static_None(harness):
+    output = harness.simple( 'Greetings, program!'
+                           , 'index.html'
+                           , request_processor_configuration={'charset_static': None}
+                            )
+    assert output.media_type == 'text/html'
+    assert output.charset is None
 
 def test_charset_dynamic_barely_working(harness):
     output = harness.simple( '[---]\n[---]\nGreetings, program!'
                            , 'index.html.spt'
-                           , request_processor_configuration={'charset_dynamic': 'CHEESECODE'}
+                           , request_processor_configuration={'charset_dynamic': 'ascii'}
                             )
     assert output.media_type == 'text/html'
-    assert output.charset == 'CHEESECODE'
+    assert output.charset == 'ascii'
 
 def test_resource_pages_work(harness):
     actual = harness.simple("[---]\nfoo = 'bar'\n[--------]\nGreetings, %(foo)s!").body
