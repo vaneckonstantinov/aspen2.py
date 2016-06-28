@@ -73,9 +73,16 @@ def _decode(raw):
     return fulltext.decode(encoding or b'ascii')
 
 
-class SimplateException(Exception):
-    def __init__(self, available_types):
+class NegotiationFailure(Exception):
+
+    def __init__(self, accept, available_types):
+        self.accept = accept
         self.available_types = available_types
+        message = "Couldn't satisfy %s. The following media types are available: %s."
+        self.message = message % (self.accept, ', '.join(self.available_types))
+
+    def __str__(self):
+        return self.message
 
 
 class SimplateDefaults(object):
@@ -118,12 +125,12 @@ class Simplate(object):
         self.pages = self.compile_pages(pages)
 
 
-    def best_match(self, accept, default=None):
+    def best_match(self, accept):
         """
         get the media type provided by this simplate that best matches
         the supplied Accept: header, or the default type (that of the
         first template page) if no accept header is provided (is None),
-        or raise SimplateException if no matches are available
+        or raise NegotiationFailure if no matches are available
         to a valid Accept: header.
 
         This is what the simplate will call internally to determine
@@ -140,7 +147,7 @@ class Simplate(object):
                 # Unparseable accept header, accept the default
                 pass
         if media_type == '':    # breakdown in negotiations
-            raise SimplateException(self.available_types)
+            raise NegotiationFailure(accept, self.available_types)
         return media_type
 
 

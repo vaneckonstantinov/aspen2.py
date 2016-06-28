@@ -1,6 +1,6 @@
 from ..output import Output
-from ..request_processor import dispatcher
-from ..simplates.simplate import Simplate, SimplateDefaults, SimplateException
+from ..request_processor.dispatcher import NotFound
+from ..simplates.simplate import NegotiationFailure, Simplate
 
 
 class Static(object):
@@ -28,23 +28,15 @@ class Static(object):
 class Dynamic(Simplate):
     """Model a dynamic HTTP resource using simplates.
 
-       Most defaults are in request_processor, so make SimplateDefaults from that.
-
        Make .request_processor available as it has been historically.
 
        Figure out which accept header to use.
-
-       Append a charset to text Content-Types if one is known.
-
 
     """
 
     def __init__(self, request_processor, fs, raw, default_media_type):
         self.request_processor = request_processor
-        initial_context = { 'request_processor': request_processor }
-        defaults = SimplateDefaults(request_processor.default_renderers_by_media_type,
-                                    request_processor.renderer_factories,
-                                    initial_context)
+        defaults = request_processor.simplate_defaults
         super(Dynamic, self).__init__(defaults, fs, raw, default_media_type)
 
 
@@ -54,11 +46,8 @@ class Dynamic(Simplate):
             accept = state.get('accept_header')
         try:
             return super(Dynamic, self).render(accept, state)
-        except SimplateException as e:
-            # find an Accept header
-            if dispatch_accept is not None:  # indirect negotiation
-                raise dispatcher.IndirectNegotiationFailure()
-            else:                            # direct negotiation
-                message = "Couldn't satisfy %s. The following media types are available: %s."
-                message %= (accept, ', '.join(e.available_types))
-                raise dispatcher.DirectNegotiationFailure(message.encode('US-ASCII'))
+        except NegotiationFailure:
+            if dispatch_accept is not None:
+                # e.g. client requested `/foo.json` but `/foo.spt` has no JSON page
+                raise NotFound()
+            raise

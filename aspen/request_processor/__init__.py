@@ -14,6 +14,7 @@ from algorithm import Algorithm
 from .typecasting import defaults as default_typecasters
 from ..configuration import ConfigurationError, configure, parse
 from ..simplates.renderers import factories
+from ..simplates.simplate import SimplateDefaults
 
 
 default_indices = lambda: ['index.html', 'index.json', 'index',
@@ -137,6 +138,14 @@ class RequestProcessor(object):
 
         self.default_renderers_by_media_type = defaultdict(lambda: self.renderer_default)
         self.default_renderers_by_media_type[self.media_type_json] = 'json_dump'
+
+        # simplate defaults
+        initial_context = { 'request_processor': self }
+        self.simplate_defaults = SimplateDefaults(
+            self.default_renderers_by_media_type,
+            self.renderer_factories,
+            initial_context
+        )
 
         # mime.types
         # ==========

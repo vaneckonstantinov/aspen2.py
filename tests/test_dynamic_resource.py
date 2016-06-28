@@ -7,10 +7,11 @@ from pytest import raises, yield_fixture
 
 from aspen import resources
 from aspen.http.resource import Dynamic
-from aspen.request_processor import dispatcher
+from aspen.request_processor.dispatcher import NotFound
 from aspen.simplates.pagination import Page
 from aspen.simplates.renderers.stdlib_template import Factory as TemplateFactory
 from aspen.simplates.renderers.stdlib_percent import Factory as PercentFactory
+from aspen.simplates.simplate import NegotiationFailure
 
 
 @yield_fixture
@@ -171,13 +172,13 @@ def test_render_raises_if_direct_negotiation_fails(harness):
     harness.fs.www.mk(('index.spt', SIMPLATE))
     state = _get_state(harness, filepath='index.spt', contents=SIMPLATE)
     state['accept_header'] = 'cheese/head'
-    raises(dispatcher.DirectNegotiationFailure, _render, state)
+    raises(NegotiationFailure, _render, state)
 
 def test_render_negotation_failures_include_available_types(harness):
     harness.fs.www.mk(('index.spt', SIMPLATE))
     state = _get_state(harness, filepath='index.spt', contents=SIMPLATE)
     state['accept_header'] = 'cheese/head'
-    actual = raises(dispatcher.DirectNegotiationFailure, _render, state).value.message
+    actual = raises(NegotiationFailure, _render, state).value.message
     expected = "Couldn't satisfy cheese/head. The following media types are available: " \
                "text/plain, text/html."
     assert actual == expected
@@ -236,7 +237,7 @@ def test_indirect_negotiation_sets_media_type_to_secondary(harness):
     assert actual == expected
 
 def test_indirect_negotiation_with_unsupported_media_type_is_an_error(harness):
-    with raises(dispatcher.IndirectNegotiationFailure):
+    with raises(NotFound):
         harness.simple(INDIRECTLY_NEGOTIATED_SIMPLATE, '/foo.spt', '/foo.jpg')
 
 
