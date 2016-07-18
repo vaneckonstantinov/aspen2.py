@@ -20,7 +20,7 @@ def get(harness):
         kw = dict( request_processor = harness.request_processor
                  , fs = ''
                  , raw = b'[---]\n[---] text/plain via stdlib_template\n'
-                 , default_media_type = ''
+                 , fs_media_type = ''
                   )
         kw.update(_kw)
         return Dynamic(**kw)
@@ -64,8 +64,10 @@ def test_parse_specline_doesnt_require_renderer(get):
     actual = (factory.__class__, media_type)
     assert actual == (PercentFactory, 'media/type')
 
-def test_parse_specline_requires_media_type(get):
-    raises(SyntaxError, get()._parse_specline, 'via stdlib_template')
+def test_parse_specline_doesnt_require_media_type(get, harness):
+    factory, media_type = get()._parse_specline('via stdlib_template')
+    actual = (factory.__class__, media_type)
+    assert actual == (TemplateFactory, harness.request_processor.media_type_default)
 
 def test_parse_specline_raises_SyntaxError_if_renderer_is_malformed(get):
     raises(SyntaxError, get()._parse_specline, 'stdlib_template media/type')

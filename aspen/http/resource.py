@@ -7,12 +7,11 @@ class Static(object):
     """Model a static HTTP resource.
     """
 
-    def __init__(self, request_processor, fspath, raw, media_type):
+    def __init__(self, request_processor, fspath, raw, fs_media_type):
         assert type(raw) is bytes  # sanity check
         self.raw = raw
-        self.media_type = media_type
-        if media_type == 'application/json':
-            self.media_type = request_processor.media_type_json
+        self.fs_media_type = fs_media_type
+        self.media_type = fs_media_type or request_processor.media_type_default
         self.charset = None
         if request_processor.charset_static:
             try:
@@ -34,9 +33,11 @@ class Dynamic(Simplate):
 
     """
 
-    def __init__(self, request_processor, fs, raw, default_media_type):
+    def __init__(self, request_processor, fs, raw, fs_media_type):
         self.request_processor = request_processor
+        self.fs_media_type = fs_media_type
         defaults = request_processor.simplate_defaults
+        default_media_type = fs_media_type or request_processor.media_type_default
         super(Dynamic, self).__init__(defaults, fs, raw, default_media_type)
 
 
