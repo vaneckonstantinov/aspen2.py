@@ -1,4 +1,5 @@
 import mimeparse
+import mimetypes
 
 from ..exceptions import NegotiationFailure, NotFound
 from ..output import Output
@@ -54,14 +55,15 @@ class Dynamic(object):
         we can ignore it: <https://tools.ietf.org/html/rfc7231#section-5.3.2>).
         """
         available = self.available_types
-        # When there is an extension in the URI path, the dispatcher gives us the
-        # corresponding media type (or an empty string if unknown)
-        accept = dispatch_accept = state['dispatch_result'].extra.get('accept')
 
-        if accept is not None:
-            # If the extension is unknown, raise NotFound
-            if accept == '':
+        dispatch_extension = state['dispatch_result'].extension
+        if dispatch_extension:
+            # There's an extension in the URI path, guess the media type from it
+            dispatch_accept = mimetypes.guess_type('a.' + dispatch_extension, strict=False)[0]
+            if dispatch_accept is None:
+                # The extension is unknown, raise NotFound
                 raise NotFound()
+            accept = dispatch_accept
             # Accept `media/type` for `media/x-type`
             i = accept.find('/x-')
             if i > 0:
@@ -74,7 +76,9 @@ class Dynamic(object):
             # then we ignore the Accept header
             return self.render_for_type(available[0], state)
         else:
+            dispatch_accept = None
             accept = state.get('accept_header')
+
         if accept:
             try:
                 best_match = mimeparse.best_match(available, accept)
@@ -88,5 +92,6 @@ class Dynamic(object):
                     # e.g. client requested `/foo.json` but `/foo.spt` has no JSON page
                     raise NotFound()
                 raise NegotiationFailure(accept, available)
+
         # Fall back to the first available type
         return self.render_for_type(available[0], state)
