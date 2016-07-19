@@ -7,7 +7,7 @@ from pytest import raises, yield_fixture
 
 from aspen.exceptions import NegotiationFailure
 from aspen.http.resource import Dynamic
-from aspen.request_processor.dispatcher import NotFound
+from aspen.request_processor.dispatcher import mimetypes, NotFound
 from aspen.simplates.pagination import Page
 from aspen.simplates.renderers.stdlib_template import Factory as TemplateFactory
 from aspen.simplates.renderers.stdlib_percent import Factory as PercentFactory
@@ -155,6 +155,19 @@ def test_render_negotation_failures_include_available_types(harness):
     expected = "Couldn't satisfy cheese/head. The following media types are available: " \
                "text/plain, text/html."
     assert actual == expected
+
+def test_treat_media_type_variants_as_equivalent(harness):
+    _guess_type = mimetypes.guess_type
+    mimetypes.guess_type = lambda url, **kw: ('application/x-javascript' if url.endswith('.js') else '', None)
+    try:
+        output = harness.simple(
+            filepath='foobar.spt',
+            contents="[---]\n[---] application/javascript\n[---] text/plain\n",
+            uripath='/foobar.js',
+        )
+        assert output.media_type == "application/javascript"
+    finally:
+        mimetypes.guess_type = _guess_type
 
 
 from aspen.simplates.renderers import Renderer, Factory
