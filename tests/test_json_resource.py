@@ -51,7 +51,6 @@ def test_json_content_type_is_per_file_configurable(harness):
     expected = 'floober/blah'
     SPT="""
 [---]
-output.media_type = 'floober/blah'
 [---] floober/blah
 {'Greetings': 'program!'}
 """
@@ -163,7 +162,7 @@ def test_aspen_json_dumps_dumps():
 
 # jsonp
 
-JSONP_SIMPLATE = """[---]\n[---] application/javascript via jsonp_dump
+JSONP_SIMPLATE = """[---]\n[---] application/json via jsonp_dump
 {'Greetings': 'program!'}"""
 
 JSONP_RESULT = '''/**/ foo({
@@ -171,7 +170,7 @@ JSONP_RESULT = '''/**/ foo({
 });'''
 
 def _jsonp_query(harness, querystring):
-    return harness.simple(JSONP_SIMPLATE, querystring=querystring).body
+    return harness.simple(JSONP_SIMPLATE, filepath='index.json.spt', querystring=querystring).body
 
 def test_jsonp_basically_works(harness):
     actual = _jsonp_query(harness, "jsonp=foo")
@@ -185,7 +184,7 @@ def test_jsonp_defaults_to_json_with_no_callback(harness):
     expected = '''{
     "Greetings": "program!"
 }'''
-    actual = harness.simple(JSONP_SIMPLATE).body
+    actual = harness.simple(JSONP_SIMPLATE, filepath='index.spt').body
     assert actual == expected, "wanted %r got %r " % (expected, actual)
 
 def test_jsonp_filters_disallowed_chars(harness):

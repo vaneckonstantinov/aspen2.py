@@ -275,7 +275,7 @@ def test_virtual_path_file_key_val_cast_custom(harness):
                       , "[-----]\nusername=path['user']\n[-----]\nGreetings, %(username)s!"
                        ),)
     actual = harness.simple(filepath=None, uripath='/user/chad.html', want='path',
-            run_through='apply_typecasters_to_path')
+            return_after='apply_typecasters_to_path')
     assert actual['user'].username == 'chad'
 
 # negotiated *and* virtual paths

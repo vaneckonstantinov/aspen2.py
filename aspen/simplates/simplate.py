@@ -6,8 +6,6 @@ from __future__ import unicode_literals
 from io import BytesIO
 import re
 
-import mimeparse
-
 from ..output import Output
 from .pagination import split_and_escape, parse_specline, Page
 
@@ -73,18 +71,6 @@ def _decode(raw):
     return fulltext.decode(encoding or b'ascii')
 
 
-class NegotiationFailure(Exception):
-
-    def __init__(self, accept, available_types):
-        self.accept = accept
-        self.available_types = available_types
-        message = "Couldn't satisfy %s. The following media types are available: %s."
-        self.message = message % (self.accept, ', '.join(self.available_types))
-
-    def __str__(self):
-        return self.message
-
-
 class SimplateDefaults(object):
     def __init__(self, renderers_by_media_type, renderer_factories, initial_context):
         """
@@ -125,44 +111,16 @@ class Simplate(object):
         self.pages = self.compile_pages(pages)
 
 
-    def best_match(self, accept):
-        """
-        get the media type provided by this simplate that best matches
-        the supplied Accept: header, or the default type (that of the
-        first template page) if no accept header is provided (is None),
-        or raise NegotiationFailure if no matches are available
-        to a valid Accept: header.
-
-        This is what the simplate will call internally to determine
-        which template to use.
-        """
-        _, media_type = self.pages[2]  # default to first content page
-        if accept is None:
-            # No accept header provided, use the default
-            pass
-        else:
-            try:
-                media_type = mimeparse.best_match(self.available_types, accept)
-            except ValueError:
-                # Unparseable accept header, accept the default
-                pass
-        if media_type == '':    # breakdown in negotiations
-            raise NegotiationFailure(accept, self.available_types)
-        return media_type
-
-
-    def render(self, accept, context):
+    def render(self, media_type, context):
         """
         Get the response to a request for this page::
 
-            accept - an HTTP Accept: header asking for this page
+            media_type - the media type of the page to render
             context - a dict of execution context values you wish to supply
                       * Note that these are overriden by values that are carried
                       over from the execution of the zeroth page
         """
 
-        # find matching media type
-        media_type = self.best_match(accept)
         # create Output object and put it in the state
         output = context['output'] = Output(media_type=media_type)
         # copy the state dict to avoid accidentally mutating it
