@@ -286,15 +286,13 @@ def is_first_index(indices, basedir, name):
     return False
 
 
-def update_neg_type(media_type_default, capture_accept, filename):
-    media_type = mimetypes.guess_type(filename, strict=False)[0]
-    if media_type is None:
-        media_type = media_type_default
+def update_neg_type(capture_accept, filename):
+    media_type = mimetypes.guess_type(filename, strict=False)[0] or ''
     capture_accept['accept'] = media_type
     debug(lambda: "set result.extra['accept'] to %r" % media_type)
 
 
-def dispatch(indices, media_type_default, pathparts, uripath, startdir):
+def dispatch(indices, pathparts, uripath, startdir):
     """Concretize dispatch_abstract.
     """
 
@@ -306,7 +304,7 @@ def dispatch(indices, media_type_default, pathparts, uripath, startdir):
     is_leaf = os.path.isfile
     traverse = os.path.join
     find_index = lambda x: match_index(indices, x)
-    noext_matched = lambda x: update_neg_type(media_type_default, capture_accept, x)
+    noext_matched = lambda x: update_neg_type(capture_accept, x)
 
 
     # Dispatch!
