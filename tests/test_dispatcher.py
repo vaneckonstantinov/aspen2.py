@@ -3,6 +3,7 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import mimetypes
 import os
 from pytest import raises
 
@@ -468,3 +469,27 @@ def test_dont_serve_hidden_files(harness):
 def test_dont_serve_spt_file_source(harness):
     harness.fs.www.mk(('foo.html.spt', "Greetings, program!"),)
     assert_raises_NotFound(harness, '/foo.html.spt')
+
+
+# dispatch_result.extra['accept']
+# ===============================
+
+def test_dispatcher_sets_extra_accept_header(harness):
+    dispatch_result = harness.simple(
+        filepath='foo.spt',
+        uripath='/foo.css',
+        return_after='dispatch_path_to_filesystem',
+        want='dispatch_result',
+    )
+    actual = dispatch_result.extra['accept']
+    expected = mimetypes.guess_type('foo.css', strict=False)[0]
+    assert actual == expected
+
+def test_extra_accept_header_is_empty_string_when_unknown(harness):
+    dispatch_result = harness.simple(
+        filepath='foo.spt',
+        uripath='/foo.unknown-extension',
+        return_after='dispatch_path_to_filesystem',
+        want='dispatch_result',
+    )
+    assert dispatch_result.extra['accept'] == ''
