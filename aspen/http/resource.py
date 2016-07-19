@@ -64,6 +64,10 @@ class Dynamic(Simplate):
             # If the extension is unknown, raise NotFound
             if accept == '':
                 raise NotFound()
+            # Accept `media/type` for `media/x-type`
+            i = accept.find('/x-')
+            if i > 0:
+                accept += ',' + accept[:i+1] + accept[i+3:]
             # Accept custom JSON media type
             if accept == 'application/json':
                 accept += ',' + self.request_processor.media_type_json
