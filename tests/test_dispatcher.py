@@ -491,3 +491,12 @@ def test_extra_accept_header_is_empty_string_when_unknown(harness):
         want='dispatch_result',
     )
     assert dispatch_result.extra['accept'] == ''
+
+def test_extra_accept_header_is_missing_when_extension_missing(harness):
+    dispatch_result = harness.simple(
+        filepath='foo.spt',
+        uripath='/foo',
+        return_after='dispatch_path_to_filesystem',
+        want='dispatch_result',
+    )
+    assert 'accept' not in dispatch_result.extra

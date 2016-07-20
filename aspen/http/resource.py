@@ -57,9 +57,10 @@ class Dynamic(Simplate):
         we can ignore it: <https://tools.ietf.org/html/rfc7231#section-5.3.2>).
         """
         available = self.available_types
-        # When there is an extension in the path, the dispatcher gives us the
+        # When there is an extension in the URI path, the dispatcher gives us the
         # corresponding media type (or an empty string if unknown)
         accept = dispatch_accept = state['dispatch_result'].extra.get('accept')
+
         if accept is not None:
             # If the extension is unknown, raise NotFound
             if accept == '':
