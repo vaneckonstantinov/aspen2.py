@@ -85,11 +85,11 @@ class Harness(object):
         return self._hit('GET', uripath, querystring, **kw)
 
     def _hit(self, method, path='/', querystring='', raise_immediately=True, return_after=None,
-             want='output', **headers):
+             want='output', accept_header=None):
 
         state = self.request_processor.process( path
                                               , querystring
-                                              , accept_header=None
+                                              , accept_header=accept_header
                                               , raise_immediately=raise_immediately
                                               , return_after=return_after
                                                )

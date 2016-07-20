@@ -110,11 +110,12 @@ def load(request_processor, fspath, mtime):
     if is_spt:
         guess_with = guess_with[:-4]
     fs_media_type = mimetypes.guess_type(guess_with, strict=False)[0]
-    media_type = fs_media_type if fs_media_type else request_processor.media_type_default
+    if fs_media_type == 'application/json':
+        fs_media_type = request_processor.media_type_json
 
     # Compute and instantiate a class.
     # ================================
     # An instantiated resource is compiled as far as we can take it.
 
     Class = Dynamic if is_spt else Static
-    return Class(request_processor, fspath, raw, media_type)
+    return Class(request_processor, fspath, raw, fs_media_type)

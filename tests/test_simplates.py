@@ -80,7 +80,7 @@ foo = 'Template'
 [---] text/plain via stdlib_format
 {foo}
 [---] text/xml
-<foo>{foo}</foo>""")
+<foo>{foo}</foo>""", filepath='index.spt')
     assert response.body.strip() == 'Template'
 
 

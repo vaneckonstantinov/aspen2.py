@@ -49,7 +49,6 @@ def hydrate_querystring(querystring):
 
 def dispatch_path_to_filesystem(request_processor, path, querystring):
     result = dispatcher.dispatch( indices               = request_processor.indices
-                                , media_type_default    = request_processor.media_type_default
                                 , pathparts             = path.parts
                                 , uripath               = path.decoded
                                 , startdir              = request_processor.www_root

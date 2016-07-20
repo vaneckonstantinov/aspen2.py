@@ -5,13 +5,12 @@ from __future__ import unicode_literals
 
 from pytest import raises, yield_fixture
 
-from aspen import resources
+from aspen.exceptions import NegotiationFailure
 from aspen.http.resource import Dynamic
-from aspen.request_processor.dispatcher import NotFound
+from aspen.request_processor.dispatcher import mimetypes, NotFound
 from aspen.simplates.pagination import Page
 from aspen.simplates.renderers.stdlib_template import Factory as TemplateFactory
 from aspen.simplates.renderers.stdlib_percent import Factory as PercentFactory
-from aspen.simplates.simplate import NegotiationFailure
 
 
 @yield_fixture
@@ -20,7 +19,7 @@ def get(harness):
         kw = dict( request_processor = harness.request_processor
                  , fs = ''
                  , raw = b'[---]\n[---] text/plain via stdlib_template\n'
-                 , default_media_type = ''
+                 , fs_media_type = ''
                   )
         kw.update(_kw)
         return Dynamic(**kw)
@@ -64,8 +63,10 @@ def test_parse_specline_doesnt_require_renderer(get):
     actual = (factory.__class__, media_type)
     assert actual == (PercentFactory, 'media/type')
 
-def test_parse_specline_requires_media_type(get):
-    raises(SyntaxError, get()._parse_specline, 'via stdlib_template')
+def test_parse_specline_doesnt_require_media_type(get, harness):
+    factory, media_type = get()._parse_specline('via stdlib_template')
+    actual = (factory.__class__, media_type)
+    assert actual == (TemplateFactory, harness.request_processor.media_type_default)
 
 def test_parse_specline_raises_SyntaxError_if_renderer_is_malformed(get):
     raises(SyntaxError, get()._parse_specline, 'stdlib_template media/type')
@@ -110,17 +111,6 @@ def test_get_renderer_factory_can_raise_syntax_error(get):
 
 # render
 
-def _get_state(harness, *a, **kw):
-    kw['return_after'] = 'dispatch_path_to_filesystem'
-    kw['want'] = 'state'
-    return harness.simple(*a, **kw)
-
-
-def _render(state):
-    resource = resources.load(state['request_processor'], state['dispatch_result'].match, 0)
-    state['resource'] = resource
-    return resource.render(state)
-
 SIMPLATE = """\
 [---]
 [---] text/plain
@@ -130,58 +120,54 @@ Greetings, program!
 """
 
 def test_render_is_happy_not_to_negotiate(harness):
-    harness.fs.www.mk(('index.spt', SIMPLATE))
-    state = _get_state(harness, filepath='index.spt', contents=SIMPLATE)
-    actual = _render(state).body
-    assert actual == "Greetings, program!\n"
+    output = harness.simple(filepath='index.spt', contents=SIMPLATE)
+    assert output.body == "Greetings, program!\n"
 
 def test_render_sets_media_type_when_it_doesnt_negotiate(harness):
-    harness.fs.www.mk(('index.spt', SIMPLATE))
-    state = _get_state(harness, filepath='index.spt', contents=SIMPLATE)
-    output = _render(state)
+    output = harness.simple(filepath='index.spt', contents=SIMPLATE)
     assert output.media_type == "text/plain"
 
 def test_render_is_happy_not_to_negotiate_with_defaults(harness):
-    harness.fs.www.mk(('index.spt', '''[---]\n[---]\nGreetings, program!\n'''))
-    state = _get_state(harness, filepath='index.spt', contents=SIMPLATE)
-    actual = _render(state).body
-    assert actual == "Greetings, program!\n"
+    output = harness.simple(filepath='index.spt', contents="[---]\n[---]\nGreetings, program!\n")
+    assert output.body == "Greetings, program!\n"
 
 def test_render_negotiates(harness):
-    harness.fs.www.mk(('index.spt', SIMPLATE))
-    state = _get_state(harness, filepath='index.spt', contents=SIMPLATE)
-    state['accept_header'] = 'text/html'
-    actual = _render(state).body
-    assert actual == "<h1>Greetings, program!</h1>\n"
+    output = harness.simple(filepath='index.spt', contents=SIMPLATE, accept_header='text/html')
+    assert output.body == "<h1>Greetings, program!</h1>\n"
 
-def test_handles_busted_accept(harness):
-    harness.fs.www.mk(('index.spt', SIMPLATE))
-    state = _get_state(harness, filepath='index.spt', contents=SIMPLATE)
-    state['accept_header'] = 'text/html;'
-    actual = _render(state).body
-    assert actual == "Greetings, program!\n"
+def test_ignores_busted_accept(harness):
+    output = harness.simple(filepath='index.spt', contents=SIMPLATE, accept_header='text/html;')
+    assert output.body == "Greetings, program!\n"
 
 def test_render_sets_media_type_when_it_negotiates(harness):
-    harness.fs.www.mk(('index.spt', SIMPLATE))
-    state = _get_state(harness, filepath='index.spt', contents=SIMPLATE)
-    state['accept_header'] = 'text/html'
-    output = _render(state)
+    output = harness.simple(filepath='index.spt', contents=SIMPLATE, accept_header='text/html')
     assert output.media_type == "text/html"
 
 def test_render_raises_if_direct_negotiation_fails(harness):
-    harness.fs.www.mk(('index.spt', SIMPLATE))
-    state = _get_state(harness, filepath='index.spt', contents=SIMPLATE)
-    state['accept_header'] = 'cheese/head'
-    raises(NegotiationFailure, _render, state)
+    with raises(NegotiationFailure):
+        harness.simple(filepath='index.spt', contents=SIMPLATE, accept_header='cheese/head')
 
 def test_render_negotation_failures_include_available_types(harness):
-    harness.fs.www.mk(('index.spt', SIMPLATE))
-    state = _get_state(harness, filepath='index.spt', contents=SIMPLATE)
-    state['accept_header'] = 'cheese/head'
-    actual = raises(NegotiationFailure, _render, state).value.message
+    actual = raises(
+        NegotiationFailure,
+        harness.simple, filepath='index.spt', contents=SIMPLATE, accept_header='cheese/head'
+    ).value.message
     expected = "Couldn't satisfy cheese/head. The following media types are available: " \
                "text/plain, text/html."
     assert actual == expected
+
+def test_treat_media_type_variants_as_equivalent(harness):
+    _guess_type = mimetypes.guess_type
+    mimetypes.guess_type = lambda url, **kw: ('application/x-javascript' if url.endswith('.js') else '', None)
+    try:
+        output = harness.simple(
+            filepath='foobar.spt',
+            contents="[---]\n[---] application/javascript\n[---] text/plain\n",
+            uripath='/foobar.js',
+        )
+        assert output.media_type == "application/javascript"
+    finally:
+        mimetypes.guess_type = _guess_type
 
 
 from aspen.simplates.renderers import Renderer, Factory
@@ -201,17 +187,13 @@ def install_glubber(harness):
 def test_can_override_default_renderers_by_mimetype(harness):
     install_glubber(harness)
     harness.fs.www.mk(('index.spt', SIMPLATE),)
-    state = _get_state(harness, filepath='index.spt', contents=SIMPLATE)
-    state['accept_header'] = 'text/plain'
-    actual = _render(state).body
-    assert actual == "glubber"
+    output = harness.simple(filepath='index.spt', contents=SIMPLATE, accept_header='text/plain')
+    assert output.body == "glubber"
 
 def test_can_override_default_renderer_entirely(harness):
     install_glubber(harness)
-    state = _get_state(harness, filepath='index.spt', contents=SIMPLATE)
-    state['accept_header'] = 'text/plain'
-    actual = _render(state).body
-    assert actual == "glubber"
+    output = harness.simple(filepath='index.spt', contents=SIMPLATE, accept_header='text/plain')
+    assert output.body == "glubber"
 
 
 # indirect
