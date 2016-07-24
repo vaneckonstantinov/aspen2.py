@@ -91,7 +91,8 @@ def test_all_table_entries(harness, files, request_uri, expected):
     realfiles = tuple([ f if f.endswith('/') else (f, GENERIC_SPT) for f in files ])
     harness.fs.www.mk(*realfiles)
     try:
-        state = harness._hit('GET', request_uri, want='state')
+        state = harness._hit('GET', request_uri, want='state',
+                             return_after='dispatch_path_to_filesystem')
     except dispatcher.NotFound:
         result = '404'
     except dispatcher.Redirect as err:
