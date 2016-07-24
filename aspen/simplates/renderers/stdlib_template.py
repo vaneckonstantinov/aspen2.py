@@ -6,9 +6,11 @@ from __future__ import unicode_literals
 from . import Renderer, Factory
 from string import Template
 
+
 class Renderer(Renderer):
-    def compile(self, filepath, raw):
-        return Template(raw)
+
+    def compile(self, filepath, padded):
+        return Template(padded)
 
     def render_content(self, context):
         return self.compiled.substitute(context)
