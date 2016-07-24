@@ -12,6 +12,7 @@ CALLBACK_RE = re.compile(r'[^_a-zA-Z0-9]')
 
 
 class Renderer(JsonRenderer):
+
     def render_content(self, context):
         # get the jsonp callback
         qs = context['querystring']
