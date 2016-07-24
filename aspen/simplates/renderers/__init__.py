@@ -135,15 +135,20 @@ class Renderer(object):
         self.raw = raw
         self.media_type = media_type
         self.offset = offset
-        self.compiled = self.compile(self._filepath, self.raw)
+        self.padded = (b'\n' * offset) + self.raw
+        self.compiled = self.compile(self._filepath, self.padded)
 
     def __call__(self, context):
         if self._changes_reload:
             self.meta = self._factory._update_meta()
-            self.compiled = self.compile(self._filepath, self.raw)
-        return self.render_content(context)
+            self.compiled = self.compile(self._filepath, self.padded)
+        r = self.render_content(context)
+        if r[:self.offset] == self.padded[:self.offset]:
+            # The padding is still there, strip it
+            return r[self.offset:]
+        return r
 
-    def compile(self, filepath, raw):
+    def compile(self, filepath, padded):
         """Override.
 
         Whatever you return from this will be set on self.compiled the first
@@ -152,7 +157,7 @@ class Renderer(object):
         self.compiled in your render_content method as needed.
 
         """
-        return raw
+        return padded
 
     def render_content(self, context):
         """Override. Context is a dict.

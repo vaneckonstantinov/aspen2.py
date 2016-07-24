@@ -7,8 +7,6 @@ from . import Renderer, Factory
 
 
 class Renderer(Renderer):
-    def compile(self, filepath, raw):
-        return raw
 
     def render_content(self, context):
         return self.compiled % context

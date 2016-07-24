@@ -7,8 +7,6 @@ from . import Renderer, Factory
 from .. import json_
 
 class Renderer(Renderer):
-    def compile(self, filepath, raw):
-        return raw
 
     def render_content(self, context):
         output = context['output']
