@@ -90,20 +90,14 @@ def test_all_table_entries(harness, files, request_uri, expected):
     # set up the specified files
     realfiles = tuple([ f if f.endswith('/') else (f, GENERIC_SPT) for f in files ])
     harness.fs.www.mk(*realfiles)
-    # make the request and get the response code and the request object (sadly we can't get both with one request)
     try:
-        harness.simple(uripath=request_uri, filepath=None)
+        state = harness._hit('GET', request_uri, want='state')
     except dispatcher.NotFound:
         result = '404'
     except dispatcher.Redirect as err:
         result = '302 ' + err.message
     else:
         result = '200'
-        state = harness.simple( uripath=request_uri
-                              , filepath=None
-                              , want='state'
-                              , raise_immediately=False
-                               )
         path = format_result(**state)
         if os.sep != posixpath.sep:
             path = path.replace(os.sep, posixpath.sep)
