@@ -105,7 +105,7 @@ class Simplate(object):
         self.decoded = _decode(raw)                   # type: unicode
         self.default_media_type = default_media_type  # type: str
 
-        self.renderers = {}         # mapping of media type to render function
+        self.renderers = {}         # mapping of media type to Renderer objects
         self.available_types = []   # ordered sequence of media types
         pages = self.parse_into_pages(self.decoded)
         self.pages = self.compile_pages(pages)
