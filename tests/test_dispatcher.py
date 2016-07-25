@@ -7,7 +7,8 @@ import mimetypes
 import os
 from pytest import raises
 
-from aspen.request_processor import dispatcher, typecasting
+from aspen.exceptions import TypecastError
+from aspen.request_processor import dispatcher
 
 
 # Helpers
@@ -205,7 +206,7 @@ def test_virtual_path_typecasts_to_int(harness):
 
 def test_virtual_path_raises_on_bad_typecast(harness):
     harness.fs.www.mk(('%year.int/foo.html', "Greetings, program!"),)
-    raises(typecasting.TypecastError, assert_fs, harness, '/I am not a year./foo.html', '')
+    raises(TypecastError, assert_fs, harness, '/I am not a year./foo.html', '')
 
 def test_virtual_path_raises_on_direct_access(harness):
     assert_raises_NotFound(harness, '/%name/foo.html', '')

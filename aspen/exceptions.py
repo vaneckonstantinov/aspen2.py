@@ -19,3 +19,10 @@ class NegotiationFailure(Exception):
 
     def __str__(self):
         return self.message
+
+
+class TypecastError(Exception):
+
+    def __init__(self, extension):
+        self.msg = "Failure to typecast extension '{0}'".format(extension)
+        Exception.__init__(self)
