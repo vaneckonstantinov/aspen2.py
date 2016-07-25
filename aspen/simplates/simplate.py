@@ -197,7 +197,7 @@ class Simplate(object):
         two = compile(two.padded_content, self.fs, 'exec')
 
         pages[:2] = (one, two)
-        pages[2:] = (self.compile_page(page) for page in pages[2:])
+        pages[2:] = [self.compile_page(page) for page in pages[2:]]
 
         return pages
 
