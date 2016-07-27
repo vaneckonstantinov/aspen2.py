@@ -151,7 +151,7 @@ def clean_sphinx():
 # =======
 
 def pyflakes():
-    shell(_virt('pyflakes', _dev()), 'aspen/', ignore_status=True, silent=False)
+    shell(_virt('pyflakes', _dev()), 'aspen/', 'tests/', ignore_status=True, silent=False)
 
 
 def test():

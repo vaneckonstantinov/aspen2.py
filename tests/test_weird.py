@@ -65,6 +65,7 @@ def test_weirdness():
         log("importing a thing")
         old = set(sys.path_importer_cache.keys())
         import aspen
+        aspen  # shut up pyflakes
         now = set(sys.path_importer_cache.keys())
         log("diff", now - old)
 
@@ -84,6 +85,7 @@ def test_weirdness():
         __dump()
         try:
             import bar
+            bar  # shut up pyflakes
             log("succeeded")
         except:
             log("failed")
