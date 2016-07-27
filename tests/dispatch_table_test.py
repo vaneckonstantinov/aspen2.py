@@ -2,7 +2,9 @@
 
 import os.path
 import posixpath
+
 import pytest
+
 from aspen.request_processor import dispatcher
 from aspen.testing import Harness
 
@@ -36,7 +38,7 @@ def find_cols(defline, header_char='='):
                 colends.append(len(defline))
                 break
 
-    return zip(colstarts,colends)
+    return list(zip(colstarts, colends))
 
 def fields_from(dataline, cols):
     """
@@ -124,7 +126,6 @@ if __name__ == '__main__':
     inputfiles = headers[:answercol]
     requests = headers[answercol:]
 
-
     for line in table[:3]:
         print(line)
     # We 'know' that table[0] == table[2], both header deflines, so skip down
@@ -140,8 +141,8 @@ if __name__ == '__main__':
         realfiles = tuple([ f if f.endswith('/') else (f, GENERIC_SPT) for f in files ])
         harness.fs.www.mk(*realfiles)
         for i,request_uri in enumerate(requests):
-            result = unicode(harness.simple(uripath=request_uri, filepath=None, want='response.code', raise_immediately=False))
-            if result not in [ '404' ]:
+            result = str(harness.simple(uripath=request_uri, filepath=None, want='response.code', raise_immediately=False))
+            if result != '404':
                 state = harness.simple( uripath=request_uri
                                       , filepath=None
                                       , want='state'

@@ -30,7 +30,7 @@ def test_unicode_dammit_fails():
 
 def test_unicode_dammit_decodes_utf8():
     actual = unicode_dammit(b"comet: \xe2\x98\x84")
-    assert actual == u"comet: \u2604"
+    assert actual == "comet: \u2604"
 
 def test_unicode_dammit_takes_encoding():
     actual = unicode_dammit(b"comet: \xe2\x98\x84", encoding="ASCII")

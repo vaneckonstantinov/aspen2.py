@@ -113,7 +113,7 @@ def test_mapping_pop_removes_the_item_if_that_was_the_last_value():
     m['foo'] = 1
     m.pop('foo')
     expected = []
-    actual = m.keys()
+    actual = list(m.keys())
     assert actual == expected
 
 def test_mapping_pop_raises_KeyError_by_default():

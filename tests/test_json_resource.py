@@ -3,7 +3,7 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import StringIO
+import io
 
 from pytest import raises
 
@@ -135,14 +135,14 @@ def test_json_raises_TypeError_on_unknown_types(harness):
            )
 
 def test_aspen_json_load_loads():
-    fp = StringIO.StringIO()
+    fp = io.StringIO()
     fp.write('{"cheese": "puffs"}')
     fp.seek(0)
     actual = json_.load(fp)
     assert actual == {'cheese': 'puffs'}
 
 def test_aspen_json_dump_dumps():
-    fp = StringIO.StringIO()
+    fp = io.BytesIO() if str is bytes else io.StringIO()
     json_.dump({"cheese": "puffs"}, fp)
     fp.seek(0)
     actual = fp.read()
