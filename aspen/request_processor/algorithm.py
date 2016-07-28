@@ -53,7 +53,7 @@ def dispatch_path_to_filesystem(request_processor, path, querystring):
                                 , uripath               = path.decoded
                                 , startdir              = request_processor.www_root
                                  )
-    for k, v in result.wildcards.iteritems():
+    for k, v in result.wildcards.items():
         path[k] = v
     return {'dispatch_result': result}
 
@@ -74,6 +74,6 @@ def render_resource(state, resource):
 
 
 def encode_output(output, request_processor):
-    if isinstance(output.body, unicode):
+    if not isinstance(output.body, bytes):
         output.charset = request_processor.charset_dynamic
         output.body = output.body.encode(output.charset)

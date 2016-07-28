@@ -43,7 +43,7 @@ def parse_conf_var(raw, from_unicode, context, name_in_context):
         value = raw
         extend = False
     try:
-        if isinstance(value, str):
+        if isinstance(value, bytes):
             value = value.decode('US-ASCII')
         return from_unicode(value), extend
     except UnicodeDecodeError as error:

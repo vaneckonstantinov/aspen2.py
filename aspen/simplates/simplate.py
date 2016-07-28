@@ -279,7 +279,7 @@ class Simplate(object):
         elif make_renderer is None:
             possible = []
             legend = ''
-            for k, v in sorted(factories.iteritems()):
+            for k, v in sorted(factories.items()):
                 if isinstance(v, ImportError):
                     k = '*' + k
                     legend = " (starred are missing third-party libraries)"

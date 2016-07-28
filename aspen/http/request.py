@@ -5,18 +5,17 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-
-import cgi
-import urllib
+from six import text_type as str
+from six.moves.urllib.parse import parse_qs, unquote, unquote_plus
 
 from .mapping import Mapping
 
 
 def path_decode(bs):
-    return urllib.unquote(bs).decode('UTF-8')
+    return unquote(bs).decode('UTF-8')
 
 
-class PathPart(unicode):
+class PathPart(str):
     """A string with a mapping for extra data about it."""
 
     __slots__ = ['params']
@@ -79,17 +78,14 @@ class Querystring(Mapping):
     def __init__(self, raw):
         """Takes a string of type application/x-www-form-urlencoded.
         """
-        self.decoded = urllib.unquote_plus(raw).decode('UTF-8')
+        self.decoded = unquote_plus(raw).decode('UTF-8')
         self.raw = raw
 
         # parse_qs does its own unquote_plus'ing ...
-        as_dict = cgi.parse_qs( raw
-                              , keep_blank_values = True
-                              , strict_parsing = False
-                               )
+        as_dict = parse_qs(raw, keep_blank_values=True, strict_parsing=False)
 
         # ... but doesn't decode to unicode.
-        for k, vals in as_dict.items():
+        for k, vals in list(as_dict.items()):
             as_dict[k.decode('UTF-8')] = [v.decode('UTF-8') for v in vals]
 
         Mapping.__init__(self, as_dict)

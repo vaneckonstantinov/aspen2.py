@@ -10,6 +10,7 @@ import mimetypes
 import os
 import posixpath
 from collections import namedtuple
+from functools import reduce
 
 
 class DispatchError(Exception):
