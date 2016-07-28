@@ -90,8 +90,8 @@ class Simplate(object):
 
         self.defaults = defaults                      # type: SimplateDefaults
         self.fs = fs                                  # type: str
-        self.raw = raw                                # type: str
-        self.decoded = _decode(raw)                   # type: unicode
+        self.raw = raw                                # type: bytes
+        self.decoded = _decode(raw)                   # type: str
         self.default_media_type = default_media_type  # type: str
 
         self.renderers = {}         # mapping of media type to Renderer objects
