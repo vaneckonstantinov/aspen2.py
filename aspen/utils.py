@@ -27,29 +27,6 @@ def replace_with_repr(unicode_error):
 codecs.register_error('repr', replace_with_repr)
 
 
-def unicode_dammit(s, encoding="UTF-8"):
-    """Given a bytestring, return a unicode decoded with `encoding`.
-
-    Any bytes not decodable with UTF-8 will be replaced with their Python
-    representation, so you'll get something like u"foo\\xefbar".
-
-    """
-    if not isinstance(s, str):
-        raise TypeError("I got %s, but I want <type 'str'>." % s.__class__)
-    errors = 'repr'
-    return s.decode(encoding, errors)
-
-
-def ascii_dammit(s):
-    """Given a bytestring, return a bytestring.
-
-    The returned bytestring will have any non-ASCII bytes replaced with
-    their Python representation, so it will be pure ASCII.
-
-    """
-    return unicode_dammit(s, encoding="ASCII").encode("ASCII")
-
-
 # Filters
 # =======
 # These are decorators for algorithm functions.

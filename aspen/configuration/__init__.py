@@ -6,7 +6,6 @@ from __future__ import unicode_literals
 import os
 
 from ..exceptions import ConfigurationError
-from ..utils import ascii_dammit
 
 
 def configure(knobs, d, env_prefix, kwargs):
@@ -47,7 +46,7 @@ def parse_conf_var(raw, from_unicode, context, name_in_context):
             value = value.decode('US-ASCII')
         return from_unicode(value), extend
     except UnicodeDecodeError as error:
-        value = ascii_dammit(value)
+        value = value.decode('US-ASCII', 'repr')
         error_detail = "Configuration values must be US-ASCII."
     except ValueError as error:
         error_detail = error.args[0]
