@@ -12,17 +12,6 @@ from .pagination import split_and_escape, parse_specline, Page
 renderer_re = re.compile(r'[a-z0-9.-_]+$')
 media_type_re = re.compile(r'[A-Za-z0-9.+*-]+/[A-Za-z0-9.+*-]+$')
 
-MIN_PAGES=2
-MAX_PAGES=None
-
-
-def _ordinal(n):
-    ords = [ 'zero' , 'one' , 'two', 'three', 'four'
-           , 'five', 'six', 'seven', 'eight', 'nine' ]
-    if 0 <= n < len(ords):
-        return ords[n]
-    return str(n)
-
 
 def _decode(raw):
     """As per PEP 263, decode raw data according to the encoding specified in
