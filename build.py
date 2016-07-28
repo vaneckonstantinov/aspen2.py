@@ -14,6 +14,7 @@ ASPEN_DEPS = [
     'algorithm>=1.0.0',
     'filesystem_tree>=1.0.1',
     'dependency_injection>=1.1.0',
+    'six',
     ]
 
 TEST_DEPS = [
