@@ -4,6 +4,18 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 
+class ConfigurationError(Exception):
+    """This is an error in any part of our configuration.
+    """
+
+    def __init__(self, msg):
+        Exception.__init__(self)
+        self.msg = msg
+
+    def __str__(self):
+        return self.msg
+
+
 class LoadError(Exception):
     """Represent a problem loading a resource.
     """
@@ -19,3 +31,10 @@ class NegotiationFailure(Exception):
 
     def __str__(self):
         return self.message
+
+
+class TypecastError(Exception):
+
+    def __init__(self, extension):
+        self.msg = "Failure to typecast extension '{0}'".format(extension)
+        Exception.__init__(self)

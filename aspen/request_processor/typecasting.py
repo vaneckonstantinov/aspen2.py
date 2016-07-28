@@ -6,11 +6,8 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+from ..exceptions import TypecastError
 
-class TypecastError(Exception):
-    def __init__(self, extension):
-        self.msg = "Failure to typecast extension '{0}'".format(extension)
-        Exception.__init__(self)
 
 """
    A typecast dict (like 'defaults' below) is a map of
