@@ -5,19 +5,8 @@ from __future__ import unicode_literals
 
 import os
 
+from ..exceptions import ConfigurationError
 from ..utils import ascii_dammit
-
-
-class ConfigurationError(StandardError):
-    """This is an error in any part of our configuration.
-    """
-
-    def __init__(self, msg):
-        StandardError.__init__(self)
-        self.msg = msg
-
-    def __str__(self):
-        return self.msg
 
 
 def configure(knobs, d, env_prefix, kwargs):
