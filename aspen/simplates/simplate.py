@@ -20,7 +20,7 @@ def _decode(raw):
     """
     assert type(raw) is bytes  # sanity check
 
-    decl_re = re.compile(r'^[ \t\f]*#.*coding[:=][ \t]*([-\w.]+)')
+    decl_re = re.compile(br'^[ \t\f]*#.*coding[:=][ \t]*([-\w.]+)')
 
     def get_declaration(line):
         match = decl_re.match(line)
@@ -40,7 +40,7 @@ def _decode(raw):
                 # observed behavior.
 
                 encoding = potential
-                munged = b'# encoding set to {0}\n'.format(encoding)
+                munged = b'# encoding set to ' + encoding + b'\n'
 
             else:
 
@@ -50,14 +50,15 @@ def _decode(raw):
                 # object, we'll get a SyntaxError if we have a well-formed
                 # `coding: # ` line in it.
 
-                munged = b'# encoding NOT set to {0}\n'.format(potential)
+                munged = b'# encoding NOT set to ' + potential + b'\n'
 
             line = line.split(b'#')[0] + munged
 
         fulltext += line
     fulltext += sio.read()
     sio.close()
-    return fulltext.decode(encoding or b'ascii')
+    encoding = encoding.decode('ascii') if encoding else 'ascii'
+    return fulltext.decode(encoding)
 
 
 class SimplateDefaults(object):
