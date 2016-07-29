@@ -20,6 +20,7 @@ TEST_DEPS = [
     'coverage>=3.7.1',
     'cov-core>=1.7',
     'py>=1.4.20',
+    'pyflakes',
     'pytest>=2.5.2',
     'pytest-cov>=1.6',
     ]
@@ -149,14 +150,20 @@ def clean_sphinx():
 # Testing
 # =======
 
+def pyflakes():
+    shell(_virt('pyflakes', _dev()), 'aspen/', 'tests/', ignore_status=False, silent=False)
+
+
 def test():
     """run all tests"""
-    shell(_virt('py.test', _dev()), 'tests/', ignore_status=True, silent=False)
+    shell(_virt('py.test', _dev()), 'tests/', ignore_status=False, silent=False)
+    pyflakes()
 
 
 def testf():
     """run tests, stopping at the first failure"""
     shell(_virt('py.test', _dev()), '-x', 'tests/', ignore_status=True, silent=False)
+    pyflakes()
 
 
 def pylint():
@@ -177,12 +184,14 @@ def test_cov():
         '--cov', 'aspen',
         'tests/',
         ignore_status=False)
+    pyflakes()
 
 
 def analyse():
     """run lint and coverage"""
     pylint()
     test_cov()
+    pyflakes()
     print('done!')
 
 

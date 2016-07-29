@@ -5,7 +5,7 @@ from __future__ import unicode_literals
 
 from pytest import raises
 
-import aspen.utils # this happens to install the 'repr' error strategy
+# Note: importing from `aspen.utils` installs the 'repr' error strategy
 from aspen.utils import ascii_dammit, unicode_dammit
 
 GARBAGE = b"\xef\xf9"
