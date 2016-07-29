@@ -62,6 +62,7 @@ def test_json_handles_unicode(harness):
     "Greetings": "\u00b5"
 }'''
     actual = harness.simple('''
+        from six import unichr
         [---]
         [---] application/json
         {'Greetings': unichr(181)}
