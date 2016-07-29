@@ -1,6 +1,7 @@
 *.egg-info/
 aspen/tests/log
 env
+.tox/
 *.pyc
 distribute-*
 __pycache__
