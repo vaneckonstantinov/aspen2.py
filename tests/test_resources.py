@@ -48,7 +48,7 @@ def test_charset_dynamic_barely_working(harness):
     assert output.charset == 'ascii'
 
 def test_resource_pages_work(harness):
-    actual = harness.simple("[---]\nfoo = 'bar'\n[--------]\nGreetings, %(foo)s!").body
+    actual = harness.simple("[---]\nfoo = 'bar'\n[--------]\nGreetings, %(foo)s!").text
     assert actual == "Greetings, bar!"
 
 def test_resource_dunder_all_limits_vars(harness):
@@ -70,7 +70,7 @@ def test_path_part_params_are_available(harness):
         [---]
         %(a)s
     """, '/foo/index.html.spt', '/foo;a=1;b;a=3/')
-    assert output.body == "3\n"
+    assert output.text == "3\n"
 
 def test_resources_dont_leak_whitespace(harness):
     """This aims to resolve https://github.com/whit537/aspen/issues/8.
@@ -79,7 +79,7 @@ def test_resources_dont_leak_whitespace(harness):
         [--------------]
         foo = [1,2,3,4]
         [--------------]
-        %(foo)r""").body
+        %(foo)r""").text
     assert actual == "[1, 2, 3, 4]"
 
 def test_negotiated_resource_doesnt_break(harness):
@@ -92,7 +92,7 @@ def test_negotiated_resource_doesnt_break(harness):
         [-----------] text/html
         <h1>Greetings, %(foo)s!</h1>
         """
-        , filepath='index.spt').body
+        , filepath='index.spt').text
     assert actual == expected
 
 def test_request_processor_is_in_context(harness):
@@ -101,7 +101,7 @@ def test_request_processor_is_in_context(harness):
         [--------]
         [--------]
         It worked.""")
-    assert output.body == 'It worked.'
+    assert output.text == 'It worked.'
 
 def test_unknown_mimetype_yields_default_mimetype(harness):
     output = harness.simple( 'Greetings, program!'
@@ -111,7 +111,7 @@ def test_unknown_mimetype_yields_default_mimetype(harness):
 
 def test_templating_without_script_works(harness):
     output = harness.simple('[-----]\n[-----] via stdlib_format\n{path.raw}')
-    assert output.body == '/'
+    assert output.text == '/'
 
 
 # Test offset calculation

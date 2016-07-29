@@ -54,7 +54,7 @@ def test_renderer_padding_works_with_padded_output(harness):
     request_processor.renderer_factories['x'] = TestFactory(request_processor)
 
     output = harness.simple("[---]\n[---] text/plain via x\nSome text")
-    assert output.body == '\nSome text\n'
+    assert output.text == '\nSome text\n'
 
 
 def test_renderer_padding_works_with_stripped_output(harness):
@@ -74,7 +74,7 @@ def test_renderer_padding_works_with_stripped_output(harness):
     request_processor.renderer_factories['y'] = TestFactory(request_processor)
 
     output = harness.simple("[---]\n[---] text/plain via y\nSome text")
-    assert output.body == '\nSome text\n'
+    assert output.text == '\nSome text\n'
 
 
 def test_renderer_padding_achieves_correct_line_numbers_in_tracebacks(harness):

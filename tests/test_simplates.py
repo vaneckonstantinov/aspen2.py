@@ -9,11 +9,11 @@ from pytest import raises
 
 
 def test_default_media_type_works(harness):
-    response = harness.simple("""
+    output = harness.simple("""
 [---]
 [---]
 plaintext""", raise_immediately=False)
-    assert "plaintext" in response.body
+    assert "plaintext" in output.text
 
 SIMPLATE="""
 foo = %s
@@ -21,9 +21,8 @@ foo = %s
 {foo}"""
 
 def test_can_use_path(harness):
-    response = harness.simple( SIMPLATE % "path.raw"
-                              )
-    assert response.body == '/'
+    output = harness.simple(SIMPLATE % "path.raw")
+    assert output.text == '/'
 
 
 def test_cant_implicitly_override_state(harness):
@@ -33,7 +32,7 @@ def test_cant_implicitly_override_state(harness):
         "{resource}",
         want='state'
     )
-    assert state['output'].body == 'foo'
+    assert state['output'].text == 'foo'
     assert state['resource'] != 'foo'
 
 
@@ -54,42 +53,42 @@ def test_can_explicitly_override_state(harness):
 
 
 def test_but_python_sections_exhibit_module_scoping_behavior(harness):
-    response = harness.simple("""[---]
+    output = harness.simple("""[---]
 bar = 'baz'
 def foo():
     return bar
 foo = foo()
 [---] text/html via stdlib_format
 {foo}""")
-    assert response.body == 'baz'
+    assert output.text == 'baz'
 
 
 def test_one_page_works(harness):
-    response = harness.simple("Template")
-    assert response.body == 'Template'
+    output = harness.simple("Template")
+    assert output.text == 'Template'
 
 
 def test_two_pages_works(harness):
-    response = harness.simple(SIMPLATE % "'Template'")
-    assert response.body == 'Template'
+    output = harness.simple(SIMPLATE % "'Template'")
+    assert output.text == 'Template'
 
 
 def test_three_pages_one_python_works(harness):
-    response = harness.simple("""
+    output = harness.simple("""
 foo = 'Template'
 [---] text/plain via stdlib_format
 {foo}
 [---] text/xml
 <foo>{foo}</foo>""", filepath='index.spt')
-    assert response.body.strip() == 'Template'
+    assert output.text.strip() == 'Template'
 
 
 def test_three_pages_two_python_works(harness):
-    response = harness.simple("""[---]
+    output = harness.simple("""[---]
 python_code = True
 [---]
 Template""")
-    assert response.body == 'Template'
+    assert output.text == 'Template'
 
 
 # _decode

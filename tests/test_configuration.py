@@ -68,7 +68,7 @@ Greetings, {name}!
     """
     harness.request_processor.renderer_default="stdlib_format"
     harness.fs.www.mk(('index.html.spt', SIMPLATE),)
-    actual = harness.simple(filepath=None, uripath='/', want='output.body')
+    actual = harness.simple(filepath=None, uripath='/', want='output.text')
     assert actual == 'Greetings, program!\n'
 
 def test_configuration_ignores_blank_indexfilenames():
