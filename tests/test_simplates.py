@@ -94,10 +94,10 @@ Template""")
 # _decode
 
 def test_decode_can_take_encoding_from_first_line():
-    actual = _decode(b"""\
+    actual = _decode("""\
     # -*- coding: utf8 -*-
     text = u'א'
-    """)
+    """.encode('utf8'))
     expected = """\
     # encoding set to utf8
     text = u'א'
@@ -105,11 +105,11 @@ def test_decode_can_take_encoding_from_first_line():
     assert actual == expected
 
 def test_decode_can_take_encoding_from_second_line():
-    actual = _decode(b"""\
+    actual = _decode("""\
     #!/blah/blah
     # -*- coding: utf8 -*-
     text = u'א'
-    """)
+    """.encode('utf8'))
     expected = """\
     #!/blah/blah
     # encoding set to utf8
@@ -118,11 +118,11 @@ def test_decode_can_take_encoding_from_second_line():
     assert actual == expected
 
 def test_decode_prefers_first_line_to_second():
-    actual = _decode(b"""\
+    actual = _decode("""\
     # -*- coding: utf8 -*-
     # -*- coding: ascii -*-
     text = u'א'
-    """)
+    """.encode('utf8'))
     expected = """\
     # encoding set to utf8
     # encoding NOT set to ascii
@@ -131,12 +131,12 @@ def test_decode_prefers_first_line_to_second():
     assert actual == expected
 
 def test_decode_ignores_third_line():
-    actual = _decode(b"""\
+    actual = _decode("""\
     # -*- coding: utf8 -*-
     # -*- coding: ascii -*-
     # -*- coding: cornnuts -*-
     text = u'א'
-    """)
+    """.encode('utf8'))
     expected = """\
     # encoding set to utf8
     # encoding NOT set to ascii
@@ -146,19 +146,19 @@ def test_decode_ignores_third_line():
     assert actual == expected
 
 def test_decode_can_take_encoding_from_various_line_formats():
-    formats = [ b'-*- coding: utf8 -*-'
-              , b'-*- encoding: utf8 -*-'
-              , b'coding: utf8'
-              , b'  coding: utf8'
-              , b'\tencoding: utf8'
-              , b'\t flubcoding=utf8'
+    formats = [ '-*- coding: utf8 -*-'
+              , '-*- encoding: utf8 -*-'
+              , 'coding: utf8'
+              , '  coding: utf8'
+              , '\tencoding: utf8'
+              , '\t flubcoding=utf8'
                ]
     for fmt in formats:
         def test():
-            actual = _decode(b"""\
+            actual = _decode("""\
             # {0}
             text = u'א'
-            """.format(fmt))
+            """.format(fmt).encode('utf8'))
             expected = """\
             # encoding set to utf8
             text = u'א'
@@ -167,18 +167,18 @@ def test_decode_can_take_encoding_from_various_line_formats():
         yield test
 
 def test_decode_cant_take_encoding_from_bad_line_formats():
-    formats = [ b'-*- coding : utf8 -*-'
-              , b'foo = 0 -*- encoding: utf8 -*-'
-              , b'  coding : utf8'
-              , b'encoding : utf8'
-              , b'  flubcoding =utf8'
-              , b'coding: '
+    formats = [ '-*- coding : utf8 -*-'
+              , 'foo = 0 -*- encoding: utf8 -*-'
+              , '  coding : utf8'
+              , 'encoding : utf8'
+              , '  flubcoding =utf8'
+              , 'coding: '
                ]
     for fmt in formats:
         def test():
-            raw = b"""\
+            raw = """\
             # {0}
             text = u'א'
-            """.format(fmt)
+            """.format(fmt).encode('utf8')
             raises(UnicodeDecodeError, _decode, raw)
         yield test
