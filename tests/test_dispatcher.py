@@ -198,7 +198,7 @@ def test_virtual_path_sets_path(harness):
 
 def test_virtual_path_sets_unicode_path(harness):
     harness.fs.www.mk(('%bar/foo.html', "Greetings, program!"),)
-    assert_virtvals(harness, b'/%E2%98%83/foo.html', {'bar': ['\u2603']})
+    assert_virtvals(harness, '/%E2%98%83/foo.html', {'bar': ['\u2603']})
 
 def test_virtual_path_typecasts_to_int(harness):
     harness.fs.www.mk(('%year.int/foo.html', "Greetings, program!"),)

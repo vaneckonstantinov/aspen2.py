@@ -5,14 +5,18 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-from six import text_type as str
+from six import PY2, text_type as str
 from six.moves.urllib.parse import parse_qs, unquote, unquote_plus
 
 from .mapping import Mapping
 
 
+def _decode(o):
+    return o.decode('utf8') if isinstance(o, bytes) else o
+
+
 def path_decode(bs):
-    return unquote(bs).decode('UTF-8')
+    return _decode(unquote(bs.encode('ascii') if PY2 else bs))
 
 
 class PathPart(str):
@@ -39,17 +43,17 @@ def extract_rfc2396_params(path):
     * path should be raw so we don't split or operate on a decoded character
     * output is decoded
     """
-    pathsegs = path.lstrip(b'/').split(b'/')
+    pathsegs = path.lstrip('/').split('/')
     segments_with_params = []
     for component in pathsegs:
-        parts = component.split(b';')
+        parts = component.split(';')
         params = Mapping()
         segment = path_decode(parts[0])
         for p in parts[1:]:
-            if b'=' in p:
-                k, v = p.split(b'=', 1)
+            if '=' in p:
+                k, v = p.split('=', 1)
             else:
-                k, v = p, b''
+                k, v = p, ''
             params.add(path_decode(k), path_decode(v))
         segments_with_params.append(PathPart(segment, params))
     return segments_with_params
@@ -58,7 +62,7 @@ def extract_rfc2396_params(path):
 def split_path_no_params(path):
     """This splits a path into parts on "/" only (no split on ";" or ",").
     """
-    return [PathPart(path_decode(s)) for s in path.lstrip(b'/').split(b'/')]
+    return [PathPart(path_decode(s)) for s in path.lstrip('/').split('/')]
 
 
 class Path(Mapping):
@@ -78,14 +82,14 @@ class Querystring(Mapping):
     def __init__(self, raw):
         """Takes a string of type application/x-www-form-urlencoded.
         """
-        self.decoded = unquote_plus(raw).decode('UTF-8')
+        self.decoded = _decode(unquote_plus(raw))
         self.raw = raw
 
         # parse_qs does its own unquote_plus'ing ...
         as_dict = parse_qs(raw, keep_blank_values=True, strict_parsing=False)
 
-        # ... but doesn't decode to unicode.
+        # ... but doesn't decode to unicode (in older python versions).
         for k, vals in list(as_dict.items()):
-            as_dict[k.decode('UTF-8')] = [v.decode('UTF-8') for v in vals]
+            as_dict[_decode(k)] = [_decode(v) for v in vals]
 
         Mapping.__init__(self, as_dict)
