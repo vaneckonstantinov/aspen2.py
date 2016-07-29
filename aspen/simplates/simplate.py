@@ -261,8 +261,6 @@ class Simplate(object):
                    "renderers (might need third-party libs): %s.")
             raise SyntaxError(msg % (renderer, renderer_re.pattern, possible))
 
-        renderer = renderer.decode('US-ASCII')
-
         make_renderer = factories.get(renderer, None)
         if isinstance(make_renderer, ImportError):
             raise make_renderer

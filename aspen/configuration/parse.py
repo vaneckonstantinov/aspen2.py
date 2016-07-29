@@ -20,7 +20,7 @@ def identity(value):
 
 def media_type(media_type):
     # XXX for now. Read a spec
-    return media_type.encode('US-ASCII')
+    return media_type.encode('ascii').decode('ascii')
 
 def codec(value):
     codecs.lookup(value)
@@ -47,4 +47,4 @@ def renderer(value):
     if value not in RENDERERS:
         msg = "not one of {%s}" % (','.join(RENDERERS))
         raise ValueError(msg)
-    return value.encode('US-ASCII')
+    return value
