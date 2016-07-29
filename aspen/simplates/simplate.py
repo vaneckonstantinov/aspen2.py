@@ -148,7 +148,7 @@ class Simplate(object):
 
         pages = list(split_and_escape(decoded))
         npages = len(pages)
-        blank = [ Page(b'') ]
+        blank = [ Page('') ]
 
         if npages == 1:
             pages = blank + blank + pages

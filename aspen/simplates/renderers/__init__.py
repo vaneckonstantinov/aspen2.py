@@ -135,7 +135,7 @@ class Renderer(object):
         self.raw = raw
         self.media_type = media_type
         self.offset = offset
-        self.padded = (b'\n' * offset) + self.raw
+        self.padded = ('\n' * offset) + self.raw
         self.compiled = self.compile(self._filepath, self.padded)
 
     def __call__(self, context):

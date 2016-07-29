@@ -41,11 +41,11 @@ def test_renderer_padding_works_with_padded_output(harness):
     class TestRenderer(Renderer):
 
         def compile(self, filepath, padded):
-            assert padded[:self.offset] == b'\n' * self.offset
+            assert padded[:self.offset] == '\n' * self.offset
             return padded
 
         def render_content(self, context):
-            return b'\n' + self.compiled + b'\n'
+            return '\n' + self.compiled + '\n'
 
     class TestFactory(Factory):
         Renderer = TestRenderer
@@ -61,11 +61,11 @@ def test_renderer_padding_works_with_stripped_output(harness):
     class TestRenderer(Renderer):
 
         def compile(self, filepath, padded):
-            assert padded[:self.offset] == b'\n' * self.offset
+            assert padded[:self.offset] == '\n' * self.offset
             return padded
 
         def render_content(self, context):
-            return b'\n' + self.raw + b'\n'
+            return '\n' + self.raw + '\n'
 
     class TestFactory(Factory):
         Renderer = TestRenderer

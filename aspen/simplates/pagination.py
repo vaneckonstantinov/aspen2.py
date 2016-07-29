@@ -20,7 +20,7 @@ class Page(object):
 
     def __init__(self, content, header='', offset=0):
         self.content = content
-        self.header = header.decode('ascii')
+        self.header = header
         self.offset = offset
 
     @property
