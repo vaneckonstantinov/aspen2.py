@@ -12,7 +12,10 @@ class Renderer(Renderer):
         output = context['output']
         if not output.media_type:
             output.media_type = context['request_processor'].media_type_json
-        return json_.dumps(eval(self.compiled, globals(), context))
+        r = json_.dumps(eval(self.compiled, globals(), context))
+        if isinstance(r, bytes):
+            r = r.decode('ascii')
+        return r
 
 
 class Factory(Factory):
