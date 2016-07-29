@@ -70,7 +70,7 @@ if _json is not None:
             cls = obj.__class__ # Use this instead of type(obj) because that
                                 # isn't consistent between new- and old-style
                                 # classes, and this is.
-            encode = encoders.get(cls, _json.JSONEncoder.default)
+            encode = encoders.get(cls, super(FriendlyEncoder, self).default)
             return encode(obj)
 
 def lazy_check():
