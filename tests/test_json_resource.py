@@ -70,9 +70,9 @@ def test_json_handles_unicode(harness):
     assert actual == expected
 
 def test_json_doesnt_handle_non_ascii_bytestrings(harness):
-    raises( UnicodeDecodeError
+    raises( (TypeError, UnicodeDecodeError)
           , harness.simple
-          , "[---]\n[---] application/json\n{'Greetings': chr(181)}"
+          , "[---]\n[---] application/json\n{'Greetings': chr(181).encode('utf8')}"
           , filepath="foo.json.spt"
            )
 
