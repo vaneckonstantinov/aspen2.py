@@ -16,7 +16,7 @@ def test_barely_working(harness):
     assert output.media_type == 'text/html'
 
 def test_charset_static_barely_working(harness):
-    output = harness.simple( 'Greetings, program!'.encode('utf16')
+    output = harness.simple( ('Greetings, program!', 'utf16')
                            , 'index.html'
                            , request_processor_configuration={'charset_static': 'utf16'}
                             )
@@ -24,7 +24,7 @@ def test_charset_static_barely_working(harness):
     assert output.charset == 'utf16'
 
 def test_charset_static_checks_encoding(harness):
-    output = harness.simple( 'Greetings, program!'.encode('utf16')
+    output = harness.simple( ('Greetings, program!', 'utf16')
                            , 'index.html'
                            , request_processor_configuration={'charset_static': 'utf8'}
                             )
