@@ -66,7 +66,11 @@ class Harness(object):
         """A helper to create a file and hit it through our machinery.
         """
         if filepath is not None:
-            self.fs.www.mk((filepath, contents))
+            if isinstance(contents, tuple):
+                contents, encoding = contents
+            else:
+                encoding = 'utf8'
+            self.fs.www.mk((filepath, contents, True, encoding))
         if request_processor_configuration is not None:
             self.hydrate_request_processor(**request_processor_configuration)
 

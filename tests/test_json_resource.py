@@ -3,7 +3,7 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import StringIO
+import io
 
 from pytest import raises
 
@@ -16,7 +16,7 @@ def test_json_basically_works(harness):
 }'''
     actual = harness.simple( "[---]\n[---] application/json\n{'Greetings': 'program!'}"
                            , filepath="foo.json.spt"
-                            ).body
+                            ).text
     assert actual == expected
 
 def test_json_defaults_to_application_json_for_static_json(harness):
@@ -62,6 +62,7 @@ def test_json_handles_unicode(harness):
     "Greetings": "\u00b5"
 }'''
     actual = harness.simple('''
+        from six import unichr
         [---]
         [---] application/json
         {'Greetings': unichr(181)}
@@ -69,9 +70,9 @@ def test_json_handles_unicode(harness):
     assert actual == expected
 
 def test_json_doesnt_handle_non_ascii_bytestrings(harness):
-    raises( UnicodeDecodeError
+    raises( (TypeError, UnicodeDecodeError)
           , harness.simple
-          , "[---]\n[---] application/json\n{'Greetings': chr(181)}"
+          , "[---]\n[---] application/json\n{'Greetings': chr(181).encode('utf8')}"
           , filepath="foo.json.spt"
            )
 
@@ -84,7 +85,7 @@ def test_json_handles_time(harness):
         import datetime
         [---------------] application/json
         {'seen': datetime.time(19, 30)}
-    ''', filepath="foo.json.spt").body
+    ''', filepath="foo.json.spt").text
     assert actual == expected
 
 def test_json_handles_date(harness):
@@ -97,7 +98,7 @@ def test_json_handles_date(harness):
         import datetime
         [---------------] application/json
         {'created': datetime.date(2011, 5, 9)}
-    ''', filepath='foo.json.spt').body
+    ''', filepath='foo.json.spt').text
     assert actual == expected
 
 def test_json_handles_datetime(harness):
@@ -109,7 +110,7 @@ def test_json_handles_datetime(harness):
         import datetime
         [---------------] application/json
         {'timestamp': datetime.datetime(2011, 5, 9, 0, 0)}
-    """, filepath="foo.json.spt").body
+    """, filepath="foo.json.spt").text
     assert actual == expected
 
 def test_json_handles_complex(harness):
@@ -121,7 +122,7 @@ def test_json_handles_complex(harness):
 }'''
     actual = harness.simple( "[---]\n[---] application/json\n{'complex': complex(1,2)}"
                            , filepath="foo.json.spt"
-                            ).body
+                            ).text
     # The json module puts trailing spaces after commas, but simplejson
     # does not. Normalize the actual input to work around that.
     actual = '\n'.join([line.rstrip() for line in actual.split('\n')])
@@ -135,14 +136,14 @@ def test_json_raises_TypeError_on_unknown_types(harness):
            )
 
 def test_aspen_json_load_loads():
-    fp = StringIO.StringIO()
+    fp = io.StringIO()
     fp.write('{"cheese": "puffs"}')
     fp.seek(0)
     actual = json_.load(fp)
     assert actual == {'cheese': 'puffs'}
 
 def test_aspen_json_dump_dumps():
-    fp = StringIO.StringIO()
+    fp = io.BytesIO() if str is bytes else io.StringIO()
     json_.dump({"cheese": "puffs"}, fp)
     fp.seek(0)
     actual = fp.read()
@@ -170,7 +171,7 @@ JSONP_RESULT = '''/**/ foo({
 });'''
 
 def _jsonp_query(harness, querystring):
-    return harness.simple(JSONP_SIMPLATE, filepath='index.json.spt', querystring=querystring).body
+    return harness.simple(JSONP_SIMPLATE, filepath='index.json.spt', querystring=querystring).text
 
 def test_jsonp_basically_works(harness):
     actual = _jsonp_query(harness, "jsonp=foo")
@@ -184,7 +185,7 @@ def test_jsonp_defaults_to_json_with_no_callback(harness):
     expected = '''{
     "Greetings": "program!"
 }'''
-    actual = harness.simple(JSONP_SIMPLATE, filepath='index.spt').body
+    actual = harness.simple(JSONP_SIMPLATE, filepath='index.spt').text
     assert actual == expected, "wanted %r got %r " % (expected, actual)
 
 def test_jsonp_filters_disallowed_chars(harness):

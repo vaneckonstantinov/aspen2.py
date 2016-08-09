@@ -9,32 +9,32 @@ from pytest import raises
 
 
 def test_non_ascii_bytes_fail_without_encoding(harness):
-    raises(LoadError, harness.simple, b"""
+    raises(LoadError, harness.simple, ("""
         [------------------]
         text = u'א'
         [------------------]
         %(text)s
-    """)
+    """, 'utf8'))
 
 def test_non_ascii_bytes_work_with_encoding(harness):
-    expected = u'א'.encode('utf8')
-    actual = harness.simple(b"""
+    expected = 'א'.encode('utf8')
+    actual = harness.simple(("""
         # encoding=utf8
         [------------------]
         text = u'א'
         [------------------]
         %(text)s
-    """).body.strip()
+    """, 'utf8')).body.strip()
     assert actual == expected
 
 def test_the_exec_machinery_handles_two_encoding_lines_properly(harness):
-    expected = u'א'.encode('utf8')
-    actual = harness.simple(b"""\
+    expected = 'א'.encode('utf8')
+    actual = harness.simple(("""\
         # encoding=utf8
         # encoding=ascii
         [------------------]
         text = u'א'
         [------------------]
         %(text)s
-    """).body.strip()
+    """, 'utf8')).body.strip()
     assert actual == expected

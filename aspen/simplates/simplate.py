@@ -12,17 +12,6 @@ from .pagination import split_and_escape, parse_specline, Page
 renderer_re = re.compile(r'[a-z0-9.-_]+$')
 media_type_re = re.compile(r'[A-Za-z0-9.+*-]+/[A-Za-z0-9.+*-]+$')
 
-MIN_PAGES=2
-MAX_PAGES=None
-
-
-def _ordinal(n):
-    ords = [ 'zero' , 'one' , 'two', 'three', 'four'
-           , 'five', 'six', 'seven', 'eight', 'nine' ]
-    if 0 <= n < len(ords):
-        return ords[n]
-    return str(n)
-
 
 def _decode(raw):
     """As per PEP 263, decode raw data according to the encoding specified in
@@ -31,7 +20,7 @@ def _decode(raw):
     """
     assert type(raw) is bytes  # sanity check
 
-    decl_re = re.compile(r'^[ \t\f]*#.*coding[:=][ \t]*([-\w.]+)')
+    decl_re = re.compile(br'^[ \t\f]*#.*coding[:=][ \t]*([-\w.]+)')
 
     def get_declaration(line):
         match = decl_re.match(line)
@@ -51,7 +40,7 @@ def _decode(raw):
                 # observed behavior.
 
                 encoding = potential
-                munged = b'# encoding set to {0}\n'.format(encoding)
+                munged = b'# encoding set to ' + encoding + b'\n'
 
             else:
 
@@ -61,14 +50,15 @@ def _decode(raw):
                 # object, we'll get a SyntaxError if we have a well-formed
                 # `coding: # ` line in it.
 
-                munged = b'# encoding NOT set to {0}\n'.format(potential)
+                munged = b'# encoding NOT set to ' + potential + b'\n'
 
             line = line.split(b'#')[0] + munged
 
         fulltext += line
     fulltext += sio.read()
     sio.close()
-    return fulltext.decode(encoding or b'ascii')
+    encoding = encoding.decode('ascii') if encoding else 'ascii'
+    return fulltext.decode(encoding)
 
 
 class SimplateDefaults(object):
@@ -101,8 +91,8 @@ class Simplate(object):
 
         self.defaults = defaults                      # type: SimplateDefaults
         self.fs = fs                                  # type: str
-        self.raw = raw                                # type: str
-        self.decoded = _decode(raw)                   # type: unicode
+        self.raw = raw                                # type: bytes
+        self.decoded = _decode(raw)                   # type: str
         self.default_media_type = default_media_type  # type: str
 
         self.renderers = {}         # mapping of media type to Renderer objects
@@ -158,7 +148,7 @@ class Simplate(object):
 
         pages = list(split_and_escape(decoded))
         npages = len(pages)
-        blank = [ Page(b'') ]
+        blank = [ Page('') ]
 
         if npages == 1:
             pages = blank + blank + pages
@@ -271,15 +261,13 @@ class Simplate(object):
                    "renderers (might need third-party libs): %s.")
             raise SyntaxError(msg % (renderer, renderer_re.pattern, possible))
 
-        renderer = renderer.decode('US-ASCII')
-
         make_renderer = factories.get(renderer, None)
         if isinstance(make_renderer, ImportError):
             raise make_renderer
         elif make_renderer is None:
             possible = []
             legend = ''
-            for k, v in sorted(factories.iteritems()):
+            for k, v in sorted(factories.items()):
                 if isinstance(v, ImportError):
                     k = '*' + k
                     legend = " (starred are missing third-party libraries)"

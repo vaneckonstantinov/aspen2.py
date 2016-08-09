@@ -68,7 +68,7 @@ Greetings, {name}!
     """
     harness.request_processor.renderer_default="stdlib_format"
     harness.fs.www.mk(('index.html.spt', SIMPLATE),)
-    actual = harness.simple(filepath=None, uripath='/', want='output.body')
+    actual = harness.simple(filepath=None, uripath='/', want='output.text')
     assert actual == 'Greetings, program!\n'
 
 def test_configuration_ignores_blank_indexfilenames():
@@ -81,54 +81,54 @@ def test_configuration_ignores_blank_indexfilenames():
 # Tests of parsing perversities
 
 def test_parse_yes_no_yes_is_True():
-    assert parse.yes_no(u'yEs')
+    assert parse.yes_no('yEs')
 
 def test_parse_yes_no_true_is_True():
-    assert parse.yes_no(u'trUe')
+    assert parse.yes_no('trUe')
 
 def test_parse_yes_no_1_is_True():
-    assert parse.yes_no(u'1')
+    assert parse.yes_no('1')
 
 def test_parse_yes_no_no_is_False():
-    assert not parse.yes_no(u'nO')
+    assert not parse.yes_no('nO')
 
 def test_parse_yes_no_true_is_False():
-    assert not parse.yes_no(u'FalSe')
+    assert not parse.yes_no('FalSe')
 
 def test_parse_yes_no_1_is_False():
-    assert not parse.yes_no(u'0')
+    assert not parse.yes_no('0')
 
 def test_parse_yes_no_int_is_AttributeError():
     raises(AttributeError, parse.yes_no, 1)
 
 def test_parse_yes_no_other_is_ValueError():
-    raises(ValueError, parse.yes_no, u'cheese')
+    raises(ValueError, parse.yes_no, 'cheese')
 
 
 def test_parse_list_handles_one():
-    actual = parse.list_(u'foo')
+    actual = parse.list_('foo')
     assert actual == ['foo']
 
 def test_parse_list_handles_two():
-    actual = parse.list_(u'foo,bar')
+    actual = parse.list_('foo,bar')
     assert actual == ['foo', 'bar']
 
 def test_parse_list_handles_spaces():
-    actual = parse.list_(u' foo ,   bar ')
+    actual = parse.list_(' foo ,   bar ')
     assert actual == ['foo', 'bar']
 
 def test_parse_list_handles_some_spaces():
-    actual = parse.list_(u'foo,   bar, baz , buz ')
+    actual = parse.list_('foo,   bar, baz , buz ')
     assert actual == ['foo', 'bar', 'baz', 'buz']
 
 def test_parse_list_uniquifies():
-    actual = parse.list_(u'foo,foo,bar')
+    actual = parse.list_('foo,foo,bar')
     assert actual == ['foo', 'bar']
 
 
 def test_parse_renderer_good():
-    actual = parse.renderer(u'stdlib_percent')
-    assert actual == u'stdlib_percent'
+    actual = parse.renderer('stdlib_percent')
+    assert actual == 'stdlib_percent'
 
 def test_parse_renderer_bad():
-    raises(ValueError, parse.renderer, u'floober')
+    raises(ValueError, parse.renderer, 'floober')

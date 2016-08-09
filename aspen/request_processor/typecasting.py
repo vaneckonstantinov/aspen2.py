@@ -28,7 +28,7 @@ def apply_typecasters(typecasters, path, state):
        *without* those extensions attached anymore, but with typecast values.
        It also then removes the string-value keys (the ones with the extensions).
     """
-    for part in path.keys():
+    for part in list(path.keys()):
         pieces = part.rsplit('.',1)
         if len(pieces) > 1:
             var, ext = pieces

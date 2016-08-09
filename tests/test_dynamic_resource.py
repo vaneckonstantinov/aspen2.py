@@ -121,7 +121,7 @@ Greetings, program!
 
 def test_render_is_happy_not_to_negotiate(harness):
     output = harness.simple(filepath='index.spt', contents=SIMPLATE)
-    assert output.body == "Greetings, program!\n"
+    assert output.text == "Greetings, program!\n"
 
 def test_render_sets_media_type_when_it_doesnt_negotiate(harness):
     output = harness.simple(filepath='index.spt', contents=SIMPLATE)
@@ -129,15 +129,15 @@ def test_render_sets_media_type_when_it_doesnt_negotiate(harness):
 
 def test_render_is_happy_not_to_negotiate_with_defaults(harness):
     output = harness.simple(filepath='index.spt', contents="[---]\n[---]\nGreetings, program!\n")
-    assert output.body == "Greetings, program!\n"
+    assert output.text == "Greetings, program!\n"
 
 def test_render_negotiates(harness):
     output = harness.simple(filepath='index.spt', contents=SIMPLATE, accept_header='text/html')
-    assert output.body == "<h1>Greetings, program!</h1>\n"
+    assert output.text == "<h1>Greetings, program!</h1>\n"
 
 def test_ignores_busted_accept(harness):
     output = harness.simple(filepath='index.spt', contents=SIMPLATE, accept_header='text/html;')
-    assert output.body == "Greetings, program!\n"
+    assert output.text == "Greetings, program!\n"
 
 def test_render_sets_media_type_when_it_negotiates(harness):
     output = harness.simple(filepath='index.spt', contents=SIMPLATE, accept_header='text/html')
@@ -188,12 +188,12 @@ def test_can_override_default_renderers_by_mimetype(harness):
     install_glubber(harness)
     harness.fs.www.mk(('index.spt', SIMPLATE),)
     output = harness.simple(filepath='index.spt', contents=SIMPLATE, accept_header='text/plain')
-    assert output.body == "glubber"
+    assert output.text == "glubber"
 
 def test_can_override_default_renderer_entirely(harness):
     install_glubber(harness)
     output = harness.simple(filepath='index.spt', contents=SIMPLATE, accept_header='text/plain')
-    assert output.body == "glubber"
+    assert output.text == "glubber"
 
 
 # indirect
@@ -207,15 +207,15 @@ foo = "program"
 Greetings, %(foo)s!"""
 
 def test_indirect_negotiation_sets_media_type(harness):
-    response = harness.simple(INDIRECTLY_NEGOTIATED_SIMPLATE, '/foo.spt', '/foo.html')
+    output = harness.simple(INDIRECTLY_NEGOTIATED_SIMPLATE, '/foo.spt', '/foo.html')
     expected = "<h1>Greetings, program!</h1>\n"
-    actual = response.body
+    actual = output.text
     assert actual == expected
 
 def test_indirect_negotiation_sets_media_type_to_secondary(harness):
-    response = harness.simple(INDIRECTLY_NEGOTIATED_SIMPLATE, '/foo.spt', '/foo.txt')
+    output = harness.simple(INDIRECTLY_NEGOTIATED_SIMPLATE, '/foo.spt', '/foo.txt')
     expected = "Greetings, program!"
-    actual = response.body
+    actual = output.text
     assert actual == expected
 
 def test_indirect_negotiation_with_unsupported_media_type_is_an_error(harness):
@@ -233,9 +233,9 @@ Greetings, %(foo)s!"""
 
 
 def test_dynamic_resource_inside_virtual_path(harness):
-    response = harness.simple(SIMPLATE_VIRTUAL_PATH, '/%foo/bar.spt', '/program/bar.txt')
+    output = harness.simple(SIMPLATE_VIRTUAL_PATH, '/%foo/bar.spt', '/program/bar.txt')
     expected = "Greetings, program!"
-    actual = response.body
+    actual = output.text
     assert actual == expected
 
 SIMPLATE_STARTYPE = """\
@@ -249,18 +249,18 @@ Unknown request type, %(foo)s!
 Greetings, %(foo)s!"""
 
 def test_dynamic_resource_inside_virtual_path_with_startypes_present(harness):
-    response = harness.simple(SIMPLATE_STARTYPE, '/%foo/bar.spt', '/program/bar.html')
-    actual = response.body
+    output = harness.simple(SIMPLATE_STARTYPE, '/%foo/bar.spt', '/program/bar.html')
+    actual = output.text
     assert '<h1>' in actual
 
 def test_dynamic_resource_inside_virtual_path_with_startype_partial_match(harness):
-    response = harness.simple(SIMPLATE_STARTYPE, '/%foo/bar.spt', '/program/bar.txt')
+    output = harness.simple(SIMPLATE_STARTYPE, '/%foo/bar.spt', '/program/bar.txt')
     expected = "Greetings, program!"
-    actual = response.body
+    actual = output.text
     assert actual == expected
 
 def test_dynamic_resource_inside_virtual_path_with_startype_fallback(harness):
-    response = harness.simple(SIMPLATE_STARTYPE, '/%foo/bar.spt', '/program/bar.jpg')
+    output = harness.simple(SIMPLATE_STARTYPE, '/%foo/bar.spt', '/program/bar.jpg')
     expected = "Unknown request type, program!"
-    actual = response.body.strip()
+    actual = output.text.strip()
     assert actual == expected

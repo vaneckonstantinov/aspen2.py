@@ -9,11 +9,11 @@ from pytest import raises
 
 
 def test_default_media_type_works(harness):
-    response = harness.simple("""
+    output = harness.simple("""
 [---]
 [---]
 plaintext""", raise_immediately=False)
-    assert "plaintext" in response.body
+    assert "plaintext" in output.text
 
 SIMPLATE="""
 foo = %s
@@ -21,9 +21,8 @@ foo = %s
 {foo}"""
 
 def test_can_use_path(harness):
-    response = harness.simple( SIMPLATE % "path.raw"
-                              )
-    assert response.body == '/'
+    output = harness.simple(SIMPLATE % "path.raw")
+    assert output.text == '/'
 
 
 def test_cant_implicitly_override_state(harness):
@@ -33,7 +32,7 @@ def test_cant_implicitly_override_state(harness):
         "{resource}",
         want='state'
     )
-    assert state['output'].body == 'foo'
+    assert state['output'].text == 'foo'
     assert state['resource'] != 'foo'
 
 
@@ -54,51 +53,51 @@ def test_can_explicitly_override_state(harness):
 
 
 def test_but_python_sections_exhibit_module_scoping_behavior(harness):
-    response = harness.simple("""[---]
+    output = harness.simple("""[---]
 bar = 'baz'
 def foo():
     return bar
 foo = foo()
 [---] text/html via stdlib_format
 {foo}""")
-    assert response.body == 'baz'
+    assert output.text == 'baz'
 
 
 def test_one_page_works(harness):
-    response = harness.simple("Template")
-    assert response.body == 'Template'
+    output = harness.simple("Template")
+    assert output.text == 'Template'
 
 
 def test_two_pages_works(harness):
-    response = harness.simple(SIMPLATE % "'Template'")
-    assert response.body == 'Template'
+    output = harness.simple(SIMPLATE % "'Template'")
+    assert output.text == 'Template'
 
 
 def test_three_pages_one_python_works(harness):
-    response = harness.simple("""
+    output = harness.simple("""
 foo = 'Template'
 [---] text/plain via stdlib_format
 {foo}
 [---] text/xml
 <foo>{foo}</foo>""", filepath='index.spt')
-    assert response.body.strip() == 'Template'
+    assert output.text.strip() == 'Template'
 
 
 def test_three_pages_two_python_works(harness):
-    response = harness.simple("""[---]
+    output = harness.simple("""[---]
 python_code = True
 [---]
 Template""")
-    assert response.body == 'Template'
+    assert output.text == 'Template'
 
 
 # _decode
 
 def test_decode_can_take_encoding_from_first_line():
-    actual = _decode(b"""\
+    actual = _decode("""\
     # -*- coding: utf8 -*-
     text = u'א'
-    """)
+    """.encode('utf8'))
     expected = """\
     # encoding set to utf8
     text = u'א'
@@ -106,11 +105,11 @@ def test_decode_can_take_encoding_from_first_line():
     assert actual == expected
 
 def test_decode_can_take_encoding_from_second_line():
-    actual = _decode(b"""\
+    actual = _decode("""\
     #!/blah/blah
     # -*- coding: utf8 -*-
     text = u'א'
-    """)
+    """.encode('utf8'))
     expected = """\
     #!/blah/blah
     # encoding set to utf8
@@ -119,11 +118,11 @@ def test_decode_can_take_encoding_from_second_line():
     assert actual == expected
 
 def test_decode_prefers_first_line_to_second():
-    actual = _decode(b"""\
+    actual = _decode("""\
     # -*- coding: utf8 -*-
     # -*- coding: ascii -*-
     text = u'א'
-    """)
+    """.encode('utf8'))
     expected = """\
     # encoding set to utf8
     # encoding NOT set to ascii
@@ -132,12 +131,12 @@ def test_decode_prefers_first_line_to_second():
     assert actual == expected
 
 def test_decode_ignores_third_line():
-    actual = _decode(b"""\
+    actual = _decode("""\
     # -*- coding: utf8 -*-
     # -*- coding: ascii -*-
     # -*- coding: cornnuts -*-
     text = u'א'
-    """)
+    """.encode('utf8'))
     expected = """\
     # encoding set to utf8
     # encoding NOT set to ascii
@@ -147,19 +146,19 @@ def test_decode_ignores_third_line():
     assert actual == expected
 
 def test_decode_can_take_encoding_from_various_line_formats():
-    formats = [ b'-*- coding: utf8 -*-'
-              , b'-*- encoding: utf8 -*-'
-              , b'coding: utf8'
-              , b'  coding: utf8'
-              , b'\tencoding: utf8'
-              , b'\t flubcoding=utf8'
+    formats = [ '-*- coding: utf8 -*-'
+              , '-*- encoding: utf8 -*-'
+              , 'coding: utf8'
+              , '  coding: utf8'
+              , '\tencoding: utf8'
+              , '\t flubcoding=utf8'
                ]
     for fmt in formats:
         def test():
-            actual = _decode(b"""\
+            actual = _decode("""\
             # {0}
             text = u'א'
-            """.format(fmt))
+            """.format(fmt).encode('utf8'))
             expected = """\
             # encoding set to utf8
             text = u'א'
@@ -168,18 +167,18 @@ def test_decode_can_take_encoding_from_various_line_formats():
         yield test
 
 def test_decode_cant_take_encoding_from_bad_line_formats():
-    formats = [ b'-*- coding : utf8 -*-'
-              , b'foo = 0 -*- encoding: utf8 -*-'
-              , b'  coding : utf8'
-              , b'encoding : utf8'
-              , b'  flubcoding =utf8'
-              , b'coding: '
+    formats = [ '-*- coding : utf8 -*-'
+              , 'foo = 0 -*- encoding: utf8 -*-'
+              , '  coding : utf8'
+              , 'encoding : utf8'
+              , '  flubcoding =utf8'
+              , 'coding: '
                ]
     for fmt in formats:
         def test():
-            raw = b"""\
+            raw = """\
             # {0}
             text = u'א'
-            """.format(fmt)
+            """.format(fmt).encode('utf8')
             raises(UnicodeDecodeError, _decode, raw)
         yield test

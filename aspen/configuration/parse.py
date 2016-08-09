@@ -20,7 +20,7 @@ def identity(value):
 
 def media_type(media_type):
     # XXX for now. Read a spec
-    return media_type.encode('US-ASCII')
+    return media_type.encode('ascii').decode('ascii')
 
 def codec(value):
     codecs.lookup(value)
@@ -28,9 +28,9 @@ def codec(value):
 
 def yes_no(s):
     s = s.lower()
-    if s in [u'yes', u'true', u'1']:
+    if s in ['yes', 'true', '1']:
         return True
-    if s in [u'no', u'false', u'0']:
+    if s in ['no', 'false', '0']:
         return False
     raise ValueError("must be either yes/true/1 or no/false/0")
 
@@ -47,4 +47,4 @@ def renderer(value):
     if value not in RENDERERS:
         msg = "not one of {%s}" % (','.join(RENDERERS))
         raise ValueError(msg)
-    return value.encode('US-ASCII')
+    return value
