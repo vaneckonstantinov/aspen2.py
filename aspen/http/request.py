@@ -11,8 +11,8 @@ from six.moves.urllib.parse import parse_qs, unquote, unquote_plus
 from .mapping import Mapping
 
 
-def _decode(o):
-    return o.decode('utf8') if isinstance(o, bytes) else o
+def _decode(o, errors='strict'):
+    return o.decode('utf8', errors=errors) if isinstance(o, bytes) else o
 
 
 def path_decode(bs):
@@ -79,17 +79,26 @@ class Querystring(Mapping):
     """Represent an HTTP querystring.
     """
 
-    def __init__(self, raw):
+    def __init__(self, raw, errors='replace'):
         """Takes a string of type application/x-www-form-urlencoded.
         """
-        self.decoded = _decode(unquote_plus(raw))
+        # urllib needs bytestrings in py2 and unicode strings in py3
+        raw_str = raw.encode('ascii') if PY2 else raw
+
+        self.decoded = _decode(unquote_plus(raw_str), errors=errors)
         self.raw = raw
 
-        # parse_qs does its own unquote_plus'ing ...
-        as_dict = parse_qs(raw, keep_blank_values=True, strict_parsing=False)
-
-        # ... but doesn't decode to unicode (in older python versions).
-        for k, vals in list(as_dict.items()):
-            as_dict[_decode(k)] = [_decode(v) for v in vals]
+        common_kw = dict(keep_blank_values=True, strict_parsing=False)
+        if PY2:
+            # in python 2 parse_qs does its own unquote_plus'ing ...
+            as_dict = parse_qs(raw_str, **common_kw)
+            # ... but doesn't decode to unicode.
+            for k, vals in list(as_dict.items()):
+                as_dict[_decode(k, errors=errors)] = [
+                    _decode(v, errors=errors) for v in vals
+                ]
+        else:
+            # in python 3 parse_qs does the decoding
+            as_dict = parse_qs(raw_str, errors=errors, **common_kw)
 
         Mapping.__init__(self, as_dict)
