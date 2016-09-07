@@ -57,6 +57,12 @@ def test_mapping_all_returns_list_of_all_values():
     actual = m.all('foo')
     assert actual == expected
 
+def test_mapping_all_returns_empty_list_when_key_is_missing():
+    m = Mapping()
+    expected = []
+    actual = m.all('foo')
+    assert actual == expected
+
 def test_mapping_ones_returns_list_of_last_values():
     m = Mapping()
     m['foo'] = 1
