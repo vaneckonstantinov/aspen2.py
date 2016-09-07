@@ -1,10 +1,6 @@
 """
 This module implements pluggable content rendering.
 
-See user docs here:
-
-    http://aspen.io/simplates/rendered/
-
 Negotiated and rendered resources have content pages the bytes for which are
 transformed based on context. The user may explicitly choose a renderer per
 content page, with the default renderer per page computed from its media type.
