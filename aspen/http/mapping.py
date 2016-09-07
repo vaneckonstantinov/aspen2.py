@@ -62,12 +62,9 @@ class Mapping(dict):
     popall = dict.pop
 
     def all(self, name):
-        """Given a name, return a list of values.
+        """Given a name, return a list of values, possibly empty.
         """
-        try:
-            return dict.__getitem__(self, name)
-        except KeyError:
-            self.keyerror(name)
+        return dict.get(self, name, [])
 
     def get(self, name, default=None):
         """Override to only return the last value.
