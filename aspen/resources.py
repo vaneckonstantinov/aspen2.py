@@ -16,7 +16,7 @@ import sys
 import traceback
 
 from .exceptions import LoadError
-from .http.resource import Dynamic, Static
+from .http.resource import Static
 
 
 __cache__ = dict()  # cache, keyed to filesystem path
@@ -87,7 +87,7 @@ def load(request_processor, fspath, mtime):
     """Given a RequestProcessor, an fspath, and an mtime, return a Resource object (w/o caching).
     """
 
-    is_dynamic = request_processor.is_dynamic(fspath)
+    Class = request_processor.get_resource_class(fspath)
 
     # Load bytes.
     # ===========
@@ -103,7 +103,7 @@ def load(request_processor, fspath, mtime):
     # For a negotiated resource we will ignore this.
 
     guess_with = fspath
-    if is_dynamic:
+    if Class is not Static:
         guess_with = guess_with.rsplit('.', 1)[0]
     fs_media_type = mimetypes.guess_type(guess_with, strict=False)[0]
     if fs_media_type == 'application/json':
@@ -113,5 +113,4 @@ def load(request_processor, fspath, mtime):
     # ================================
     # An instantiated resource is compiled as far as we can take it.
 
-    Class = Dynamic if is_dynamic else Static
     return Class(request_processor, fspath, raw, fs_media_type)

@@ -9,6 +9,7 @@ from pytest import raises
 
 from aspen.simplates import json_
 from aspen.simplates.renderers import Factory, Renderer
+from aspen.simplates.simplate import Simplate
 
 
 def test_a_custom_renderer(harness):
@@ -28,16 +29,19 @@ def test_a_custom_renderer(harness):
             return 'foobar'
 
     request_processor = harness.request_processor
-    request_processor.renderer_factories['lorem'] = TestFactory(request_processor)
+    try:
+        Simplate.renderer_factories['lorem'] = TestFactory(request_processor)
 
-    r = harness.simple("[---]\n[---] text/html via lorem\nLorem ipsum")
-    assert r.text
-    d = json_.loads(r.text)
-    assert d['meta'] == 'foobar'
-    assert d['raw'] == 'Lorem ipsum'
-    assert d['media_type'] == 'text/html'
-    assert d['offset'] == 2
-    assert d['compiled'] == 'LOREM IPSUM'
+        r = harness.simple("[---]\n[---] text/html via lorem\nLorem ipsum")
+        assert r.text
+        d = json_.loads(r.text)
+        assert d['meta'] == 'foobar'
+        assert d['raw'] == 'Lorem ipsum'
+        assert d['media_type'] == 'text/html'
+        assert d['offset'] == 2
+        assert d['compiled'] == 'LOREM IPSUM'
+    finally:
+        del Simplate.renderer_factories['lorem']
 
 
 def test_renderer_padding_works_with_padded_output(harness):
@@ -54,10 +58,13 @@ def test_renderer_padding_works_with_padded_output(harness):
         Renderer = TestRenderer
 
     request_processor = harness.request_processor
-    request_processor.renderer_factories['x'] = TestFactory(request_processor)
+    try:
+        Simplate.renderer_factories['x'] = TestFactory(request_processor)
 
-    output = harness.simple("[---]\n[---] text/plain via x\nSome text")
-    assert output.text == '\nSome text\n'
+        output = harness.simple("[---]\n[---] text/plain via x\nSome text")
+        assert output.text == '\nSome text\n'
+    finally:
+        del Simplate.renderer_factories['x']
 
 
 def test_renderer_padding_works_with_stripped_output(harness):
@@ -74,10 +81,14 @@ def test_renderer_padding_works_with_stripped_output(harness):
         Renderer = TestRenderer
 
     request_processor = harness.request_processor
-    request_processor.renderer_factories['y'] = TestFactory(request_processor)
+    try:
+        Simplate.renderer_factories['y'] = TestFactory(request_processor)
 
-    output = harness.simple("[---]\n[---] text/plain via y\nSome text")
-    assert output.text == '\nSome text\n'
+        output = harness.simple("[---]\n[---] text/plain via y\nSome text")
+        assert output.text == '\nSome text\n'
+    finally:
+        del Simplate.renderer_factories['y']
+
 
 
 def test_renderer_padding_achieves_correct_line_numbers_in_tracebacks(harness):

@@ -93,7 +93,7 @@ def dispatch_abstract(listnodes, is_dynamic, is_leaf, traverse, find_index, noex
 
        listnodes(joinedpath) - lists the nodes in the specified joined path
 
-       is_dynamic(node) - returns true iff the specified node is a renderable
+       is_dynamic(node) - returns true iff the specified node is dynamic
 
        is_leaf(node) - returns true iff the specified node is a leaf node
 

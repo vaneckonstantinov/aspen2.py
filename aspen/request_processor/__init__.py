@@ -12,9 +12,8 @@ from collections import defaultdict
 from algorithm import Algorithm
 
 from .typecasting import defaults as default_typecasters
+from ..http.resource import Static
 from ..configuration import ConfigurationError, configure, parse
-from ..simplates.renderers import factories
-from ..simplates.simplate import SimplateDefaults
 
 
 default_indices = lambda: ['index.html', 'index.json', 'index',
@@ -133,19 +132,22 @@ class RequestProcessor(object):
 
         self.www_root = os.path.realpath(self.www_root)
 
-        # load renderers
-        self.renderer_factories = factories(self)
+        # kludge simplates -- should move out into a simplate plugin
+        from ..simplates.renderers import factories
+        from ..simplates.simplate import Simplate, SimplateDefaults
+        Simplate.renderer_factories = factories(self)
+        Simplate.default_renderers_by_media_type = defaultdict(lambda: self.renderer_default)
+        Simplate.default_renderers_by_media_type[self.media_type_json] = 'json_dump'
 
-        self.default_renderers_by_media_type = defaultdict(lambda: self.renderer_default)
-        self.default_renderers_by_media_type[self.media_type_json] = 'json_dump'
-
-        # simplate defaults
         initial_context = { 'request_processor': self }
-        self.simplate_defaults = SimplateDefaults(
-            self.default_renderers_by_media_type,
-            self.renderer_factories,
+        Simplate.defaults = SimplateDefaults(
+            Simplate.default_renderers_by_media_type,
+            Simplate.renderer_factories,
             initial_context
         )
+
+        # set up dynamic class mapping
+        self.dynamic_classes_by_file_extension = dict(spt=Simplate)
 
         # mime.types
         # ==========
@@ -161,4 +163,12 @@ class RequestProcessor(object):
     def is_dynamic(self, fspath):
         """Given a filesystem path, return a boolean.
         """
-        return fspath.endswith('.spt')
+        return self.get_resource_class(fspath) is not Static
+
+
+    def get_resource_class(self, fspath):
+        """Given a filesystem path, return a resource class.
+        """
+        parts = fspath.split('.')
+        extension = parts[-1] if len(parts) > 1 else None
+        return self.dynamic_classes_by_file_extension.get(extension, Static)

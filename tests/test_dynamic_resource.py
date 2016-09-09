@@ -6,7 +6,7 @@ from __future__ import unicode_literals
 from pytest import raises, yield_fixture
 
 from aspen.exceptions import NegotiationFailure
-from aspen.http.resource import Dynamic
+from aspen.simplates.simplate import Simplate
 from aspen.request_processor.dispatcher import mimetypes, NotFound
 from aspen.simplates.pagination import Page
 from aspen.simplates.renderers.stdlib_template import Factory as TemplateFactory
@@ -22,7 +22,7 @@ def get(harness):
                  , fs_media_type = ''
                   )
         kw.update(_kw)
-        return Dynamic(**kw)
+        return Simplate(**kw)
     yield get
 
 
@@ -31,8 +31,8 @@ def test_dynamic_resource_is_instantiable(harness):
     fs = ''
     raw = b'[---]\n[---] text/plain via stdlib_template\n'
     media_type = ''
-    actual = Dynamic(request_processor, fs, raw, media_type).__class__
-    assert actual is Dynamic
+    actual = Simplate(request_processor, fs, raw, media_type).__class__
+    assert actual is Simplate
 
 
 # compile_page
@@ -85,21 +85,21 @@ def test_parse_specline_enforces_order(get):
 
 def test_parse_specline_obeys_default_by_media_type(get):
     resource = get()
-    resource.request_processor.default_renderers_by_media_type['media/type'] = 'glubber'
+    resource.default_renderers_by_media_type['media/type'] = 'glubber'
     err = raises(ValueError, resource._parse_specline, 'media/type').value
     msg = err.args[0]
     assert msg.startswith("Unknown renderer for media/type: glubber."), msg
 
 def test_parse_specline_obeys_default_by_media_type_default(get):
     resource = get()
-    resource.request_processor.default_renderers_by_media_type.default_factory = lambda: 'glubber'
+    resource.default_renderers_by_media_type.default_factory = lambda: 'glubber'
     err = raises(ValueError, resource._parse_specline, 'media/type').value
     msg = err.args[0]
     assert msg.startswith("Unknown renderer for media/type: glubber.")
 
 def test_get_renderer_factory_can_raise_syntax_error(get):
     resource = get()
-    resource.request_processor.default_renderers_by_media_type['media/type'] = 'glubber'
+    resource.default_renderers_by_media_type['media/type'] = 'glubber'
     err = raises( SyntaxError
                        , resource._get_renderer_factory
                        , 'media/type'
@@ -179,21 +179,31 @@ class Glubber(Renderer):
 class GlubberFactory(Factory):
     Renderer = Glubber
 
-def install_glubber(harness):
-    harness.request_processor.renderer_factories['glubber'] = \
-                                                          GlubberFactory(harness.request_processor)
-    harness.request_processor.default_renderers_by_media_type['text/plain'] = 'glubber'
+class glubber:
+
+    def __init__(self, harness):
+        self.harness = harness
+
+    def __enter__(self):
+        Simplate.renderer_factories['glubber'] = GlubberFactory(self.harness.request_processor)
+        self.__old = Simplate.default_renderers_by_media_type['text/plain']
+        Simplate.default_renderers_by_media_type['text/plain'] = 'glubber'
+
+    def __exit__(self, *a, **kw):
+        del Simplate.renderer_factories['glubber']
+        Simplate.default_renderers_by_media_type['text/plain'] = self.__old
+
 
 def test_can_override_default_renderers_by_mimetype(harness):
-    install_glubber(harness)
-    harness.fs.www.mk(('index.spt', SIMPLATE),)
-    output = harness.simple(filepath='index.spt', contents=SIMPLATE, accept_header='text/plain')
-    assert output.text == "glubber"
+    with glubber(harness):
+        harness.fs.www.mk(('index.spt', SIMPLATE),)
+        output = harness.simple(filepath='index.spt', contents=SIMPLATE, accept_header='text/plain')
+        assert output.text == "glubber"
 
 def test_can_override_default_renderer_entirely(harness):
-    install_glubber(harness)
-    output = harness.simple(filepath='index.spt', contents=SIMPLATE, accept_header='text/plain')
-    assert output.text == "glubber"
+    with glubber(harness):
+        output = harness.simple(filepath='index.spt', contents=SIMPLATE, accept_header='text/plain')
+        assert output.text == "glubber"
 
 
 # indirect

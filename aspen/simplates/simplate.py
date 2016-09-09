@@ -8,6 +8,7 @@ import re
 
 from ..output import Output
 from .pagination import split_and_escape, parse_specline, Page
+from aspen.http.resource import Dynamic
 
 renderer_re = re.compile(r'[a-z0-9.-_]+$')
 media_type_re = re.compile(r'[A-Za-z0-9.+*-]+/[A-Za-z0-9.+*-]+$')
@@ -75,25 +76,25 @@ class SimplateDefaults(object):
         self.initial_context = initial_context                 # type: Dict[str, object]
 
 
-class Simplate(object):
+class Simplate(Dynamic):
     """A simplate is a dynamic resource with multiple syntaxes in one file.
     """
 
-    def __init__(self, defaults, fs, raw, default_media_type):
+    defaults = None # type: SimplateDefaults
+
+    def __init__(self, request_processor, fs, raw, fs_media_type):
         """Instantiate a simplate.
 
-        defaults - a SimplateDefaults object
         fs - path to this simplate
         raw - raw content of this simplate as bytes
         decoded - content of this simplate as unicode
-        default_media_type - the default content_type of this simplate
+        fs_media_type - the filesystem content_type of this simplate
         """
-
-        self.defaults = defaults                      # type: SimplateDefaults
+        self.request_processor = request_processor
         self.fs = fs                                  # type: str
         self.raw = raw                                # type: bytes
         self.decoded = _decode(raw)                   # type: str
-        self.default_media_type = default_media_type  # type: str
+        self.default_media_type = fs_media_type or request_processor.media_type_default
 
         self.renderers = {}         # mapping of media type to Renderer objects
         self.available_types = []   # ordered sequence of media types
@@ -101,7 +102,7 @@ class Simplate(object):
         self.pages = self.compile_pages(pages)
 
 
-    def render(self, media_type, context):
+    def render_for_type(self, media_type, context):
         """
         Get the response to a request for this page::
 
