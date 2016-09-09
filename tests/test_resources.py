@@ -39,10 +39,10 @@ def test_charset_static_None(harness):
     assert output.media_type == 'text/html'
     assert output.charset is None
 
-def test_charset_dynamic_barely_working(harness):
+def test_encode_output_as_barely_working(harness):
     output = harness.simple( '[---]\n[---]\nGreetings, program!'
                            , 'index.html.spt'
-                           , request_processor_configuration={'charset_dynamic': 'ascii'}
+                           , request_processor_configuration={'encode_output_as': 'ascii'}
                             )
     assert output.media_type == 'text/html'
     assert output.charset == 'ascii'

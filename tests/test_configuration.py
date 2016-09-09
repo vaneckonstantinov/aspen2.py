@@ -17,14 +17,14 @@ def test_defaults_to_defaults(harness):
              , rp.www_root
 
              , rp.changes_reload
-             , rp.charset_dynamic
              , rp.charset_static
+             , rp.encode_output_as
              , rp.indices
              , rp.media_type_default
              , rp.media_type_json
              , rp.renderer_default
               )
-    expected = ( None, os.getcwd(), False, 'UTF-8', None
+    expected = ( None, os.getcwd(), False, None, 'UTF-8'
                , ['index.html', 'index.json', 'index', 'index.html.spt', 'index.json.spt', 'index.spt']
                , 'text/plain', 'application/json', 'stdlib_percent'
                 )
