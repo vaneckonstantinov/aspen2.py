@@ -21,10 +21,11 @@ def configure(knobs, d, env_prefix, kwargs):
                 d[name] = value
 
         # get from the environment
-        envvar = env_prefix + name.upper()
-        raw = os.environ.get(envvar, '').strip()
-        if raw:
-            update(*parse_conf_var(raw, func, 'environment', envvar))
+        if env_prefix:
+            envvar = env_prefix + name.upper()
+            raw = os.environ.get(envvar, '').strip()
+            if raw:
+                update(*parse_conf_var(raw, func, 'environment', envvar))
 
         # get from kwargs
         raw = kwargs.get(name)

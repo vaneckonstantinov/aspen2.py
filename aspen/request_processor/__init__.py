@@ -44,6 +44,8 @@ class RequestProcessor(object):
 
     def __init__(self, **kwargs):
         """Takes configuration in kwargs.
+
+        See the `KNOBS` global variable for valid keys and default values.
         """
         self.algorithm = Algorithm.from_dotted_name('aspen.request_processor.algorithm')
         self.configure(**kwargs)
@@ -81,10 +83,10 @@ class RequestProcessor(object):
         self.typecasters = default_typecasters
 
 
-        # Configure from defaults, environment, and kwargs.
-        # =================================================
+        # Configure from defaults and kwargs.
+        # ===================================
 
-        configure(KNOBS, self.__dict__, 'ASPEN_', kwargs)
+        configure(KNOBS, self.__dict__, None, kwargs)
 
 
         # Set some attributes.
@@ -109,10 +111,10 @@ class RequestProcessor(object):
         if self.project_root is not None:
             # canonicalize it
             if not os.path.isabs(self.project_root):
-                cwd = safe_getcwd("Could not get a current working "
-                                  "directory. You can specify "
-                                  "ASPEN_PROJECT_ROOT in the environment, "
-                                  "or project_root in kwargs.")
+                cwd = safe_getcwd(
+                    "Could not get a current working directory. You can specify "
+                    "project_root in kwargs."
+                )
                 self.project_root = os.path.join(cwd, self.project_root)
 
             self.project_root = os.path.realpath(self.project_root)
@@ -126,10 +128,10 @@ class RequestProcessor(object):
 
         # www_root
         if self.www_root is None:
-            self.www_root = safe_getcwd("Could not get a current working "
-                                         "directory. You can specify "
-                                         "ASPEN_WWW_ROOT in the environment, "
-                                         "or www_root in kwargs.")
+            self.www_root = safe_getcwd(
+                "Could not get a current working directory. You can specify "
+                "www_root in kwargs."
+            )
 
         self.www_root = os.path.realpath(self.www_root)
 
