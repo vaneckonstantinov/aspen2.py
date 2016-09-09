@@ -87,13 +87,13 @@ def load(request_processor, fspath, mtime):
     """Given a RequestProcessor, an fspath, and an mtime, return a Resource object (w/o caching).
     """
 
-    is_spt = fspath.endswith('.spt')
+    is_dynamic = fspath.endswith('.spt')
 
     # Load bytes.
     # ===========
-    # .spt files are simplates, which get loaded according to their encoding
-    #      and turned into unicode strings internally
-    # non-.spt files are static, possibly binary, so don't get decoded
+    # Dynamic files are loaded according to their encoding and turned into
+    # unicode strings internally. Static files might be binary, so we don't
+    # decode them.
 
     with open(fspath, 'rb') as fh:
         raw = fh.read()
@@ -103,8 +103,8 @@ def load(request_processor, fspath, mtime):
     # For a negotiated resource we will ignore this.
 
     guess_with = fspath
-    if is_spt:
-        guess_with = guess_with[:-4]
+    if is_dynamic:
+        guess_with = guess_with[:-4]  # XXX Assumes *.spt!
     fs_media_type = mimetypes.guess_type(guess_with, strict=False)[0]
     if fs_media_type == 'application/json':
         fs_media_type = request_processor.media_type_json
@@ -113,5 +113,5 @@ def load(request_processor, fspath, mtime):
     # ================================
     # An instantiated resource is compiled as far as we can take it.
 
-    Class = Dynamic if is_spt else Static
+    Class = Dynamic if is_dynamic else Static
     return Class(request_processor, fspath, raw, fs_media_type)

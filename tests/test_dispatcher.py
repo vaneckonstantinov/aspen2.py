@@ -47,6 +47,7 @@ Greetings, program!
 def test_dispatcher_returns_a_result(harness):
     harness.fs.www.mk(('index.html', 'Greetings, program!'),)
     result = dispatcher.dispatch( indices               = ['index.html']
+                                , is_dynamic            = lambda n: n.endswith('.spt')
                                 , pathparts             = ['']
                                 , uripath               = '/'
                                 , startdir              = harness.fs.www.root
@@ -59,6 +60,7 @@ def test_dispatcher_returns_a_result(harness):
 def test_dispatcher_raises_for_unindexed_directory(harness):
     with raises(dispatcher.UnindexedDirectory):
         dispatcher.dispatch( indices               = []
+                           , is_dynamic            = lambda n: n.endswith('.spt')
                            , pathparts             = ['']
                            , uripath               = '/'
                            , startdir              = harness.fs.www.root

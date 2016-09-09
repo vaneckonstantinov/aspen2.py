@@ -84,7 +84,7 @@ DispatchResult = namedtuple('DispatchResult', 'status match wildcards detail ext
 """
 
 
-def dispatch_abstract(listnodes, is_leaf, traverse, find_index, noext_matched,
+def dispatch_abstract(listnodes, is_dynamic, is_leaf, traverse, find_index, noext_matched,
                       startnode, nodepath):
     """Given a list of nodenames (in 'nodepath'), return a DispatchResult.
 
@@ -92,6 +92,8 @@ def dispatch_abstract(listnodes, is_leaf, traverse, find_index, noext_matched,
     functions:
 
        listnodes(joinedpath) - lists the nodes in the specified joined path
+
+       is_dynamic(node) - returns true iff the specified node is a renderable
 
        is_leaf(node) - returns true iff the specified node is a leaf node
 
@@ -114,7 +116,7 @@ def dispatch_abstract(listnodes, is_leaf, traverse, find_index, noext_matched,
     # TODO: noext_matched wildleafs are borken
     wildvals, wildleafs = {}, {}
     curnode = startnode
-    is_spt = lambda n: n.endswith(".spt")
+    is_dynamic_node = lambda n: is_dynamic(traverse(curnode, n))
     is_leaf_node = lambda n: is_leaf(traverse(curnode, n))
     lastnode_ext = splitext(nodepath[-1])[1]
 
@@ -140,7 +142,7 @@ def dispatch_abstract(listnodes, is_leaf, traverse, find_index, noext_matched,
         # only maybe because non-spt files aren't wild
         maybe_wild_nodes = [ n for n in sorted(subnodes) if n.startswith("%") ]
 
-        wild_leaf_ns = [ n for n in maybe_wild_nodes if is_leaf_node(n) and is_spt(n) ]
+        wild_leaf_ns = [ n for n in maybe_wild_nodes if is_leaf_node(n) and is_dynamic_node(n) ]
         wild_nonleaf_ns = [ n for n in maybe_wild_nodes if not is_leaf_node(n) ]
 
         # store all the fallback possibilities
@@ -179,7 +181,7 @@ def dispatch_abstract(listnodes, is_leaf, traverse, find_index, noext_matched,
                                               )
             elif node in subnodes and is_leaf_node(node):
                 debug(lambda: "...found exact file, must be static")
-                if is_spt(node):
+                if is_dynamic_node(node):
                     return DispatchResult( DispatchStatus.missing
                                          , None
                                          , None
@@ -293,7 +295,7 @@ def update_neg_type(capture_accept, filename):
     debug(lambda: "set result.extra['accept'] to %r" % media_type)
 
 
-def dispatch(indices, pathparts, uripath, startdir):
+def dispatch(indices, is_dynamic, pathparts, uripath, startdir):
     """Concretize dispatch_abstract.
     """
 
@@ -312,6 +314,7 @@ def dispatch(indices, pathparts, uripath, startdir):
     # =========
 
     result = dispatch_abstract( listnodes
+                              , is_dynamic
                               , is_leaf
                               , traverse
                               , find_index
