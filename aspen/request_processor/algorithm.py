@@ -75,5 +75,5 @@ def render_resource(state, resource):
 
 def encode_output(output, request_processor):
     if not isinstance(output.body, bytes):
-        output.charset = request_processor.charset_dynamic
+        output.charset = request_processor.encode_output_as
         output.body = output.body.encode(output.charset)
