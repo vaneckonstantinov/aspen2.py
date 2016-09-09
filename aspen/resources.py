@@ -87,7 +87,7 @@ def load(request_processor, fspath, mtime):
     """Given a RequestProcessor, an fspath, and an mtime, return a Resource object (w/o caching).
     """
 
-    is_dynamic = fspath.endswith('.spt')
+    is_dynamic = request_processor.is_dynamic(fspath)
 
     # Load bytes.
     # ===========
@@ -104,7 +104,7 @@ def load(request_processor, fspath, mtime):
 
     guess_with = fspath
     if is_dynamic:
-        guess_with = guess_with[:-4]  # XXX Assumes *.spt!
+        guess_with = guess_with.rsplit('.', 1)[0]
     fs_media_type = mimetypes.guess_type(guess_with, strict=False)[0]
     if fs_media_type == 'application/json':
         fs_media_type = request_processor.media_type_json

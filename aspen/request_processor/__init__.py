@@ -156,3 +156,9 @@ class RequestProcessor(object):
 
         if not mimetypes.inited:
             mimetypes.init()
+
+
+    def is_dynamic(self, fspath):
+        """Given a filesystem path, return a boolean.
+        """
+        return fspath.endswith('.spt')
