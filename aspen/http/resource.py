@@ -27,9 +27,7 @@ class Static(object):
 
 
 class Dynamic(object):
-    """Model a dynamic HTTP resource using simplates.
-
-       Make .request_processor available as it has been historically.
+    """Model a dynamic HTTP resource.
     """
 
     available_types = []  # populate in your subclass
