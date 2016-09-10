@@ -3,8 +3,6 @@ import mimeparse
 
 from ..exceptions import NegotiationFailure
 from ..output import Output
-from ..request_processor.dispatcher import NotFound
-from ..simplates.simplate import Simplate
 
 
 class Static(object):
@@ -28,18 +26,11 @@ class Static(object):
         return Output(body=self.raw, media_type=self.media_type, charset=self.charset)
 
 
-class Dynamic(Simplate):
-    """Model a dynamic HTTP resource using simplates.
-
-       Make .request_processor available as it has been historically.
+class Dynamic(object):
+    """Model a dynamic HTTP resource.
     """
 
-    def __init__(self, request_processor, fs, raw, fs_media_type):
-        self.request_processor = request_processor
-        self.fs_media_type = fs_media_type
-        defaults = request_processor.simplate_defaults
-        default_media_type = fs_media_type or request_processor.media_type_default
-        super(Dynamic, self).__init__(defaults, fs, raw, default_media_type)
+    available_types = []  # populate in your subclass
 
     def render(self, state):
         """Render the resource with the given state as context, return Output.
@@ -56,6 +47,8 @@ class Dynamic(Simplate):
         Note that we don't always respect the `Accept` header (the spec says
         we can ignore it: <https://tools.ietf.org/html/rfc7231#section-5.3.2>).
         """
+        from ..request_processor.dispatcher import NotFound
+
         available = self.available_types
         # When there is an extension in the URI path, the dispatcher gives us the
         # corresponding media type (or an empty string if unknown)
@@ -75,7 +68,7 @@ class Dynamic(Simplate):
         elif len(available) == 1:
             # If there's only one available type and no extension in the path,
             # then we ignore the Accept header
-            return super(Dynamic, self).render(available[0], state)
+            return self.render_for_type(available[0], state)
         else:
             accept = state.get('accept_header')
         if accept:
@@ -85,11 +78,11 @@ class Dynamic(Simplate):
                 # Unparseable accept header
                 best_match = None
             if best_match:
-                return super(Dynamic, self).render(best_match, state)
+                return self.render_for_type(best_match, state)
             elif best_match == '':
                 if dispatch_accept is not None:
                     # e.g. client requested `/foo.json` but `/foo.spt` has no JSON page
                     raise NotFound()
                 raise NegotiationFailure(accept, available)
         # Fall back to the first available type
-        return super(Dynamic, self).render(available[0], state)
+        return self.render_for_type(available[0], state)
