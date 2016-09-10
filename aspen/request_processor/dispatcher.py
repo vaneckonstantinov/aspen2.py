@@ -1,4 +1,7 @@
 """
+Dispatcher
+==========
+
 Implement Aspen's filesystem dispatch algorithm.
 """
 from __future__ import absolute_import

@@ -1,4 +1,7 @@
 """
+Parsing and Validation
+======================
+
 Define parser/validators for configuration system
 
 Each of these is guaranteed to be passed a unicode object as read from the

@@ -1,4 +1,7 @@
-
+"""
+Resource
+========
+"""
 import mimeparse
 
 from ..exceptions import NegotiationFailure

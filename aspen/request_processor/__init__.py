@@ -1,3 +1,13 @@
+"""
+*******************
+ Request Processor
+*******************
+
+.. automodule:: aspen.request_processor.algorithm
+.. automodule:: aspen.request_processor.dispatcher
+.. automodule:: aspen.request_processor.typecasting
+
+"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function

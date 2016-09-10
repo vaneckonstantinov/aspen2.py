@@ -1,3 +1,9 @@
+"""
+********
+ Output
+********
+"""
+
 class Output(object):
     body = media_type = charset = None
 
