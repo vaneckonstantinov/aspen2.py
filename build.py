@@ -80,6 +80,7 @@ def __env(envdir):
 def env():
     """set up a base virtual environment"""
     _env()
+    _deps()
 
 
 def _deps():
