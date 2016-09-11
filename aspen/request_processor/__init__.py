@@ -1,7 +1,8 @@
 """
-*******************
- Request Processor
-*******************
+:mod:`request_processor`
+========================
+
+Request processor.
 
 .. automodule:: aspen.request_processor.algorithm
 .. automodule:: aspen.request_processor.dispatcher

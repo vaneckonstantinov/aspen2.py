@@ -1,6 +1,8 @@
 """
-Resource
-========
+:mod:`resource`
+---------------
+
+Resource.
 """
 import mimeparse
 

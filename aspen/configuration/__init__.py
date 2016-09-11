@@ -1,7 +1,9 @@
 """
-***************
- Configuration
-***************
+
+:mod:`configuration`
+====================
+
+Configuration.
 
 .. automodule:: aspen.configuration.parse
 

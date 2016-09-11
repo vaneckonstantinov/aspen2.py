@@ -1,6 +1,6 @@
 """
-stdlib_format
--------------
+:mod:`stdlib_format`
+^^^^^^^^^^^^^^^^^^^^
 """
 from __future__ import absolute_import
 from __future__ import division

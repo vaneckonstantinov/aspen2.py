@@ -1,7 +1,8 @@
 """
-********
- Output
-********
+:mod:`output`
+=============
+
+Output.
 """
 
 class Output(object):

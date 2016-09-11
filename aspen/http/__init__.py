@@ -1,7 +1,6 @@
 """
-************
- HTTP Model
-************
+:mod:`http`
+===========
 
 Aspen doesn't implement all of HTTP, only things related to filesystem
 dispatch.

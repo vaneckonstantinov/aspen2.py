@@ -1,6 +1,8 @@
 """
-Request
-=======
+:mod:`request`
+--------------
+
+Request.
 """
 from __future__ import absolute_import
 from __future__ import division

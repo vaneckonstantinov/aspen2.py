@@ -1,6 +1,6 @@
 """
-stdlib_percent
---------------
+:mod:`stdlib_percent`
+^^^^^^^^^^^^^^^^^^^^^
 """
 from __future__ import absolute_import
 from __future__ import division

@@ -1,6 +1,6 @@
 """
-Algorithm
-=========
+:mod:`algorithm`
+----------------
 
 These functions comprise the request processing functionality of Aspen.
 

@@ -1,6 +1,6 @@
 """
-Dispatcher
-==========
+:mod:`dispatcher`
+-----------------
 
 Implement Aspen's filesystem dispatch algorithm.
 """

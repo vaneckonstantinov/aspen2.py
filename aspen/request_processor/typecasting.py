@@ -1,6 +1,6 @@
 """
-Typecasting
-===========
+:mod:`typecasting`
+------------------
 
 Pluggable typecasting of virtual path values
 """

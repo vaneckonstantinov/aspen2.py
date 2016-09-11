@@ -1,6 +1,6 @@
 """
-jsonp_dump
-----------
+:mod:`jsonp_dump`
+^^^^^^^^^^^^^^^^^^
 """
 from __future__ import absolute_import
 from __future__ import division

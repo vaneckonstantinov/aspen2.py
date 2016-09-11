@@ -1,7 +1,6 @@
 """
-***********
- Resources
-***********
+:mod:`resources`
+================
 
 This is a registry of filesystem paths to objects representing HTTP resources.
 
