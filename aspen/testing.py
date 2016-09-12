@@ -1,6 +1,9 @@
 """
 :mod:`testing`
 ==============
+
+This module provides helpers for testing applications that use Aspen.
+
 """
 from __future__ import absolute_import
 from __future__ import division

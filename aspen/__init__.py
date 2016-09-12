@@ -4,9 +4,9 @@
 #########
 
 Aspen is a filesystem dispatch library for Python web frameworks. Instead of
-regular expressions, decorators, or object traversal, Aspen dispatches HTTP
-requests based on the natural symmetry of URL paths and filesystem paths. In
-the `immortal words`_ of Jeff Lindsay, "so like. a web server." Exactly! ;-)
+using regular expressions, decorators, or object traversal, Aspen dispatches
+HTTP requests based on the natural symmetry of URL paths and filesystem paths.
+In the `immortal words`_ of Jeff Lindsay, "so like. a web server." Exactly! ;-)
 
 .. _immortal words: https://twitter.com/progrium/status/773694289033383937
 
@@ -55,18 +55,11 @@ The `Keystone`_ web framework was inspired by Aspen.
 .. _Keystone: http://keystone.readthedocs.org/
 
 
-**********
- Tutorial
-**********
-
-Foo bar
-
-
 ***********
  Reference
 ***********
 
-No?
+This is the API reference for the Aspen library.
 
 .. automodule:: aspen.simplates
 .. automodule:: aspen.http

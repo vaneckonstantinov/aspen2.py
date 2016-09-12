@@ -2,7 +2,7 @@
 :mod:`resource`
 ---------------
 
-Resource.
+This module implements classes for modeling static and dynamic HTTP resources.
 """
 import mimeparse
 

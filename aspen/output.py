@@ -2,7 +2,8 @@
 :mod:`output`
 =============
 
-Output.
+Implement a class for capturing request processing output.
+
 """
 
 class Output(object):
