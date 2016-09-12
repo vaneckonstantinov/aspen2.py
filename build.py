@@ -62,7 +62,6 @@ def __env(envdir):
 def env():
     """set up a base virtual environment"""
     _env()
-    _deps()
 
 
 def _deps():
@@ -105,6 +104,7 @@ def clean():
 
 def _sphinx_cmd(packages, cmd):
     envdir = _env()
+    _deps()
     run('pip', 'install', *packages)
     builddir = 'docs/_build'
     run('mkdir', '-p', builddir)
