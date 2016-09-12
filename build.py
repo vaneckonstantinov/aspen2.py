@@ -34,11 +34,6 @@ def _env(envdir='env'):
     # extend the PATH
     path = os.path.join(d, 'Scripts' if os.name == "nt" else 'bin')
     os.environ['PATH'] = path + os.pathsep + os.environ.get('PATH', '')
-    # install tox if it isn't there
-    try:
-        shell('pip', 'show', 'tox')
-    except ExecutionError:
-        run('pip', 'install', 'tox')
     return d
 
 
@@ -64,6 +59,14 @@ def env():
     _env()
 
 
+def _install_tox():
+    # install tox if it isn't there
+    try:
+        shell('pip', 'show', 'tox')
+    except ExecutionError:
+        run('pip', 'install', 'tox')
+
+
 def _deps():
     shell('pip', 'install', '-r', 'requirements.txt', ignore_status=False)
 
@@ -75,6 +78,7 @@ def _test_deps():
 
 def _dev(envdir='env'):
     envdir = _env(envdir)
+    _install_tox()
     run('tox', '--notest', '--skip-missing-interpreters')
     return envdir
 
@@ -129,6 +133,7 @@ def clean_sphinx():
 
 def _tox(*args, **kw):
     _env()
+    _install_tox()
     kw.setdefault('silent', False)
     shell('tox', '--skip-missing-interpreters', '--', *args, **kw)
 
