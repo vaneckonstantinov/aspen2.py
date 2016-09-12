@@ -9,24 +9,6 @@ from fabricate import ExecutionError, main, run, shell, autoclean
 # Core Executables
 # ================
 
-ASPEN_DEPS = [
-    'python-mimeparse>=0.1.4',
-    'first>=2.0.1',
-    'algorithm>=1.0.0',
-    'filesystem_tree>=1.0.1',
-    'dependency_injection>=1.1.0',
-    'six',
-    ]
-
-TEST_DEPS = [
-    'coverage>=3.7.1',
-    'cov-core>=1.7',
-    'py>=1.4.20',
-    'pyflakes',
-    'pytest>=2.5.2',
-    'pytest-cov>=1.6',
-    ]
-
 ENV_ARGS = [
     '-m', 'virtualenv',
     '--prompt=[aspen]',
@@ -84,12 +66,12 @@ def env():
 
 
 def _deps():
-    shell('pip', 'install', *ASPEN_DEPS, ignore_status=False)
+    shell('pip', 'install', '-r', 'requirements.txt', ignore_status=False)
 
 
 def _test_deps():
     _deps()
-    shell('pip', 'install', *TEST_DEPS, ignore_status=False)
+    shell('pip', 'install', '-r', 'requirements_tests.txt', ignore_status=False)
 
 
 def _dev(envdir='env'):
