@@ -28,9 +28,5 @@ view) with template code in one file. Here's an example::
     , "excitement": excitement
      }
 
-
 .. automodule:: aspen.simplates.renderers
-.. automodule:: aspen.simplates.pagination
-.. automodule:: aspen.simplates.json_
-
 """
