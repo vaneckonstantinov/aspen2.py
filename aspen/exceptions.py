@@ -1,8 +1,13 @@
 """
-:mod:`exceptions`
-=================
+#########################
+ :mod:`aspen.exceptions`
+#########################
 
-Exceptions.
+This module defines all of the custom exceptions used across the Aspen library.
+
+.. contents::
+    :local:
+
 """
 from __future__ import absolute_import
 from __future__ import division

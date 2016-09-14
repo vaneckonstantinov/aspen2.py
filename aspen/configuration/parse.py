@@ -1,7 +1,7 @@
 """
-
-:mod:`parse`
-============
+**************
+ :mod:`parse`
+**************
 
 Define parser/validators for configuration system
 

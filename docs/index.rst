@@ -59,7 +59,7 @@ The `Keystone`_ web framework was inspired by Aspen.
 **********
 
 .. toctree::
-    :maxdepth: 6
+    :maxdepth: 2
 
     tutorial
-    reference
+    reference/index

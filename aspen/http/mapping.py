@@ -1,6 +1,7 @@
 """
-:mod:`mapping`
---------------
+****************
+ :mod:`mapping`
+****************
 
 This module implements a class to represent HTTP mappings.
 
