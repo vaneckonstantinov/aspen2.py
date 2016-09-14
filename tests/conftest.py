@@ -9,7 +9,7 @@ import pytest
 from aspen.testing import Harness, teardown
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def sys_path_scrubber():
     before = set(sys.path)
     yield
@@ -18,7 +18,7 @@ def sys_path_scrubber():
         sys.path.remove(name)
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def harness(sys_path_scrubber):
     harness = Harness()
     yield harness
