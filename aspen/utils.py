@@ -1,3 +1,11 @@
+"""
+:mod:`utils`
+============
+
+This module collects a few random bits that should be placed somewhere that
+makes more sense.
+
+"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function

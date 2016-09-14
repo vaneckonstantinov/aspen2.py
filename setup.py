@@ -6,8 +6,6 @@ except ImportError:
 
 from setuptools import find_packages, setup
 
-from build import ASPEN_DEPS, TEST_DEPS
-
 version = open('version.txt').read()
 
 
@@ -32,6 +30,6 @@ setup( author = 'Chad Whitacre et al.'
      , version = version
      , zip_safe = False
      , package_data = {'aspen': ['request_processor/mime.types']}
-     , install_requires = ASPEN_DEPS
-     , tests_require = TEST_DEPS
+     , install_requires = open('requirements.txt').read()
+     , tests_require = open('requirements_tests.txt').read()
       )

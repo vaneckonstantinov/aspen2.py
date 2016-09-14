@@ -32,7 +32,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Aspen'
-copyright = u'2016, Chad Whitacre, Paul Jimenez, and others'
+copyright = u'2016, Chad Whitacre et al.'
 
 # The full version, including alpha/beta/rc tags.
 release = open('../version.txt').read().strip()
@@ -55,9 +55,9 @@ autodoc_member_order = 'bysource'
 
 # -- Options for HTML output ---------------------------------------------------
 
-# The theme to use for HTML and HTML Help pages.  See the documentation for
-# a list of builtin themes.
-html_theme = 'default'
+import sphinx_rtd_theme
+html_theme = "sphinx_rtd_theme"
+html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 
 # Output file base name for HTML help builder.
 htmlhelp_basename = 'Aspendoc'
@@ -69,7 +69,7 @@ htmlhelp_basename = 'Aspendoc'
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
   ('index', 'Aspen.tex', u'Aspen Documentation',
-   u'Chad Whitacre, Paul Jimenez, and others', 'manual'),
+   u'Chad Whitacre et al.', 'manual'),
 ]
 
 
@@ -79,7 +79,7 @@ latex_documents = [
 # (source start file, name, description, authors, manual section).
 man_pages = [
     ('index', 'aspen', u'Aspen Documentation',
-     [u'Chad Whitacre, Paul Jimenez, and others'], 1)
+     [u'Chad Whitacre et al.'], 1)
 ]
 
 
@@ -90,7 +90,7 @@ man_pages = [
 #  dir menu entry, description, category)
 texinfo_documents = [
   ('index', 'Aspen', u'Aspen Documentation',
-   u'Chad Whitacre, Paul Jimenez, and others', 'Aspen',
+   u'Chad Whitacre et al.', 'Aspen',
    'A filesystem router for Python web frameworks.',
    'Miscellaneous'),
 ]

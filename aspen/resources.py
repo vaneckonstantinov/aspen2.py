@@ -1,4 +1,7 @@
 """
+:mod:`resources`
+================
+
 This is a registry of filesystem paths to objects representing HTTP resources.
 
 Use :py:func:`get` to use the cache, use :py:func:`load` to circumvent it.

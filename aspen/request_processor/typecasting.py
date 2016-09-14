@@ -1,5 +1,9 @@
 """
-Pluggable typecasting of virtual path values
+:mod:`typecasting`
+------------------
+
+This module implements pluggable typecasting of URL path variables.
+
 """
 from __future__ import absolute_import
 from __future__ import division

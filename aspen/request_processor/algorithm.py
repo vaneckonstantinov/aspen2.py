@@ -1,4 +1,7 @@
 """
+:mod:`algorithm`
+----------------
+
 These functions comprise the request processing functionality of Aspen.
 
 The order of functions in this module defines Aspen algorithm for request

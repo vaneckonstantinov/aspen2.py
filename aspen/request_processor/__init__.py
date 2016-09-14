@@ -1,3 +1,17 @@
+"""
+:mod:`request_processor`
+========================
+
+The request processor dispatches requests to the filesystem (typecasting URL
+path variables), loads the resource from the filesystem, and then renders and
+encodes the resource. This algorithm is defined in the :mod:`algorithm` module,
+with dispatching and typecasting in additional modules.
+
+.. automodule:: aspen.request_processor.algorithm
+.. automodule:: aspen.request_processor.dispatcher
+.. automodule:: aspen.request_processor.typecasting
+
+"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function

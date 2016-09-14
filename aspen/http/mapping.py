@@ -1,23 +1,29 @@
+"""
+:mod:`mapping`
+--------------
+
+This module implements a class to represent HTTP mappings.
+
+"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
 
-
 NO_DEFAULT = object()
 
 
 class Mapping(dict):
-    """Base class for HTTP mappings: Path, Querystring, Headers, Cookie, Body.
+    """Base class for HTTP mappings.
 
     Mappings in HTTP differ from Python dictionaries in that they may have one
     or more values. This dictionary subclass maintains a list of values for
-    each key. However, access semantics are asymetric: subscript assignment
-    clobbers to the list, while subscript access returns the last item. Think
+    each key. However, access semantics are asymmetric: subscript assignment
+    clobbers to list, while subscript access returns the last item. Think
     about it.
 
-    WARNING: this isn't thread-safe
+    .. warning:: This isn't thread-safe.
 
     """
 

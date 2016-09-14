@@ -1,4 +1,7 @@
 """
+:mod:`renderers`
+----------------
+
 This module implements pluggable content rendering.
 
 Negotiated and rendered resources have content pages the bytes for which are
@@ -67,6 +70,12 @@ please work with Aspen's existing reloading machinery, etc. as much as
 possible. Use the existing template shims as guidelines, and if Aspen's
 machinery is inadequate for some reason let's evolve the machinery so all
 renderers behave consistently for users. Thanks.
+
+.. automodule:: aspen.simplates.renderers.jsonp_dump
+.. automodule:: aspen.simplates.renderers.json_dump
+.. automodule:: aspen.simplates.renderers.stdlib_format
+.. automodule:: aspen.simplates.renderers.stdlib_percent
+.. automodule:: aspen.simplates.renderers.stdlib_template
 
 """
 from __future__ import absolute_import
