@@ -4,18 +4,19 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-from aspen.simplates.simplate import _decode
-from pytest import raises, yield_fixture
+import pytest
+from pytest import raises, fixture
 
 from aspen.exceptions import NegotiationFailure
-from aspen.simplates.simplate import Simplate
 from aspen.request_processor.dispatcher import mimetypes, NotFound
+from aspen.simplates.simplate import _decode
+from aspen.simplates.simplate import Simplate
 from aspen.simplates.pagination import Page
 from aspen.simplates.renderers.stdlib_template import Factory as TemplateFactory
 from aspen.simplates.renderers.stdlib_percent import Factory as PercentFactory
 
 
-@yield_fixture
+@fixture
 def get(harness):
     def get(**_kw):
         kw = dict( request_processor = harness.request_processor
@@ -415,40 +416,37 @@ def test_decode_ignores_third_line():
     """
     assert actual == expected
 
-def test_decode_can_take_encoding_from_various_line_formats():
-    formats = [ '-*- coding: utf8 -*-'
-              , '-*- encoding: utf8 -*-'
-              , 'coding: utf8'
-              , '  coding: utf8'
-              , '\tencoding: utf8'
-              , '\t flubcoding=utf8'
-               ]
-    for fmt in formats:
-        def test():
-            actual = _decode("""\
-            # {0}
-            text = u'א'
-            """.format(fmt).encode('utf8'))
-            expected = """\
-            # encoding set to utf8
-            text = u'א'
-            """
-            assert actual == expected
-        yield test
+formats = [ '-*- coding: utf8 -*-'
+          , '-*- encoding: utf8 -*-'
+          , 'coding: utf8'
+          , '  coding: utf8'
+          , '\tencoding: utf8'
+          , '\t flubcoding=utf8'
+           ]
+@pytest.mark.parametrize('fmt', formats)
+def test_decode_can_take_encoding_from_various_line_formats(fmt):
+    actual = _decode("""\
+    # {0}
+    text = u'א'
+    """.format(fmt).encode('utf8'))
+    expected = """\
+    # encoding set to utf8
+    text = u'א'
+    """
+    assert actual == expected
 
-def test_decode_cant_take_encoding_from_bad_line_formats():
-    formats = [ '-*- coding : utf8 -*-'
-              , 'foo = 0 -*- encoding: utf8 -*-'
-              , '  coding : utf8'
-              , 'encoding : utf8'
-              , '  flubcoding =utf8'
-              , 'coding: '
-               ]
-    for fmt in formats:
-        def test():
-            raw = """\
-            # {0}
-            text = u'א'
-            """.format(fmt).encode('utf8')
-            raises(UnicodeDecodeError, _decode, raw)
-        yield test
+formats = [ '-*- coding : utf8 -*-'
+          , 'foo = 0 -*- encoding: utf8 -*-'
+          , '  coding : utf8'
+          , 'encoding : utf8'
+          , '  flubcoding =utf8'
+          , 'coding: '
+           ]
+@pytest.mark.parametrize('fmt', formats)
+def test_decode_cant_take_encoding_from_bad_line_formats(fmt):
+    def test():
+        raw = """\
+        # {0}
+        text = u'א'
+        """.format(fmt).encode('utf8')
+        raises(UnicodeDecodeError, _decode, raw)
