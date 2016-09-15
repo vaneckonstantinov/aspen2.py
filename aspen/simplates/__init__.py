@@ -1,10 +1,16 @@
 """
-:mod:`simplates`
-================
+########################
+ :mod:`aspen.simplates`
+########################
 
-The simplates module implements Aspen's file format, simplates (*.spt).
+The simplates module implements Aspen's file format, simplates (\*.spt).
 Simplates combine request processing logic (think: Rails controller, or Django
-view) with template code in one file. Here's an example::
+view) with template code in one file.
+
+.. contents::
+    :local:
+
+Here's an example::
 
     # Python syntax. Runs once on startup.
     import random
@@ -28,9 +34,7 @@ view) with template code in one file. Here's an example::
     , "excitement": excitement
      }
 
-
 .. automodule:: aspen.simplates.renderers
 .. automodule:: aspen.simplates.pagination
 .. automodule:: aspen.simplates.json_
-
 """

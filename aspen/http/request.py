@@ -1,6 +1,7 @@
 """
-:mod:`request`
---------------
+****************
+ :mod:`request`
+****************
 
 Aspen models the path and querystring parts of an HTTP request message.
 """

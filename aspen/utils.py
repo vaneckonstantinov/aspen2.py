@@ -1,9 +1,13 @@
 """
-:mod:`utils`
-============
+####################
+ :mod:`aspen.utils`
+####################
 
 This module collects a few random bits that should be placed somewhere that
 makes more sense.
+
+.. contents::
+    :local:
 
 """
 from __future__ import absolute_import

@@ -1,11 +1,15 @@
 """
-:mod:`request_processor`
-========================
+################################
+ :mod:`aspen.request_processor`
+################################
 
 The request processor dispatches requests to the filesystem (typecasting URL
 path variables), loads the resource from the filesystem, and then renders and
 encodes the resource. This algorithm is defined in the :mod:`algorithm` module,
 with dispatching and typecasting in additional modules.
+
+.. contents::
+    :local:
 
 .. automodule:: aspen.request_processor.algorithm
 .. automodule:: aspen.request_processor.dispatcher

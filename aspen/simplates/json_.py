@@ -1,6 +1,7 @@
 """
-:mod:`json_`
-------------
+**************
+ :mod:`json_`
+**************
 """
 from __future__ import absolute_import
 from __future__ import division

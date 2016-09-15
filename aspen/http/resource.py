@@ -1,6 +1,7 @@
 """
-:mod:`resource`
----------------
+*****************
+ :mod:`resource`
+*****************
 
 This module implements classes for modeling static and dynamic HTTP resources.
 """

@@ -1,6 +1,7 @@
 """
-:mod:`renderers`
-----------------
+******************
+ :mod:`renderers`
+******************
 
 This module implements pluggable content rendering.
 

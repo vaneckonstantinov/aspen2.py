@@ -1,9 +1,12 @@
 """
+############################
+ :mod:`aspen.configuration`
+############################
 
-:mod:`configuration`
-====================
+This module defines Aspen's configuration mechanism.
 
-Configuration.
+.. contents::
+    :local:
 
 .. automodule:: aspen.configuration.parse
 
