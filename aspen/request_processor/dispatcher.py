@@ -14,22 +14,7 @@ import os
 import posixpath
 from collections import namedtuple
 from functools import reduce
-
-
-class DispatchError(Exception):
-    def __init__(self, message):
-        self.message = message
-        Exception.__init__(self)
-
-class NotFound(DispatchError):
-    def __init__(self, message=''):
-        DispatchError.__init__(self, message if message else "not found")
-
-class AttemptedBreakout(NotFound): pass
-class UnindexedDirectory(NotFound): pass
-class Redirect(DispatchError): pass
-class RedirectFromIndexFilename(Redirect): pass
-class RedirectFromSlashless(Redirect): pass
+from .. import exceptions
 
 
 def debug_noop(*args, **kwargs):
@@ -341,7 +326,7 @@ def dispatch(indices, is_dynamic, pathparts, uripath, startdir):
                  % (pathparts[-1], indices)
                   )
             location = uripath[:-len(pathparts[-1])]
-            raise RedirectFromIndexFilename(location)
+            raise exceptions.RedirectFromIndexFilename(location)
 
 
     # Handle returned states.
@@ -349,23 +334,23 @@ def dispatch(indices, is_dynamic, pathparts, uripath, startdir):
 
     if result.status == DispatchStatus.okay:
         if result.match.endswith(os.path.sep):
-            raise UnindexedDirectory(result.match)
+            raise exceptions.UnindexedDirectory(result.match)
 
     elif result.status == DispatchStatus.non_leaf:                                # trailing slash
         location = uripath + '/'
-        raise RedirectFromSlashless(location)
+        raise exceptions.RedirectFromSlashless(location)
 
     elif result.status == DispatchStatus.missing:                                 # 404
-        raise NotFound()
+        raise exceptions.NotFound()
 
     else:
-        raise DispatchError("Unknown result status.")
+        raise exceptions.DispatchError("Unknown result status.")
 
 
     # Protect against escaping the www_root.
     # ======================================
 
     if result.constrain_path and not result.match.startswith(startdir):
-        raise AttemptedBreakout()
+        raise exceptions.AttemptedBreakout()
 
     return result

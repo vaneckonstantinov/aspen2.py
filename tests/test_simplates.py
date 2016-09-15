@@ -7,8 +7,8 @@ from __future__ import unicode_literals
 import pytest
 from pytest import raises, fixture
 
-from aspen.exceptions import NegotiationFailure
-from aspen.request_processor.dispatcher import mimetypes, NotFound
+from aspen.exceptions import NegotiationFailure, NotFound
+from aspen.request_processor.dispatcher import mimetypes
 from aspen.simplates.simplate import _decode
 from aspen.simplates.simplate import Simplate
 from aspen.simplates.pagination import Page
