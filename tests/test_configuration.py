@@ -9,6 +9,7 @@ import sys
 from pytest import raises, mark
 
 from aspen.request_processor import ConfigurationError, RequestProcessor, parse
+from aspen.configuration import parse_conf_var
 
 
 def test_defaults_to_defaults(harness):
@@ -132,3 +133,12 @@ def test_parse_renderer_good():
 
 def test_parse_renderer_bad():
     raises(ValueError, parse.renderer, 'floober')
+
+
+# pcv - parse_conf_var
+
+def test_pcv_doesnt_choke_on_garbage():
+    garbage = b"a\xef\xf9"
+    info = raises(ConfigurationError, parse_conf_var, garbage, parse.identity, 'foo', 'bar')
+    assert info.value.msg == "Got a bad value 'a\\xef\\xf9' for foo variable bar: " \
+                             "Configuration values must be US-ASCII."
