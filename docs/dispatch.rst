@@ -2,19 +2,18 @@
  Filesystem Dispatch Rules
 ###########################
 
+Aspen dispatches web requests to the filesystem based on paths. For simple
+cases this is straightforward: ``/foo.html`` in the browser will find
+``foo.html`` in the publishing root on your filesystem, and serve the file
+statically. There are a couple wrinkles, however. What about *dynamic*
+resources?  And what about variable path parts?
+
 .. note::
 
     This is a tutorial. Please refer to our test table for the `complete dispatch rules`_.
 
     .. _complete dispatch rules:
         https://raw.githubusercontent.com/AspenWeb/aspen.py/master/tests/dispatch_table_data.rst
-
-
-Aspen dispatches web requests to the filesystem based on paths. For simple
-cases this is straightforward: ``/foo.html`` in the browser will find
-``foo.html`` in the publishing root on your filesystem, and serve the file
-statically. There are a couple wrinkles, however. What about *dynamic*
-resources?  And what about variable path parts?
 
 
 -------------------

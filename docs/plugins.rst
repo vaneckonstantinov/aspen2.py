@@ -1,6 +1,6 @@
-##################
- Writing a Plugin
-##################
+#######################
+ How to Write a Plugin
+#######################
 
 This document is for people who want to write a plugin for Aspen. If you only
 want to use Aspen with existing plugins, then ... what?
