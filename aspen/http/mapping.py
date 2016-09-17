@@ -1,11 +1,3 @@
-"""
-****************
- :mod:`mapping`
-****************
-
-This module implements a class to represent HTTP mappings.
-
-"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function

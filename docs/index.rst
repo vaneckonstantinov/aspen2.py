@@ -41,20 +41,23 @@ Aspen is available on `PyPI`_::
 
 
 **********
- See Also
-**********
-
-The `Keystone`_ web framework was inspired by Aspen.
-
-.. _Keystone: http://keystone.readthedocs.org/
-
-
-**********
  Contents
 **********
 
 .. toctree::
     :maxdepth: 2
 
-    tutorial
-    reference/index
+    dispatch 
+    simplates 
+    plugins
+    wrappers
+    reference/index 
+
+
+**********
+ See Also
+**********
+
+The `Keystone`_ web framework was inspired by Aspen.
+
+.. _Keystone: http://keystone.readthedocs.org/
