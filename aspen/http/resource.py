@@ -7,7 +7,7 @@ This module implements classes for modeling static and dynamic HTTP resources.
 """
 import mimeparse
 
-from ..exceptions import NegotiationFailure
+from ..exceptions import NegotiationFailure, NotFound
 from ..output import Output
 
 
@@ -53,8 +53,6 @@ class Dynamic(object):
         Note that we don't always respect the `Accept` header (the spec says
         we can ignore it: <https://tools.ietf.org/html/rfc7231#section-5.3.2>).
         """
-        from ..request_processor.dispatcher import NotFound
-
         available = self.available_types
         # When there is an extension in the URI path, the dispatcher gives us the
         # corresponding media type (or an empty string if unknown)

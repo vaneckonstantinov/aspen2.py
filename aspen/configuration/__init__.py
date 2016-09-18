@@ -60,8 +60,8 @@ def parse_conf_var(raw, from_unicode, context, name_in_context):
             value = value.decode('US-ASCII')
         return from_unicode(value), extend
     except UnicodeDecodeError as error:
-        value = value.decode('US-ASCII', 'repr')
-        error_detail = "Configuration values must be US-ASCII."
+        value = value.decode('US-ASCII', 'backslashreplace')
+        error_detail = "Configuration values must be US-ASCII"
     except ValueError as error:
         error_detail = error.args[0]
 

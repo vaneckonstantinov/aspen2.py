@@ -23,26 +23,21 @@ specific web framework, see the docs for `django-aspen`_, `Flask-Aspen`_, or
 This version of Aspen has been tested with Python 2.7, 3.4, and 3.5, on both
 Ubuntu and Windows.
 
+Aspen's source code is on `GitHub`_, and is `MIT-licensed`_.
+
+.. _GitHub: https://github.com/AspenWeb/aspen.py
+.. _MIT-licensed: https://github.com/AspenWeb/aspen.py/blob/master/COPYRIGHT
+
 
 **************
  Installation
 **************
 
-Aspen is available on `GitHub`_ and on `PyPI`_::
+Aspen is available on `PyPI`_::
 
     $ pip install aspen
 
-.. _GitHub: https://github.com/AspenWeb/aspen.py
 .. _PyPI: https://pypi.python.org/pypi/aspen
-
-
-*******
- Legal
-*******
-
-Aspen is distributed under the `MIT license`_.
-
-.. _MIT license: https://github.com/AspenWeb/aspen.py/blob/master/COPYRIGHT
 
 
 **********

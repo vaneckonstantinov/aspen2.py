@@ -7,7 +7,7 @@ import mimetypes
 import os
 from pytest import raises
 
-from aspen.exceptions import TypecastError
+from aspen import exceptions
 from aspen.request_processor import dispatcher
 
 
@@ -20,11 +20,11 @@ def assert_fs(harness, ask_uri, expect_fs):
 
 def assert_raises_NotFound(*args):
     if len(args) < 3: args += ('',)
-    return raises(dispatcher.NotFound, assert_fs, *args).value
+    return raises(exceptions.NotFound, assert_fs, *args).value
 
 def assert_raises_Redirect(*args):
     if len(args) < 3: args += ('',)
-    return raises(dispatcher.Redirect, assert_fs, *args).value
+    return raises(exceptions.Redirect, assert_fs, *args).value
 
 def assert_virtvals(harness, uripath, expected_vals):
     actual = harness.simple(filepath=None, uripath=uripath, want='path')
@@ -58,7 +58,7 @@ def test_dispatcher_returns_a_result(harness):
     assert result.detail == 'Found.'
 
 def test_dispatcher_raises_for_unindexed_directory(harness):
-    with raises(dispatcher.UnindexedDirectory):
+    with raises(exceptions.UnindexedDirectory):
         dispatcher.dispatch( indices               = []
                            , is_dynamic            = lambda n: n.endswith('.spt')
                            , pathparts             = ['']
@@ -208,7 +208,7 @@ def test_virtual_path_typecasts_to_int(harness):
 
 def test_virtual_path_raises_on_bad_typecast(harness):
     harness.fs.www.mk(('%year.int/foo.html', "Greetings, program!"),)
-    raises(TypecastError, assert_fs, harness, '/I am not a year./foo.html', '')
+    raises(exceptions.TypecastError, assert_fs, harness, '/I am not a year./foo.html', '')
 
 def test_virtual_path_raises_on_direct_access(harness):
     assert_raises_NotFound(harness, '/%name/foo.html', '')

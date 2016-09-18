@@ -5,7 +5,7 @@ import posixpath
 
 import pytest
 
-from aspen.request_processor import dispatcher
+from aspen import exceptions
 from aspen.testing import Harness
 
 tablefile = os.path.join(os.path.dirname(__file__), 'dispatch_table_data.rst')
@@ -95,9 +95,9 @@ def test_all_table_entries(harness, files, request_uri, expected):
     try:
         state = harness._hit('GET', request_uri, want='state',
                              return_after='dispatch_path_to_filesystem')
-    except dispatcher.NotFound:
+    except exceptions.NotFound:
         result = '404'
-    except dispatcher.Redirect as err:
+    except exceptions.Redirect as err:
         result = '302 ' + err.message
     else:
         result = '200'
