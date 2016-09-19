@@ -19,14 +19,6 @@ def codec(value):
     codecs.lookup(value)
     return value
 
-def yes_no(s):
-    s = s.lower()
-    if s in ['yes', 'true', '1']:
-        return True
-    if s in ['no', 'false', '0']:
-        return False
-    raise ValueError("must be either yes/true/1 or no/false/0")
-
 def list_(value):
     # populate out with a single copy of each non-empty item, preserving order
     out = []
