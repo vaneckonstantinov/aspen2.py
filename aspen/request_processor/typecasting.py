@@ -1,10 +1,3 @@
-"""
-:mod:`typecasting`
-------------------
-
-This module implements pluggable typecasting of URL path variables.
-
-"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function

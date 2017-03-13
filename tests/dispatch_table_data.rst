@@ -1,3 +1,4 @@
+# Headings here are filesystem paths (X = "exists")        # Headings here are URL paths (rows give the HTTP result, plus the matched file for 200 w/ any variable value)
 ===== ======= ======= =========== ======== ==== =========  =====================  ========================  =========================  ============================  ================================
 index bar.spt bar.txt bar.txt.spt %bar.spt bar/ bar/index  /                      /bar                      /bar/                      /bar.txt                      /bar.txt/
 ===== ======= ======= =========== ======== ==== =========  =====================  ========================  =========================  ============================  ================================

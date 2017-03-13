@@ -1,16 +1,3 @@
-"""
-############################
- :mod:`aspen.configuration`
-############################
-
-This module defines Aspen's configuration mechanism.
-
-.. contents::
-    :local:
-
-.. automodule:: aspen.configuration.parse
-
-"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function

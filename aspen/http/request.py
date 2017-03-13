@@ -1,10 +1,3 @@
-"""
-****************
- :mod:`request`
-****************
-
-Aspen models the path and querystring parts of an HTTP request message.
-"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function

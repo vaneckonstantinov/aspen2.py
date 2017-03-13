@@ -53,6 +53,9 @@ def fields_from(dataline, cols):
 def get_table_entries():
     table = open(tablefile,'r').readlines()
 
+    while table[0][:1] == '#':  # skip comment lines
+        table = table[1:]
+
     tabledefline = table[0].strip()
     cols = find_cols(tabledefline)
 

@@ -1,12 +1,3 @@
-"""
-:mod:`resources`
-================
-
-This is a registry of filesystem paths to objects representing HTTP resources.
-
-Use :py:func:`get` to use the cache, use :py:func:`load` to circumvent it.
-
-"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function

@@ -32,7 +32,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Aspen'
-copyright = u'2016, Chad Whitacre et al.'
+copyright = u'2016, Chad Whitacre, et al'  # RtD theme doubles the period
 
 # The full version, including alpha/beta/rc tags.
 release = open('../version.txt').read().strip()
@@ -49,7 +49,7 @@ pygments_style = 'sphinx'
 
 # -- Autodoc options
 
-autodoc_default_flags = ['members', 'undoc-members']
+autodoc_default_flags = ['members']
 autodoc_member_order = 'bysource'
 
 

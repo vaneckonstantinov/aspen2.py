@@ -1,11 +1,3 @@
-"""
-:mod:`output`
-=============
-
-Implement a class for capturing request processing output.
-
-"""
-
 class Output(object):
     body = media_type = charset = None
 
