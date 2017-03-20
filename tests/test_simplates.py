@@ -139,7 +139,7 @@ def test_render_negotiates(harness):
     assert output.text == "<h1>Greetings, program!</h1>\n"
 
 def test_ignores_busted_accept(harness):
-    output = harness.simple(filepath='index.spt', contents=SIMPLATE, accept_header='text/html;')
+    output = harness.simple(filepath='index.spt', contents=SIMPLATE, accept_header='text/html/foo')
     assert output.text == "Greetings, program!\n"
 
 def test_render_sets_media_type_when_it_negotiates(harness):
