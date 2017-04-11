@@ -9,10 +9,10 @@ before_install:
   - pip install --upgrade pip
   - pip --version
   - pip install --upgrade flake8
-  - flake8 . --count --statistics
+  - flake8 . --count --ignore=E --statistics --exit-zero  # treat all issues as a warning
 install: python build.py dev
 script:
-  - flake8 . --count --max-line-length=127 --select=E999  # Stop the build on syntax errors
+  - flake8 . --select=E999  --statistics  # Stop the build on syntax errors
   - python build.py test_cov
 notifications:
   email: false
