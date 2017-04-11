@@ -10,7 +10,7 @@ before_install:
   - pip install --upgrade pip
   - pip --version
   - pip install --upgrade flake8
-  - flake8 . --count --ignore=E --statistics --exit-zero  # treat all issues as a warning
+  - flake8 . --count --exclude=fabricate.py --ignore=E --statistics --exit-zero
 install: python build.py dev
 script:
   - flake8 . --select=E999  --statistics  # Stop the build on syntax errors
