@@ -11,7 +11,7 @@ Installation, Testing, and License
 
     $ pip install aspen
 
-We test against 64-bit Python 2.7 on Linux: |travis|
+We test against 64-bit Python 2.7 and Python 3.6 on Linux: |travis|
 
 And we test against 32- and 64-bit Python 2.7 on Windows: |appveyor|
 
