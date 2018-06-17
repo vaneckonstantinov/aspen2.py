@@ -46,6 +46,7 @@ KNOBS = {
     'media_type_json': 'application/json',
     'project_root': None,
     'renderer_default': 'stdlib_percent',
+    'store_static_files_in_ram': False,
     'www_root': None,
 }
 
