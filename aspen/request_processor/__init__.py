@@ -16,6 +16,7 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+from copy import copy
 import errno
 import mimetypes
 import os
@@ -26,25 +27,27 @@ from algorithm import Algorithm
 
 from .typecasting import defaults as default_typecasters
 from ..http.resource import Static
-from ..configuration import ConfigurationError, configure, parse
+from ..exceptions import ConfigurationError
 
 
-default_indices = lambda: ['index.html', 'index.json', 'index',
-                           'index.html.spt', 'index.json.spt', 'index.spt']
+default_indices = [
+    'index.html', 'index.json', 'index',
+    'index.html.spt', 'index.json.spt', 'index.spt',
+]
 
 
-    # 'name':               (default,               from_unicode)
-KNOBS = \
-    { 'changes_reload':     (False,                 parse.yes_no)
-    , 'charset_static':     (None,                  parse.codec)
-    , 'encode_output_as':   ('UTF-8',               parse.codec)
-    , 'indices':            (default_indices,       parse.list_)
-    , 'media_type_default': ('text/plain',          parse.media_type)
-    , 'media_type_json':    ('application/json',    parse.media_type)
-    , 'project_root':       (None,                  parse.identity)
-    , 'renderer_default':   ('stdlib_percent',      parse.renderer)
-    , 'www_root':           (None,                  parse.identity)
-     }
+#: Dict of configuration variables to their default values.
+KNOBS = {
+    'changes_reload': False,
+    'charset_static': None,
+    'encode_output_as': 'UTF-8',
+    'indices': default_indices,
+    'media_type_default': 'text/plain',
+    'media_type_json': 'application/json',
+    'project_root': None,
+    'renderer_default': 'stdlib_percent',
+    'www_root': None,
+}
 
 
 class RequestProcessor(object):
@@ -57,28 +60,9 @@ class RequestProcessor(object):
     def __init__(self, **kwargs):
         """Takes configuration in kwargs.
 
-        See the `KNOBS` global variable for valid keys and default values.
+        See the :obj:`.KNOBS` global variable for valid keys and default values.
         """
         self.algorithm = Algorithm.from_dotted_name('aspen.request_processor.algorithm')
-        self.configure(**kwargs)
-
-
-    def process(self, path, querystring, accept_header, raise_immediately=None, return_after=None,
-                **kw):
-        """Given a path, querystring, and Accept header, return a state dict.
-        """
-        return self.algorithm.run( request_processor=self
-                                 , path=path
-                                 , querystring=querystring
-                                 , accept_header=accept_header
-                                 , _raise_immediately=raise_immediately
-                                 , _return_after=return_after
-                                 , **kw
-                                  )
-
-    def configure(self, **kwargs):
-        """Takes a dictionary of strings/unicodes to strings/unicodes.
-        """
 
         # Do some base-line configuration.
         # ================================
@@ -98,7 +82,11 @@ class RequestProcessor(object):
         # Configure from defaults and kwargs.
         # ===================================
 
-        configure(KNOBS, self.__dict__, None, kwargs)
+        for name, default in sorted(KNOBS.items()):
+            if name in kwargs:
+                self.__dict__[name] = kwargs[name]
+            else:
+                self.__dict__[name] = copy(default)
 
 
         # Set some attributes.
@@ -173,6 +161,20 @@ class RequestProcessor(object):
 
         if not mimetypes.inited:
             mimetypes.init()
+
+
+    def process(self, path, querystring, accept_header, raise_immediately=None, return_after=None,
+                **kw):
+        """Given a path, querystring, and Accept header, return a state dict.
+        """
+        return self.algorithm.run( request_processor=self
+                                 , path=path
+                                 , querystring=querystring
+                                 , accept_header=accept_header
+                                 , _raise_immediately=raise_immediately
+                                 , _return_after=return_after
+                                 , **kw
+                                  )
 
 
     def is_dynamic(self, fspath):
