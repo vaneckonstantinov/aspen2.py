@@ -95,23 +95,21 @@ def test_all_table_entries(harness, files, request_uri, expected):
     # set up the specified files
     realfiles = tuple([ f if f.endswith('/') else (f, GENERIC_SPT) for f in files ])
     harness.fs.www.mk(*realfiles)
-    if True:
-        state = harness._hit('GET', request_uri, want='state',
-                             return_after='dispatch_path_to_filesystem')
-        dispatch_result = state['dispatch_result']
-        if dispatch_result.status == DispatchStatus.okay:
-            result = '200'
-        elif dispatch_result.canonical:
-            result = '302 ' + dispatch_result.canonical
-        else:
-            result = '404'
-    if result == '200':
+    state = harness._hit('GET', request_uri, want='state',
+                         return_after='dispatch_path_to_filesystem')
+    dispatch_result = state['dispatch_result']
+    if dispatch_result.status == DispatchStatus.okay:
+        result = '200'
         path = format_result(**state)
         if os.sep != posixpath.sep:
             path = path.replace(os.sep, posixpath.sep)
         path = path[len(harness.fs.www.root)+1:]
         if path:
             result += " " + path
+    elif dispatch_result.canonical:
+        result = '302 ' + dispatch_result.canonical
+    else:
+        result = '404'
     if expected.endswith("*"):
         expected = expected[:-1]
     assert result == expected, "Requesting %r, got %r instead of %r" % (request_uri, result, expected)
