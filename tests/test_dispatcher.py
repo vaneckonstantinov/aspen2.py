@@ -17,13 +17,14 @@ def assert_fs(harness, ask_uri, expect_fs):
     actual = harness.simple(uripath=ask_uri, filepath=None, want='dispatch_result.match')
     assert actual == harness.fs.www.resolve(expect_fs)
 
-def assert_raises_NotFound(*args):
-    if len(args) < 3: args += ('',)
-    return raises(exceptions.NotFound, assert_fs, *args).value
+def assert_missing(harness, request_path):
+    result = harness.simple(uripath=request_path, filepath=None, want='dispatch_result')
+    assert result.status == dispatcher.DispatchStatus.missing
+    assert result.match is None
 
-def assert_raises_Redirect(*args):
-    if len(args) < 3: args += ('',)
-    return raises(exceptions.Redirect, assert_fs, *args).value
+def assert_canonical(harness, request_path, canonical_path):
+    result = harness.simple(uripath=request_path, filepath=None, want='dispatch_result')
+    assert result.canonical == canonical_path
 
 def assert_virtvals(harness, uripath, expected_vals):
     actual = harness.simple(filepath=None, uripath=uripath, want='path')
@@ -55,14 +56,15 @@ def test_dispatcher_returns_a_result(harness):
     assert result.match == os.path.join(harness.fs.www.root, 'index.html')
     assert result.wildcards == {}
 
-def test_dispatcher_raises_for_unindexed_directory(harness):
-    with raises(exceptions.UnindexedDirectory):
-        dispatcher.dispatch( indices               = []
+def test_dispatcher_returns_unindexed_for_unindexed_directory(harness):
+    r = dispatcher.dispatch( indices               = []
                            , is_dynamic            = lambda n: n.endswith('.spt')
                            , pathparts             = ['']
                            , uripath               = '/'
                            , startdir              = harness.fs.www.root
                             )
+    assert r.status == dispatcher.DispatchStatus.unindexed
+    assert r.match == harness.fs.www.root + '/'
 
 
 # Indices
@@ -84,7 +86,8 @@ def test_negotiated_index_is_found(harness):
     assert actual == expected
 
 def test_alternate_index_is_not_found(harness):
-    assert_raises_NotFound(harness, '/')
+    result = harness.simple(uripath='/', filepath=None, want='dispatch_result')
+    assert result.status == dispatcher.DispatchStatus.unindexed
 
 def test_alternate_index_is_found(harness):
     harness.request_processor.indices += ["default.html"]
@@ -94,7 +97,8 @@ def test_alternate_index_is_found(harness):
 def test_configure_aspen_py_setting_override_works_too(harness):
     harness.request_processor.indices = ["default.html"]
     harness.fs.www.mk(('index.html', "Greetings, program!"),)
-    assert_raises_NotFound(harness, '/')
+    result = harness.simple(uripath='/', filepath=None, want='dispatch_result')
+    assert result.status == dispatcher.DispatchStatus.unindexed
 
 def test_configure_aspen_py_setting_takes_first(harness):
     harness.request_processor.indices = ["index.html", "default.html"]
@@ -116,18 +120,18 @@ def test_configure_aspen_py_setting_strips_commas(harness):
 def test_redirect_indices_to_slash(harness):
     harness.request_processor.indices = ["index.html", "default.html"]
     harness.fs.www.mk(('index.html', "Greetings, program!"),)
-    assert_raises_Redirect(harness, '/index.html')
+    assert_canonical(harness, '/index.html', '/')
 
 def test_redirect_second_index_to_slash(harness):
     harness.request_processor.indices = ["index.html", "default.html"]
     harness.fs.www.mk(('default.html', "Greetings, program!"),)
-    assert_raises_Redirect(harness, '/default.html')
+    assert_canonical(harness, '/default.html', '/')
 
 def test_dont_redirect_second_index_if_first(harness):
     harness.request_processor.indices = ["index.html", "default.html"]
     harness.fs.www.mk(('default.html', "Greetings, program!"), ('index.html', "Greetings, program!"),)
     # first index redirects
-    assert_raises_Redirect(harness, '/index.html')
+    assert_canonical(harness, '/index.html', '/')
     # second shouldn't
     assert_fs(harness, '/default.html', 'default.html')
 
@@ -174,7 +178,7 @@ def test_indirect_negotiation_really_prefers_rendered_2(harness):
     assert_fs(harness, 'foo.html', 'foo.html')
 
 def test_indirect_negotation_doesnt_do_dirs(harness):
-    assert_raises_NotFound(harness, 'foo.html')
+    assert_missing(harness, 'foo.html')
 
 
 # Virtual Paths
@@ -186,7 +190,7 @@ def test_virtual_path_can_passthrough(harness):
 
 def test_unfound_virtual_path_passes_through(harness):
     harness.fs.www.mk(('%bar/foo.html', "Greetings, program!"),)
-    assert_raises_NotFound(harness, '/blah/flah.html')
+    assert_missing(harness, '/blah/flah.html')
 
 def test_virtual_path_is_virtual(harness):
     harness.fs.www.mk(('%bar/foo.html', "Greetings, program!"),)
@@ -209,10 +213,10 @@ def test_virtual_path_raises_on_bad_typecast(harness):
     raises(exceptions.TypecastError, assert_fs, harness, '/I am not a year./foo.html', '')
 
 def test_virtual_path_raises_on_direct_access(harness):
-    assert_raises_NotFound(harness, '/%name/foo.html', '')
+    assert_missing(harness, '/%name/foo.html')
 
 def test_virtual_path_raises_404_on_direct_access(harness):
-    assert_raises_NotFound(harness, '/%name/foo.html')
+    assert_missing(harness, '/%name/foo.html')
 
 def test_virtual_path_matches_the_first(harness):
     harness.fs.www.mk( ('%first/foo.html', "Greetings, program!")
@@ -234,7 +238,7 @@ def test_virtual_path_file_only_last_part(harness):
 
 def test_virtual_path_file_only_last_part____no_really(harness):
     harness.fs.www.mk(('foo/%bar.html', "Greetings, program!"),)
-    assert_raises_NotFound(harness, '/foo/blah.html/')
+    assert_missing(harness, '/foo/blah.html/')
 
 def test_virtual_path_file_key_val_set(harness):
     harness.fs.www.mk(('foo/%bar.html.spt', NEGOTIATED_SIMPLATE),)
@@ -301,7 +305,7 @@ def test_virtual_path_and_indirect_neg_ext(harness):
 
 def test_dispatcher_passes_through_files(harness):
     harness.fs.www.mk(('foo/index.html', "Greetings, program!"),)
-    assert_raises_NotFound(harness, '/foo/537.html')
+    assert_missing(harness, '/foo/537.html')
 
 def test_trailing_slash_passes_dirs_with_slash_through(harness):
     harness.fs.www.mk(('foo/index.html', "Greetings, program!"),)
@@ -313,18 +317,15 @@ def test_dispatcher_passes_through_virtual_dir_with_trailing_slash(harness):
 
 def test_dispatcher_redirects_dir_without_trailing_slash(harness):
     harness.fs.www.mk('foo',)
-    result = assert_raises_Redirect(harness, '/foo')
-    assert result.message == '/foo/'
+    assert_canonical(harness, '/foo', '/foo/')
 
 def test_dispatcher_redirects_virtual_dir_without_trailing_slash(harness):
     harness.fs.www.mk('%foo',)
-    result = assert_raises_Redirect(harness, '/foo')
-    assert result.message == '/foo/'
+    assert_canonical(harness, '/foo', '/foo/')
 
 def test_trailing_on_virtual_paths_missing(harness):
     harness.fs.www.mk('%foo/%bar/%baz',)
-    result = assert_raises_Redirect(harness, '/foo/bar/baz')
-    assert result.message == '/foo/bar/baz/'
+    assert_canonical(harness, '/foo/bar/baz', '/foo/bar/baz/')
 
 def test_trailing_on_virtual_paths(harness):
     harness.fs.www.mk(('%foo/%bar/%baz/index.html', "Greetings program!"),)
@@ -332,7 +333,7 @@ def test_trailing_on_virtual_paths(harness):
 
 def test_dont_confuse_files_for_dirs(harness):
     harness.fs.www.mk(('foo.html', 'Greetings, Program!'),)
-    assert_raises_NotFound(harness, '/foo.html/bar')
+    assert_missing(harness, '/foo.html/bar')
 
 
 # path part params
@@ -397,7 +398,7 @@ def test_virtual_path_docs_4(harness):
     harness.fs.www.mk( ('%name/index.html.spt', GREETINGS_NAME_SPT)
           , ('%name/%cheese.txt.spt', NAME_LIKES_CHEESE_SPT)
            )
-    assert_raises_NotFound(harness, '/chad/cheddar.txt/')
+    assert_missing(harness, '/chad/cheddar.txt/')
 
 PARTY_LIKE_YEAR_SPT = """\
 [-----]
@@ -463,11 +464,11 @@ def test_file_with_no_extension_matches(harness):
 
 def test_dont_serve_hidden_files(harness):
     harness.fs.www.mk(('.secret_data', ''),)
-    assert_raises_NotFound(harness, '/.secret_data')
+    assert_missing(harness, '/.secret_data')
 
 def test_dont_serve_spt_file_source(harness):
     harness.fs.www.mk(('foo.html.spt', "Greetings, program!"),)
-    assert_raises_NotFound(harness, '/foo.html.spt')
+    assert_missing(harness, '/foo.html.spt')
 
 
 # dispatch_result.extension
