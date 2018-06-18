@@ -54,12 +54,11 @@ class DispatchStatus(object):
     okay, missing, non_leaf = range(3)
 
 
-DispatchResult = namedtuple('DispatchResult', 'status match wildcards detail extension')
+DispatchResult = namedtuple('DispatchResult', 'status match wildcards extension')
 """
     status - A DispatchStatus object encoding the overall result
     match - the matching path (if status != 'missing')
     wildcards - a dict of whose keys are wildcard path parts, and values are as supplied by the path
-    detail - a human readable message describing the result
     extension - e.g. `json` when `foo.spt` is matched to `foo.json`
 """
 
@@ -102,7 +101,7 @@ def dispatch_abstract(listnodes, is_dynamic, is_leaf, traverse, find_index, star
             ext = lastnode_ext if lastnode_ext in wildleafs else None
             curnode, wildvals = wildleafs[ext]
             debug(lambda: "Wildcard leaf match %r and ext %r" % (curnode, ext))
-            return DispatchResult(DispatchStatus.okay, curnode, wildvals, "Found.", None)
+            return DispatchResult(DispatchStatus.okay, curnode, wildvals, None)
         return None
 
     for depth, node in enumerate(nodepath):
@@ -151,7 +150,6 @@ def dispatch_abstract(listnodes, is_dynamic, is_leaf, traverse, find_index, star
                         return DispatchResult( DispatchStatus.okay
                                              , curnode
                                              , wildvals
-                                             , "Found."
                                              , None
                                               )
             elif node in subnodes and is_leaf_node(node):
@@ -160,7 +158,6 @@ def dispatch_abstract(listnodes, is_dynamic, is_leaf, traverse, find_index, star
                     return DispatchResult( DispatchStatus.missing
                                          , None
                                          , None
-                                         , "Node %r Not Found" % node
                                          , None
                                           )
                 else:
@@ -188,7 +185,6 @@ def dispatch_abstract(listnodes, is_dynamic, is_leaf, traverse, find_index, star
                     return DispatchResult( DispatchStatus.non_leaf
                                          , curnode
                                          , None
-                                         , "Tried to access non-leaf node as leaf."
                                          , None
                                           )
                 return result
@@ -197,7 +193,6 @@ def dispatch_abstract(listnodes, is_dynamic, is_leaf, traverse, find_index, star
                 return DispatchResult( DispatchStatus.non_leaf
                                      , curnode
                                      , None
-                                     , "Tried to access non-leaf node as leaf."
                                      , None
                                       )
             else:
@@ -207,7 +202,6 @@ def dispatch_abstract(listnodes, is_dynamic, is_leaf, traverse, find_index, star
                     return DispatchResult( DispatchStatus.missing
                                          , None
                                          , None
-                                         , "Node %r Not Found" % node
                                          , None
                                           )
                 return result
@@ -232,12 +226,11 @@ def dispatch_abstract(listnodes, is_dynamic, is_leaf, traverse, find_index, star
                     return DispatchResult( DispatchStatus.missing
                                          , None
                                          , None
-                                         , "Node %r Not Found" % node
                                          , None
                                           )
                 return result
 
-    return DispatchResult(DispatchStatus.okay, curnode, wildvals, "Found.", extension)
+    return DispatchResult(DispatchStatus.okay, curnode, wildvals, extension)
 
 
 def match_index(indices, indir):

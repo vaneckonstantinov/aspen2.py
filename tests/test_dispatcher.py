@@ -54,7 +54,6 @@ def test_dispatcher_returns_a_result(harness):
     assert result.status == dispatcher.DispatchStatus.okay
     assert result.match == os.path.join(harness.fs.www.root, 'index.html')
     assert result.wildcards == {}
-    assert result.detail == 'Found.'
 
 def test_dispatcher_raises_for_unindexed_directory(harness):
     with raises(exceptions.UnindexedDirectory):
