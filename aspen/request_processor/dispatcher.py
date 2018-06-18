@@ -54,14 +54,13 @@ class DispatchStatus(object):
     okay, missing, non_leaf = range(3)
 
 
-DispatchResult = namedtuple('DispatchResult', 'status match wildcards detail extension constrain_path')
+DispatchResult = namedtuple('DispatchResult', 'status match wildcards detail extension')
 """
     status - A DispatchStatus object encoding the overall result
     match - the matching path (if status != 'missing')
     wildcards - a dict of whose keys are wildcard path parts, and values are as supplied by the path
     detail - a human readable message describing the result
     extension - e.g. `json` when `foo.spt` is matched to `foo.json`
-    constrain_path - whether the resultant path is below the supplied startnode
 """
 
 
@@ -103,7 +102,7 @@ def dispatch_abstract(listnodes, is_dynamic, is_leaf, traverse, find_index, star
             ext = lastnode_ext if lastnode_ext in wildleafs else None
             curnode, wildvals = wildleafs[ext]
             debug(lambda: "Wildcard leaf match %r and ext %r" % (curnode, ext))
-            return DispatchResult(DispatchStatus.okay, curnode, wildvals, "Found.", None, True)
+            return DispatchResult(DispatchStatus.okay, curnode, wildvals, "Found.", None)
         return None
 
     for depth, node in enumerate(nodepath):
@@ -154,7 +153,6 @@ def dispatch_abstract(listnodes, is_dynamic, is_leaf, traverse, find_index, star
                                              , wildvals
                                              , "Found."
                                              , None
-                                             , True
                                               )
             elif node in subnodes and is_leaf_node(node):
                 debug(lambda: "...found exact file, must be static")
@@ -164,7 +162,6 @@ def dispatch_abstract(listnodes, is_dynamic, is_leaf, traverse, find_index, star
                                          , None
                                          , "Node %r Not Found" % node
                                          , None
-                                         , True
                                           )
                 else:
                     found_n = node
@@ -193,7 +190,6 @@ def dispatch_abstract(listnodes, is_dynamic, is_leaf, traverse, find_index, star
                                          , None
                                          , "Tried to access non-leaf node as leaf."
                                          , None
-                                         , True
                                           )
                 return result
             elif node in subnodes:
@@ -203,7 +199,6 @@ def dispatch_abstract(listnodes, is_dynamic, is_leaf, traverse, find_index, star
                                      , None
                                      , "Tried to access non-leaf node as leaf."
                                      , None
-                                     , True
                                       )
             else:
                 debug(lambda: "fallthrough")
@@ -214,7 +209,6 @@ def dispatch_abstract(listnodes, is_dynamic, is_leaf, traverse, find_index, star
                                          , None
                                          , "Node %r Not Found" % node
                                          , None
-                                         , True
                                           )
                 return result
 
@@ -240,11 +234,10 @@ def dispatch_abstract(listnodes, is_dynamic, is_leaf, traverse, find_index, star
                                          , None
                                          , "Node %r Not Found" % node
                                          , None
-                                         , True
                                           )
                 return result
 
-    return DispatchResult(DispatchStatus.okay, curnode, wildvals, "Found.", extension, True)
+    return DispatchResult(DispatchStatus.okay, curnode, wildvals, "Found.", extension)
 
 
 def match_index(indices, indir):
@@ -327,7 +320,7 @@ def dispatch(indices, is_dynamic, pathparts, uripath, startdir):
     # Protect against escaping the www_root.
     # ======================================
 
-    if result.constrain_path and not result.match.startswith(startdir):
+    if not result.match.startswith(startdir):
         raise exceptions.AttemptedBreakout()
 
     return result
