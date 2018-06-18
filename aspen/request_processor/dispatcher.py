@@ -147,19 +147,11 @@ def dispatch_abstract(listnodes, is_dynamic, is_leaf, traverse, find_index, star
                         curnode = traverse(curnode, found_n)
                         node_name = found_n[1:-4]  # strip leading % and trailing .spt
                         wildvals[node_name] = node
-                        return DispatchResult( DispatchStatus.okay
-                                             , curnode
-                                             , wildvals
-                                             , None
-                                              )
+                        return DispatchResult(DispatchStatus.okay, curnode, wildvals, None)
             elif node in subnodes and is_leaf_node(node):
                 debug(lambda: "...found exact file, must be static")
                 if is_dynamic_node(node):
-                    return DispatchResult( DispatchStatus.missing
-                                         , None
-                                         , None
-                                         , None
-                                          )
+                    return DispatchResult(DispatchStatus.missing, None, None, None)
                 else:
                     found_n = node
             elif node + ".spt" in subnodes and is_leaf_node(node + ".spt"):
@@ -182,28 +174,16 @@ def dispatch_abstract(listnodes, is_dynamic, is_leaf, traverse, find_index, star
                 curnode = traverse(curnode, found_n)
                 result = get_wildleaf_fallback()
                 if not result:
-                    return DispatchResult( DispatchStatus.non_leaf
-                                         , curnode
-                                         , None
-                                         , None
-                                          )
+                    return DispatchResult(DispatchStatus.non_leaf, curnode, None, None)
                 return result
             elif node in subnodes:
                 debug(lambda: "exact dirmatch")
-                return DispatchResult( DispatchStatus.non_leaf
-                                     , curnode
-                                     , None
-                                     , None
-                                      )
+                return DispatchResult(DispatchStatus.non_leaf, curnode, None, None)
             else:
                 debug(lambda: "fallthrough")
                 result = get_wildleaf_fallback()
                 if not result:
-                    return DispatchResult( DispatchStatus.missing
-                                         , None
-                                         , None
-                                         , None
-                                          )
+                    return DispatchResult(DispatchStatus.missing, None, None, None)
                 return result
 
         if not last_node:  # not at last path seg in request
@@ -223,11 +203,7 @@ def dispatch_abstract(listnodes, is_dynamic, is_leaf, traverse, find_index, star
                 debug(lambda: "No exact match for " + repr(node))
                 result = get_wildleaf_fallback()
                 if not result:
-                    return DispatchResult( DispatchStatus.missing
-                                         , None
-                                         , None
-                                         , None
-                                          )
+                    return DispatchResult(DispatchStatus.missing, None, None, None)
                 return result
 
     return DispatchResult(DispatchStatus.okay, curnode, wildvals, extension)
