@@ -34,6 +34,9 @@ def assert_body(harness, uripath, expected_body):
     actual = harness.simple(filepath=None, uripath=uripath, want='output.text')
     assert actual == expected_body
 
+def dispatch(harness, request_path):
+    return harness.simple(uripath=request_path, filepath=None, want='dispatch_result')
+
 NEGOTIATED_SIMPLATE="""[-----]
 [-----] text/plain
 Greetings, program!
@@ -317,7 +320,10 @@ def test_dispatcher_passes_through_virtual_dir_with_trailing_slash(harness):
 
 def test_dispatcher_redirects_dir_without_trailing_slash(harness):
     harness.fs.www.mk('foo',)
-    assert_canonical(harness, '/foo', '/foo/')
+    result = dispatch(harness, '/foo')
+    assert result.status == dispatcher.DispatchStatus.unindexed
+    assert result.match == harness.fs.www.resolve('foo') + os.path.sep
+    assert result.canonical == '/foo/'
 
 def test_dispatcher_redirects_virtual_dir_without_trailing_slash(harness):
     harness.fs.www.mk('%foo',)
