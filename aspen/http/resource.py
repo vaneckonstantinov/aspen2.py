@@ -10,7 +10,8 @@ class Static(object):
 
     def __init__(self, request_processor, fspath, raw, fs_media_type):
         assert type(raw) is bytes  # sanity check
-        self.raw = raw
+        self.fspath = fspath
+        self.raw = raw if request_processor.store_static_files_in_ram else None
         self.fs_media_type = fs_media_type
         self.media_type = fs_media_type or request_processor.media_type_default
         self.charset = None
@@ -22,7 +23,13 @@ class Static(object):
                 pass
 
     def render(self, context):
-        return Output(body=self.raw, media_type=self.media_type, charset=self.charset)
+        output = Output(media_type=self.media_type, charset=self.charset)
+        if self.raw is None:
+            with open(self.fspath, 'rb') as f:
+                output.body = f.read()
+        else:
+            output.body = self.raw
+        return output
 
 
 class Dynamic(object):
