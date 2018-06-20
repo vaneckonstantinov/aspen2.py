@@ -331,6 +331,14 @@ def test_trailing_on_virtual_paths(harness):
     harness.fs.www.mk(('%foo/%bar/%baz/index.html', "Greetings program!"),)
     assert_fs(harness, '/foo/bar/baz/', '/%foo/%bar/%baz/index.html')
 
+def test_trailing_slash_matches_wild_leaf(harness):
+    harness.fs.www.mk(('foo/%bar.html.spt', "Greetings program!"),)
+    assert_fs(harness, '/foo/', '/foo/%bar.html.spt')
+
+def test_missing_trailing_slash_redirects_to_wild_leaf(harness):
+    harness.fs.www.mk(('foo/%bar.html.spt', "Greetings program!"),)
+    assert_canonical(harness, '/foo', '/foo/')
+
 def test_dont_confuse_files_for_dirs(harness):
     harness.fs.www.mk(('foo.html', 'Greetings, Program!'),)
     assert_missing(harness, '/foo.html/bar')
