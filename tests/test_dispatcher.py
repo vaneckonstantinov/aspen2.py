@@ -3,7 +3,6 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import mimetypes
 import os
 from pytest import raises
 
@@ -55,7 +54,6 @@ def test_dispatcher_returns_a_result(harness):
     assert result.status == dispatcher.DispatchStatus.okay
     assert result.match == os.path.join(harness.fs.www.root, 'index.html')
     assert result.wildcards == {}
-    assert result.detail == 'Found.'
 
 def test_dispatcher_raises_for_unindexed_directory(harness):
     with raises(exceptions.UnindexedDirectory):
@@ -472,8 +470,8 @@ def test_dont_serve_spt_file_source(harness):
     assert_raises_NotFound(harness, '/foo.html.spt')
 
 
-# dispatch_result.extra['accept']
-# ===============================
+# dispatch_result.extension
+# =========================
 
 def test_dispatcher_sets_extra_accept_header(harness):
     dispatch_result = harness.simple(
@@ -482,9 +480,7 @@ def test_dispatcher_sets_extra_accept_header(harness):
         return_after='dispatch_path_to_filesystem',
         want='dispatch_result',
     )
-    actual = dispatch_result.extra['accept']
-    expected = mimetypes.guess_type('foo.css', strict=False)[0]
-    assert actual == expected
+    assert dispatch_result.extension == 'css'
 
 def test_extra_accept_header_is_empty_string_when_unknown(harness):
     dispatch_result = harness.simple(
@@ -493,7 +489,7 @@ def test_extra_accept_header_is_empty_string_when_unknown(harness):
         return_after='dispatch_path_to_filesystem',
         want='dispatch_result',
     )
-    assert dispatch_result.extra['accept'] == ''
+    assert dispatch_result.extension == 'unknown-extension'
 
 def test_extra_accept_header_is_missing_when_extension_missing(harness):
     dispatch_result = harness.simple(
@@ -502,4 +498,4 @@ def test_extra_accept_header_is_missing_when_extension_missing(harness):
         return_after='dispatch_path_to_filesystem',
         want='dispatch_result',
     )
-    assert 'accept' not in dispatch_result.extra
+    assert dispatch_result.extension is None

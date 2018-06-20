@@ -3,7 +3,6 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import mimetypes
 import os
 import posixpath
 from collections import namedtuple
@@ -55,19 +54,16 @@ class DispatchStatus(object):
     okay, missing, non_leaf = range(3)
 
 
-DispatchResult = namedtuple('DispatchResult', 'status match wildcards detail extra constrain_path')
+DispatchResult = namedtuple('DispatchResult', 'status match wildcards extension')
 """
     status - A DispatchStatus object encoding the overall result
     match - the matching path (if status != 'missing')
     wildcards - a dict of whose keys are wildcard path parts, and values are as supplied by the path
-    detail - a human readable message describing the result
-    extra - extra information associated with this result
-    constrain_path - whether the resultant path is below the supplied startnode
+    extension - e.g. `json` when `foo.spt` is matched to `foo.json`
 """
 
 
-def dispatch_abstract(listnodes, is_dynamic, is_leaf, traverse, find_index, noext_matched,
-                      startnode, nodepath):
+def dispatch_abstract(listnodes, is_dynamic, is_leaf, traverse, find_index, startnode, nodepath):
     """Given a list of nodenames (in 'nodepath'), return a DispatchResult.
 
     We try to traverse the directed graph rooted at 'startnode' using the
@@ -85,9 +81,6 @@ def dispatch_abstract(listnodes, is_dynamic, is_leaf, traverse, find_index, noex
        find_index(joinedpath) - returns the index file in the specified path if
         it exists, or None if not
 
-       noext_matched(node) - is called iff node is matched with no extension
-        instead of fully
-
     Wildcards nodenames start with %. Non-leaf wildcards are used as keys in
     wildvals and their actual path names are used as their values. In general,
     the rule for matching is 'most specific wins': $foo looks for isfile($foo)
@@ -95,9 +88,9 @@ def dispatch_abstract(listnodes, is_dynamic, is_leaf, traverse, find_index, noex
     isfile(virtual-no-extension) then isdir(virtual)
 
     """
-    # TODO: noext_matched wildleafs are borken
     wildvals, wildleafs = {}, {}
     curnode = startnode
+    extension = None
     is_dynamic_node = lambda n: is_dynamic(traverse(curnode, n))
     is_leaf_node = lambda n: is_leaf(traverse(curnode, n))
     lastnode_ext = splitext(nodepath[-1])[1]
@@ -108,7 +101,7 @@ def dispatch_abstract(listnodes, is_dynamic, is_leaf, traverse, find_index, noex
             ext = lastnode_ext if lastnode_ext in wildleafs else None
             curnode, wildvals = wildleafs[ext]
             debug(lambda: "Wildcard leaf match %r and ext %r" % (curnode, ext))
-            return DispatchResult(DispatchStatus.okay, curnode, wildvals, "Found.", {}, True)
+            return DispatchResult(DispatchStatus.okay, curnode, wildvals, None)
         return None
 
     for depth, node in enumerate(nodepath):
@@ -154,23 +147,11 @@ def dispatch_abstract(listnodes, is_dynamic, is_leaf, traverse, find_index, noex
                         curnode = traverse(curnode, found_n)
                         node_name = found_n[1:-4]  # strip leading % and trailing .spt
                         wildvals[node_name] = node
-                        return DispatchResult( DispatchStatus.okay
-                                             , curnode
-                                             , wildvals
-                                             , "Found."
-                                             , {}
-                                             , True
-                                              )
+                        return DispatchResult(DispatchStatus.okay, curnode, wildvals, None)
             elif node in subnodes and is_leaf_node(node):
                 debug(lambda: "...found exact file, must be static")
                 if is_dynamic_node(node):
-                    return DispatchResult( DispatchStatus.missing
-                                         , None
-                                         , None
-                                         , "Node %r Not Found" % node
-                                         , {}
-                                         , True
-                                          )
+                    return DispatchResult(DispatchStatus.missing, None, None, None)
                 else:
                     found_n = node
             elif node + ".spt" in subnodes and is_leaf_node(node + ".spt"):
@@ -179,9 +160,9 @@ def dispatch_abstract(listnodes, is_dynamic, is_leaf, traverse, find_index, noex
             elif node_noext + ".spt" in subnodes and is_leaf_node(node_noext + ".spt") \
                     and node_ext:
                 # node has an extension
-                debug(lambda: "...found indirect spt")
+                debug(lambda: "...found indirect spt, extension is `%s`" % node_ext)
                 # indirect match - foo.spt is answering to foo.html
-                noext_matched(node)
+                extension = node_ext
                 found_n = node_noext + ".spt"
 
             if found_n is not None:
@@ -193,34 +174,16 @@ def dispatch_abstract(listnodes, is_dynamic, is_leaf, traverse, find_index, noex
                 curnode = traverse(curnode, found_n)
                 result = get_wildleaf_fallback()
                 if not result:
-                    return DispatchResult( DispatchStatus.non_leaf
-                                         , curnode
-                                         , None
-                                         , "Tried to access non-leaf node as leaf."
-                                         , {}
-                                         , True
-                                          )
+                    return DispatchResult(DispatchStatus.non_leaf, curnode, None, None)
                 return result
             elif node in subnodes:
                 debug(lambda: "exact dirmatch")
-                return DispatchResult( DispatchStatus.non_leaf
-                                     , curnode
-                                     , None
-                                     , "Tried to access non-leaf node as leaf."
-                                     , {}
-                                     , True
-                                      )
+                return DispatchResult(DispatchStatus.non_leaf, curnode, None, None)
             else:
                 debug(lambda: "fallthrough")
                 result = get_wildleaf_fallback()
                 if not result:
-                    return DispatchResult( DispatchStatus.missing
-                                         , None
-                                         , None
-                                         , "Node %r Not Found" % node
-                                         , {}
-                                         , True
-                                          )
+                    return DispatchResult(DispatchStatus.missing, None, None, None)
                 return result
 
         if not last_node:  # not at last path seg in request
@@ -240,16 +203,10 @@ def dispatch_abstract(listnodes, is_dynamic, is_leaf, traverse, find_index, noex
                 debug(lambda: "No exact match for " + repr(node))
                 result = get_wildleaf_fallback()
                 if not result:
-                    return DispatchResult( DispatchStatus.missing
-                                         , None
-                                         , None
-                                         , "Node %r Not Found" % node
-                                         , {}
-                                         , True
-                                          )
+                    return DispatchResult(DispatchStatus.missing, None, None, None)
                 return result
 
-    return DispatchResult(DispatchStatus.okay, curnode, wildvals, "Found.", {}, True)
+    return DispatchResult(DispatchStatus.okay, curnode, wildvals, extension)
 
 
 def match_index(indices, indir):
@@ -271,12 +228,6 @@ def is_first_index(indices, basedir, name):
     return False
 
 
-def update_neg_type(capture_accept, filename):
-    media_type = mimetypes.guess_type(filename, strict=False)[0] or ''
-    capture_accept['accept'] = media_type
-    debug(lambda: "set result.extra['accept'] to %r" % media_type)
-
-
 def dispatch(indices, is_dynamic, pathparts, uripath, startdir):
     """Concretize dispatch_abstract.
     """
@@ -284,12 +235,10 @@ def dispatch(indices, is_dynamic, pathparts, uripath, startdir):
     # Set up the real environment for the dispatcher.
     # ===============================================
 
-    capture_accept = {}
     listnodes = os.listdir
     is_leaf = os.path.isfile
     traverse = os.path.join
     find_index = lambda x: match_index(indices, x)
-    noext_matched = lambda x: update_neg_type(capture_accept, x)
 
 
     # Dispatch!
@@ -300,15 +249,11 @@ def dispatch(indices, is_dynamic, pathparts, uripath, startdir):
                               , is_leaf
                               , traverse
                               , find_index
-                              , noext_matched
                               , startdir
                               , pathparts
                                )
 
     debug(lambda: "dispatch_abstract returned: " + repr(result))
-
-    if 'accept' in capture_accept:
-        result.extra['accept'] = capture_accept['accept']
 
     if result.match:
         debug(lambda: "result.match is true" )
@@ -344,7 +289,7 @@ def dispatch(indices, is_dynamic, pathparts, uripath, startdir):
     # Protect against escaping the www_root.
     # ======================================
 
-    if result.constrain_path and not result.match.startswith(startdir):
+    if not result.match.startswith(startdir):
         raise exceptions.AttemptedBreakout()
 
     return result
