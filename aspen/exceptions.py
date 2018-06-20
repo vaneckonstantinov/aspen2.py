@@ -27,11 +27,6 @@ class ConfigurationError(Exception):
         return self.msg
 
 
-class LoadError(Exception):
-    """Represent a problem loading a resource.
-    """
-
-
 class NegotiationFailure(Exception):
 
     def __init__(self, accept, available_types):
