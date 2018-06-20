@@ -92,14 +92,15 @@ def dispatch_abstract(listnodes, is_dynamic, is_leaf, traverse, find_index, star
     isfile(virtual-no-extension) then isdir(virtual)
 
     """
+    nodepath = nodepath[:]  # copy it so we can mutate it if necessary
     wildvals, wildleafs = {}, {}
     curnode = startnode
-    extension = None
+    extension, canonical = None, None
     is_dynamic_node = lambda n: is_dynamic(traverse(curnode, n))
     is_leaf_node = lambda n: is_leaf(traverse(curnode, n))
-    lastnode_ext = splitext(nodepath[-1])[1]
 
     def get_wildleaf_fallback():
+        lastnode_ext = splitext(nodepath[-1])[1]
         wildleaf_fallback = lastnode_ext in wildleafs or None in wildleafs
         if wildleaf_fallback:
             ext = lastnode_ext if lastnode_ext in wildleafs else None
@@ -142,22 +143,31 @@ def dispatch_abstract(listnodes, is_dynamic, is_leaf, traverse, find_index, star
             if node == '':  # dir request
                 debug(lambda: "...last node is empty")
                 path_so_far = traverse(curnode, node)
-                # return either an index file or have the path end in '/' which means 404
-                found_n = find_index(path_so_far)
-                if found_n is None:
-                    found_n = ""
-                    if wild_leaf_ns:
-                        found_n = wild_leaf_ns[0]
-                        curnode = traverse(curnode, found_n)
-                        node_name = found_n[1:-4]  # strip leading % and trailing .spt
-                        wildvals[node_name] = node
-                        return DispatchResult(DispatchStatus.okay, curnode, wildvals, None, None)
+                status = DispatchStatus.okay if canonical is None else DispatchStatus.non_leaf
+                index = find_index(path_so_far)
+                if index:
+                    debug(lambda: "found index: %r" % index)
+                    return DispatchResult(status, index, wildvals, None, canonical)
+                if wild_leaf_ns:
+                    found_n = wild_leaf_ns[0]
+                    debug(lambda: "found wild leaf: %r" % found_n)
+                    curnode = traverse(curnode, found_n)
+                    node_name = found_n[1:-4]  # strip leading % and trailing .spt
+                    wildvals[node_name] = node
+                    return DispatchResult(status, curnode, wildvals, None, canonical)
+                debug(lambda: "no match")
+                return DispatchResult(
+                    DispatchStatus.unindexed, curnode + os.path.sep, None, None, canonical
+                )
             elif node in subnodes and is_leaf_node(node):
                 debug(lambda: "...found exact file, must be static")
                 if is_dynamic_node(node):
                     return MISSING
                 else:
                     found_n = node
+                    if find_index(curnode) == traverse(curnode, node):
+                        # The canonical path of `/index.html` is `/`
+                        canonical = '/' + '/'.join(nodepath)[:-len(node)]
             elif node + ".spt" in subnodes and is_leaf_node(node + ".spt"):
                 debug(lambda: "...found exact spt")
                 found_n = node + ".spt"
@@ -174,15 +184,17 @@ def dispatch_abstract(listnodes, is_dynamic, is_leaf, traverse, find_index, star
                 curnode = traverse(curnode, found_n)
             elif wild_nonleaf_ns:
                 debug(lambda: "wild_nonleaf_ns")
-                found_n = wild_nonleaf_ns[0]
-                curnode = traverse(curnode, found_n)
                 result = get_wildleaf_fallback()
-                if not result:
-                    return DispatchResult(DispatchStatus.non_leaf, curnode, None, None, None)
-                return result
+                if result:
+                    return result
+                curnode = traverse(curnode, wild_nonleaf_ns[0])
+                nodepath.append('')
+                canonical = '/' + '/'.join(nodepath)
             elif node in subnodes:
                 debug(lambda: "exact dirmatch")
-                return DispatchResult(DispatchStatus.non_leaf, curnode, None, None, None)
+                curnode = traverse(curnode, node)
+                nodepath.append('')
+                canonical = '/' + '/'.join(nodepath)
             else:
                 debug(lambda: "fallthrough")
                 result = get_wildleaf_fallback()
@@ -210,7 +222,7 @@ def dispatch_abstract(listnodes, is_dynamic, is_leaf, traverse, find_index, star
                     return MISSING
                 return result
 
-    return DispatchResult(DispatchStatus.okay, curnode, wildvals, extension, None)
+    return DispatchResult(DispatchStatus.okay, curnode, wildvals, extension, canonical)
 
 
 def match_index(indices, indir):
@@ -258,24 +270,5 @@ def dispatch(indices, is_dynamic, pathparts, uripath, startdir):
     if result.match and not result.match.startswith(startdir):
         # Attempted breakout, e.g. a request for `/../secrets`
         return MISSING
-
-    # Handle returned states.
-    if result.status == DispatchStatus.okay:
-        if result.match.endswith(os.path.sep):
-            return result._replace(status=DispatchStatus.unindexed)
-
-        # Detect non-canonical path of index page.
-        matchbase, matchname = result.match.rsplit(os.path.sep,1)
-        if pathparts[-1] != '' and matchname in indices and \
-                is_first_index(indices, matchbase, matchname):
-            debug( lambda: "found default index '%s' maps into %r"
-                 % (pathparts[-1], indices)
-                  )
-            location = uripath[:-len(pathparts[-1])]
-            return result._replace(canonical=location)
-
-    elif result.status == DispatchStatus.non_leaf:
-        location = uripath + '/'
-        return result._replace(canonical=location)
 
     return result
