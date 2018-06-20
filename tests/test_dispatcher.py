@@ -64,7 +64,7 @@ def test_dispatcher_returns_unindexed_for_unindexed_directory(harness):
                            , startdir              = harness.fs.www.root
                             )
     assert r.status == dispatcher.DispatchStatus.unindexed
-    assert r.match == harness.fs.www.root + '/'
+    assert r.match == harness.fs.www.root + os.path.sep
 
 
 # Indices
