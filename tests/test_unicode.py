@@ -4,12 +4,11 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-from aspen.resources import LoadError
 from pytest import raises
 
 
 def test_non_ascii_bytes_fail_without_encoding(harness):
-    raises(LoadError, harness.simple, ("""
+    raises(UnicodeDecodeError, harness.simple, ("""
         [------------------]
         text = u'א'
         [------------------]
