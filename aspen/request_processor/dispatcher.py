@@ -8,6 +8,8 @@ import posixpath
 from collections import namedtuple
 from functools import reduce
 
+from ..utils import Constant
+
 
 def debug_noop(*args, **kwargs):
     pass
@@ -50,12 +52,14 @@ class DispatchStatus(object):
     missing - no matching file found
     unindexed - found a matching node, but it's a directory without an index
     """
-    okay, missing, unindexed = range(3)
+    okay = Constant('okay')
+    missing = Constant('missing')
+    unindexed = Constant('unindexed')
 
 
 DispatchResult = namedtuple('DispatchResult', 'status match wildcards extension canonical')
 """
-    status - A DispatchStatus object encoding the overall result
+    status - A DispatchStatus constant encoding the overall result
     match - the matching path (if status != 'missing')
     wildcards - a dict of whose keys are wildcard path parts, and values are as supplied by the path
     extension - e.g. `json` when `foo.spt` is matched to `foo.json`
