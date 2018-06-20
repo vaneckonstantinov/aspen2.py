@@ -5,7 +5,7 @@ import posixpath
 
 import pytest
 
-from aspen import exceptions
+from aspen.request_processor.dispatcher import DispatchStatus
 from aspen.testing import Harness
 
 tablefile = os.path.join(os.path.dirname(__file__), 'dispatch_table_data.rst')
@@ -95,14 +95,10 @@ def test_all_table_entries(harness, files, request_uri, expected):
     # set up the specified files
     realfiles = tuple([ f if f.endswith('/') else (f, GENERIC_SPT) for f in files ])
     harness.fs.www.mk(*realfiles)
-    try:
-        state = harness._hit('GET', request_uri, want='state',
-                             return_after='dispatch_path_to_filesystem')
-    except exceptions.NotFound:
-        result = '404'
-    except exceptions.Redirect as err:
-        result = '302 ' + err.message
-    else:
+    state = harness._hit('GET', request_uri, want='state',
+                         return_after='dispatch_path_to_filesystem')
+    dispatch_result = state['dispatch_result']
+    if dispatch_result.status == DispatchStatus.okay:
         result = '200'
         path = format_result(**state)
         if os.sep != posixpath.sep:
@@ -110,6 +106,10 @@ def test_all_table_entries(harness, files, request_uri, expected):
         path = path[len(harness.fs.www.root)+1:]
         if path:
             result += " " + path
+    elif dispatch_result.canonical:
+        result = '302 ' + dispatch_result.canonical
+    else:
+        result = '404'
     if expected.endswith("*"):
         expected = expected[:-1]
     assert result == expected, "Requesting %r, got %r instead of %r" % (request_uri, result, expected)

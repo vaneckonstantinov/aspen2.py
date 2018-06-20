@@ -7,7 +7,6 @@ import os
 import posixpath
 from collections import namedtuple
 from functools import reduce
-from .. import exceptions
 
 
 def debug_noop(*args, **kwargs):
@@ -50,17 +49,22 @@ class DispatchStatus(object):
     okay - found a matching leaf node
     missing - no matching file found
     non_leaf - found a matching node, but it's a non-leaf node
+    unindexed - found a matching node, but it's a directory without an index
     """
-    okay, missing, non_leaf = range(3)
+    okay, missing, non_leaf, unindexed = range(4)
 
 
-DispatchResult = namedtuple('DispatchResult', 'status match wildcards extension')
+DispatchResult = namedtuple('DispatchResult', 'status match wildcards extension canonical')
 """
     status - A DispatchStatus object encoding the overall result
     match - the matching path (if status != 'missing')
     wildcards - a dict of whose keys are wildcard path parts, and values are as supplied by the path
     extension - e.g. `json` when `foo.spt` is matched to `foo.json`
+    canonical - the canonical path of the resource, e.g. `/` for `/index.html`
 """
+
+
+MISSING = DispatchResult(DispatchStatus.missing, None, None, None, None)
 
 
 def dispatch_abstract(listnodes, is_dynamic, is_leaf, traverse, find_index, startnode, nodepath):
@@ -101,7 +105,7 @@ def dispatch_abstract(listnodes, is_dynamic, is_leaf, traverse, find_index, star
             ext = lastnode_ext if lastnode_ext in wildleafs else None
             curnode, wildvals = wildleafs[ext]
             debug(lambda: "Wildcard leaf match %r and ext %r" % (curnode, ext))
-            return DispatchResult(DispatchStatus.okay, curnode, wildvals, None)
+            return DispatchResult(DispatchStatus.okay, curnode, wildvals, None, None)
         return None
 
     for depth, node in enumerate(nodepath):
@@ -147,11 +151,11 @@ def dispatch_abstract(listnodes, is_dynamic, is_leaf, traverse, find_index, star
                         curnode = traverse(curnode, found_n)
                         node_name = found_n[1:-4]  # strip leading % and trailing .spt
                         wildvals[node_name] = node
-                        return DispatchResult(DispatchStatus.okay, curnode, wildvals, None)
+                        return DispatchResult(DispatchStatus.okay, curnode, wildvals, None, None)
             elif node in subnodes and is_leaf_node(node):
                 debug(lambda: "...found exact file, must be static")
                 if is_dynamic_node(node):
-                    return DispatchResult(DispatchStatus.missing, None, None, None)
+                    return MISSING
                 else:
                     found_n = node
             elif node + ".spt" in subnodes and is_leaf_node(node + ".spt"):
@@ -174,16 +178,16 @@ def dispatch_abstract(listnodes, is_dynamic, is_leaf, traverse, find_index, star
                 curnode = traverse(curnode, found_n)
                 result = get_wildleaf_fallback()
                 if not result:
-                    return DispatchResult(DispatchStatus.non_leaf, curnode, None, None)
+                    return DispatchResult(DispatchStatus.non_leaf, curnode, None, None, None)
                 return result
             elif node in subnodes:
                 debug(lambda: "exact dirmatch")
-                return DispatchResult(DispatchStatus.non_leaf, curnode, None, None)
+                return DispatchResult(DispatchStatus.non_leaf, curnode, None, None, None)
             else:
                 debug(lambda: "fallthrough")
                 result = get_wildleaf_fallback()
                 if not result:
-                    return DispatchResult(DispatchStatus.missing, None, None, None)
+                    return MISSING
                 return result
 
         if not last_node:  # not at last path seg in request
@@ -203,10 +207,10 @@ def dispatch_abstract(listnodes, is_dynamic, is_leaf, traverse, find_index, star
                 debug(lambda: "No exact match for " + repr(node))
                 result = get_wildleaf_fallback()
                 if not result:
-                    return DispatchResult(DispatchStatus.missing, None, None, None)
+                    return MISSING
                 return result
 
-    return DispatchResult(DispatchStatus.okay, curnode, wildvals, extension)
+    return DispatchResult(DispatchStatus.okay, curnode, wildvals, extension, None)
 
 
 def match_index(indices, indir):
@@ -233,17 +237,12 @@ def dispatch(indices, is_dynamic, pathparts, uripath, startdir):
     """
 
     # Set up the real environment for the dispatcher.
-    # ===============================================
-
     listnodes = os.listdir
     is_leaf = os.path.isfile
     traverse = os.path.join
     find_index = lambda x: match_index(indices, x)
 
-
     # Dispatch!
-    # =========
-
     result = dispatch_abstract( listnodes
                               , is_dynamic
                               , is_leaf
@@ -255,41 +254,28 @@ def dispatch(indices, is_dynamic, pathparts, uripath, startdir):
 
     debug(lambda: "dispatch_abstract returned: " + repr(result))
 
-    if result.match:
-        debug(lambda: "result.match is true" )
+    # Protect against escaping the www_root.
+    if result.match and not result.match.startswith(startdir):
+        # Attempted breakout, e.g. a request for `/../secrets`
+        return MISSING
+
+    # Handle returned states.
+    if result.status == DispatchStatus.okay:
+        if result.match.endswith(os.path.sep):
+            return result._replace(status=DispatchStatus.unindexed)
+
+        # Detect non-canonical path of index page.
         matchbase, matchname = result.match.rsplit(os.path.sep,1)
         if pathparts[-1] != '' and matchname in indices and \
                 is_first_index(indices, matchbase, matchname):
-            # asked for something that maps to a default index file; redirect to / per issue #175
             debug( lambda: "found default index '%s' maps into %r"
                  % (pathparts[-1], indices)
                   )
             location = uripath[:-len(pathparts[-1])]
-            raise exceptions.RedirectFromIndexFilename(location)
+            return result._replace(canonical=location)
 
-
-    # Handle returned states.
-    # =======================
-
-    if result.status == DispatchStatus.okay:
-        if result.match.endswith(os.path.sep):
-            raise exceptions.UnindexedDirectory(result.match)
-
-    elif result.status == DispatchStatus.non_leaf:                                # trailing slash
+    elif result.status == DispatchStatus.non_leaf:
         location = uripath + '/'
-        raise exceptions.RedirectFromSlashless(location)
-
-    elif result.status == DispatchStatus.missing:                                 # 404
-        raise exceptions.NotFound()
-
-    else:
-        raise exceptions.DispatchError("Unknown result status.")
-
-
-    # Protect against escaping the www_root.
-    # ======================================
-
-    if not result.match.startswith(startdir):
-        raise exceptions.AttemptedBreakout()
+        return result._replace(canonical=location)
 
     return result
