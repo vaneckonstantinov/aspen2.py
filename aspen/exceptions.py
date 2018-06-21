@@ -49,3 +49,18 @@ class TypecastError(Exception):
 class NotFound(NegotiationFailure):
     def __init__(self, message=''):
         self.message = message or "not found"
+
+
+class SlugCollision(Exception):
+    """Raised if two files claim the same URL path.
+
+    Example: `www/foo.html` and `www/foo.html.spt` both claim `/foo.html`
+    """
+
+class WildcardCollision(Exception):
+    """Raised if a filesystem path contains multiple wildcards with the same name.
+
+    Examples:
+    - `www/%foo/%foo/index.spt`
+    - `www/%foo/bar/%foo.spt`
+    """
