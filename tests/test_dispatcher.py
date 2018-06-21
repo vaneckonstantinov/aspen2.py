@@ -3,11 +3,12 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+from inspect import isclass
 import os
-from pytest import raises
+import pytest
 
-from aspen import exceptions
-from aspen.request_processor import dispatcher
+import aspen
+from aspen.request_processor.dispatcher import Dispatcher, DispatchStatus
 
 
 # Helpers
@@ -19,7 +20,7 @@ def assert_fs(harness, ask_uri, expect_fs):
 
 def assert_missing(harness, request_path):
     result = harness.simple(uripath=request_path, filepath=None, want='dispatch_result')
-    assert result.status == dispatcher.DispatchStatus.missing
+    assert result.status == DispatchStatus.missing
     assert result.match is None
 
 def assert_canonical(harness, request_path, canonical_path):
@@ -47,26 +48,35 @@ Greetings, program!
 # dispatcher.dispatch
 # ===================
 
-def test_dispatcher_returns_a_result(harness):
+DISPATCHER_CLASSES = [
+    o for o in aspen.request_processor.dispatcher.__dict__.values()
+    if isclass(o) and issubclass(o, Dispatcher) and o != Dispatcher
+]
+
+@pytest.mark.parametrize('dispatcher_class', DISPATCHER_CLASSES)
+def test_dispatcher_returns_a_result(harness, dispatcher_class):
     harness.fs.www.mk(('index.html', 'Greetings, program!'),)
-    result = dispatcher.dispatch( indices               = ['index.html']
-                                , is_dynamic            = lambda n: n.endswith('.spt')
-                                , pathparts             = ['']
-                                , uripath               = '/'
-                                , startdir              = harness.fs.www.root
-                                 )
-    assert result.status == dispatcher.DispatchStatus.okay
+    dispatcher = dispatcher_class(
+        www_root    = harness.fs.www.root,
+        is_dynamic  = lambda n: n.endswith('.spt'),
+        indices     = ['index.html'],
+        typecasters = {},
+    )
+    result = dispatcher.dispatch('/', [''])
+    assert result.status == DispatchStatus.okay
     assert result.match == os.path.join(harness.fs.www.root, 'index.html')
     assert result.wildcards == {}
 
-def test_dispatcher_returns_unindexed_for_unindexed_directory(harness):
-    r = dispatcher.dispatch( indices               = []
-                           , is_dynamic            = lambda n: n.endswith('.spt')
-                           , pathparts             = ['']
-                           , uripath               = '/'
-                           , startdir              = harness.fs.www.root
-                            )
-    assert r.status == dispatcher.DispatchStatus.unindexed
+@pytest.mark.parametrize('dispatcher_class', DISPATCHER_CLASSES)
+def test_dispatcher_returns_unindexed_for_unindexed_directory(harness, dispatcher_class):
+    dispatcher = dispatcher_class(
+        www_root    = harness.fs.www.root,
+        is_dynamic  = lambda n: n.endswith('.spt'),
+        indices     = [],
+        typecasters = {},
+    )
+    r = dispatcher.dispatch('/', [''])
+    assert r.status == DispatchStatus.unindexed
     assert r.match == harness.fs.www.root + os.path.sep
 
 
@@ -90,7 +100,7 @@ def test_negotiated_index_is_found(harness):
 
 def test_alternate_index_is_not_found(harness):
     result = harness.simple(uripath='/', filepath=None, want='dispatch_result')
-    assert result.status == dispatcher.DispatchStatus.unindexed
+    assert result.status == DispatchStatus.unindexed
 
 def test_alternate_index_is_found(harness):
     harness.request_processor.indices += ["default.html"]
@@ -98,40 +108,40 @@ def test_alternate_index_is_found(harness):
     assert_fs(harness, '/', 'default.html')
 
 def test_configure_aspen_py_setting_override_works_too(harness):
-    harness.request_processor.indices = ["default.html"]
+    harness.hydrate_request_processor(indices=["default.html"])
     harness.fs.www.mk(('index.html', "Greetings, program!"),)
     result = harness.simple(uripath='/', filepath=None, want='dispatch_result')
-    assert result.status == dispatcher.DispatchStatus.unindexed
+    assert result.status == DispatchStatus.unindexed
 
 def test_configure_aspen_py_setting_takes_first(harness):
-    harness.request_processor.indices = ["index.html", "default.html"]
+    harness.hydrate_request_processor(indices=["index.html", "default.html"])
     harness.fs.www.mk( ('index.html', "Greetings, program!")
                      , ('default.html', "Greetings, program!")
                       )
     assert_fs(harness, '/', 'index.html')
 
 def test_configure_aspen_py_setting_takes_second_if_first_is_missing(harness):
-    harness.request_processor.indices = ["index.html", "default.html"]
+    harness.hydrate_request_processor(indices=["index.html", "default.html"])
     harness.fs.www.mk(('default.html', "Greetings, program!"),)
     assert_fs(harness, '/', 'default.html')
 
 def test_configure_aspen_py_setting_strips_commas(harness):
-    harness.request_processor.indices = ["index.html", "default.html"]
+    harness.hydrate_request_processor(indices=["index.html", "default.html"])
     harness.fs.www.mk(('default.html', "Greetings, program!"),)
     assert_fs(harness, '/', 'default.html')
 
 def test_redirect_indices_to_slash(harness):
-    harness.request_processor.indices = ["index.html", "default.html"]
+    harness.hydrate_request_processor(indices=["index.html", "default.html"])
     harness.fs.www.mk(('index.html', "Greetings, program!"),)
     assert_canonical(harness, '/index.html', '/')
 
 def test_redirect_second_index_to_slash(harness):
-    harness.request_processor.indices = ["index.html", "default.html"]
+    harness.hydrate_request_processor(indices=["index.html", "default.html"])
     harness.fs.www.mk(('default.html', "Greetings, program!"),)
     assert_canonical(harness, '/default.html', '/')
 
 def test_dont_redirect_second_index_if_first(harness):
-    harness.request_processor.indices = ["index.html", "default.html"]
+    harness.hydrate_request_processor(indices=["index.html", "default.html"])
     harness.fs.www.mk(('default.html', "Greetings, program!"), ('index.html', "Greetings, program!"),)
     # first index redirects
     assert_canonical(harness, '/index.html', '/')
@@ -213,7 +223,8 @@ def test_virtual_path_typecasts_to_int(harness):
 
 def test_virtual_path_raises_on_bad_typecast(harness):
     harness.fs.www.mk(('%year.int/foo.html', "Greetings, program!"),)
-    raises(exceptions.TypecastError, assert_fs, harness, '/I am not a year./foo.html', '')
+    with pytest.raises(aspen.exceptions.TypecastError):
+        assert_fs(harness, '/I am not a year./foo.html', '')
 
 def test_virtual_path_raises_on_direct_access(harness):
     assert_missing(harness, '/%name/foo.html')
@@ -321,7 +332,7 @@ def test_dispatcher_passes_through_virtual_dir_with_trailing_slash(harness):
 def test_dispatcher_redirects_dir_without_trailing_slash(harness):
     harness.fs.www.mk('foo',)
     result = dispatch(harness, '/foo')
-    assert result.status == dispatcher.DispatchStatus.unindexed
+    assert result.status == DispatchStatus.unindexed
     assert result.match == harness.fs.www.resolve('foo') + os.path.sep
     assert result.canonical == '/foo/'
 
