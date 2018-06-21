@@ -5,7 +5,9 @@ import posixpath
 
 import pytest
 
-from aspen.request_processor.dispatcher import DispatchStatus
+from aspen.request_processor.dispatcher import (
+    DispatchStatus, SystemDispatcher, UserlandDispatcher
+)
 from aspen.testing import Harness
 
 tablefile = os.path.join(os.path.dirname(__file__), 'dispatch_table_data.rst')
@@ -65,13 +67,15 @@ def get_table_entries():
 
     # We 'know' that table[0] == table[2], both header deflines, so skip down
     results = []
-    for line in table[3:]:
-        if line.strip() == tabledefline: break # found ending header, ignore the rest
-        if line.strip().startswith('#'): continue # skip comment lines
-        fields = fields_from(line, cols)
-        files = [ x for i, x in enumerate(inputfiles) if fields[i] == 'X' ]
-        expected = fields[len(inputfiles):]
-        results += [ (files, r, expected[i]) for i, r in enumerate(requests) ]
+    for dispatcher_cls in [SystemDispatcher, UserlandDispatcher]:
+        for line in table[3:]:
+            if line.strip() == tabledefline: break # found ending header, ignore the rest
+            if line.strip().startswith('#'): continue # skip comment lines
+            fields = fields_from(line, cols)
+            files = [ x for i, x in enumerate(inputfiles) if fields[i] == 'X' ]
+            expected = fields[len(inputfiles):]
+            results += [ (files, r, expected[i], dispatcher_cls)
+                         for i, r in enumerate(requests) ]
     return results
 
 def format_result(path, dispatch_result=None, **ignored):
@@ -90,11 +94,12 @@ GENERIC_SPT = """
 Greetings, Program!
 """
 
-@pytest.mark.parametrize("files,request_uri,expected", get_table_entries())
-def test_all_table_entries(harness, files, request_uri, expected):
+@pytest.mark.parametrize("files,request_uri,expected,dispatcher_cls", get_table_entries())
+def test_all_table_entries(harness, files, request_uri, expected, dispatcher_cls):
     # set up the specified files
     realfiles = tuple([ f if f.endswith('/') else (f, GENERIC_SPT) for f in files ])
     harness.fs.www.mk(*realfiles)
+    harness.hydrate_request_processor(dispatcher_class=dispatcher_cls)
     state = harness._hit('GET', request_uri, want='state',
                          return_after='dispatch_path_to_filesystem')
     dispatch_result = state['dispatch_result']
