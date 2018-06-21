@@ -3,10 +3,10 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import os
-import posixpath
 from collections import namedtuple
 from functools import reduce
+import os
+import posixpath
 
 from ..utils import Constant
 
@@ -61,7 +61,7 @@ DispatchResult = namedtuple('DispatchResult', 'status match wildcards extension 
 """
     status - A DispatchStatus constant encoding the overall result
     match - the matching path (if status != 'missing')
-    wildcards - a dict of whose keys are wildcard path parts, and values are as supplied by the path
+    wildcards - a dict whose keys are wildcard names, and values are as supplied by the path
     extension - e.g. `json` when `foo.spt` is matched to `foo.json`
     canonical - the canonical path of the resource, e.g. `/` for `/index.html`
 """
