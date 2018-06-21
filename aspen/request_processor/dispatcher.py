@@ -70,7 +70,70 @@ DispatchResult = namedtuple('DispatchResult', 'status match wildcards extension 
 MISSING = DispatchResult(DispatchStatus.missing, None, None, None, None)
 
 
-def dispatch_abstract(listnodes, is_dynamic, is_leaf, traverse, find_index, startnode, nodepath):
+class Dispatcher(object):
+    """The abstract base class of dispatchers.
+
+    :param www_root: the absolute path to a filesystem directory
+    :param is_dynamic: a function that takes a file name and returns a boolean
+    :param indices: a list of filenames that should be treated as directory indexes
+    :param typecasters: a dict of typecasters, keys are strings and values are functions
+    """
+
+    def __init__(self, www_root, is_dynamic, indices, typecasters, **kw):
+        self.www_root = os.path.realpath(www_root)
+        self.is_dynamic = is_dynamic
+        self.indices = indices
+        self.typecasters = typecasters
+        self.__dict__.update(kw)
+        self.build_dispatch_tree()
+
+    def build_dispatch_tree(self):
+        """Abstract method called by :meth:`.__init__` to build the dispatch tree.
+        """
+        raise NotImplementedError('abstract method')
+
+    def dispatch(self, path, path_segments):
+        """Dispatch a request.
+
+        :param str path: the request path, e.g. ``'/'``
+        :param list path_segments: the path split into segments, e.g. ``['']``
+        """
+        raise NotImplementedError('abstract method')
+
+    def find_index(self, dirpath):
+        """Looks for an index file in a directory.
+        """
+        return _match_index(self.indices, dirpath)
+
+
+class SystemDispatcher(Dispatcher):
+    """Aspen's legacy dispatcher, not optimized for production use.
+    """
+
+    def build_dispatch_tree(self):
+        """This method does nothing.
+        """
+        pass
+
+    def dispatch(self, path, path_segments):
+        listnodes = os.listdir
+        is_leaf = os.path.isfile
+        traverse = os.path.join
+        result = _dispatch_abstract(
+            listnodes, self.is_dynamic, is_leaf, traverse, self.find_index,
+            self.www_root, path_segments,
+        )
+        debug(lambda: "dispatch_abstract returned: " + repr(result))
+
+        # Protect against escaping the www_root.
+        if result.match and not result.match.startswith(self.www_root):
+            # Attempted breakout, e.g. a request for `/../secrets`
+            return MISSING
+
+        return result
+
+
+def _dispatch_abstract(listnodes, is_dynamic, is_leaf, traverse, find_index, startnode, nodepath):
     """Given a list of nodenames (in 'nodepath'), return a DispatchResult.
 
     We try to traverse the directed graph rooted at 'startnode' using the
@@ -227,50 +290,10 @@ def dispatch_abstract(listnodes, is_dynamic, is_leaf, traverse, find_index, star
     return DispatchResult(DispatchStatus.okay, curnode, wildvals, extension, canonical)
 
 
-def match_index(indices, indir):
+def _match_index(indices, indir):
     """return the full path of the first index in indir, or None if not found"""
     for filename in indices:
         index = os.path.join(indir, filename)
         if os.path.isfile(index):
             return index
     return None
-
-
-def is_first_index(indices, basedir, name):
-    """is the supplied name the first existing index in the basedir ?"""
-    for i in indices:
-        if i == name:
-            return True
-        if os.path.isfile(os.path.join(basedir, i)):
-            return False
-    return False
-
-
-def dispatch(indices, is_dynamic, pathparts, uripath, startdir):
-    """Concretize dispatch_abstract.
-    """
-
-    # Set up the real environment for the dispatcher.
-    listnodes = os.listdir
-    is_leaf = os.path.isfile
-    traverse = os.path.join
-    find_index = lambda x: match_index(indices, x)
-
-    # Dispatch!
-    result = dispatch_abstract( listnodes
-                              , is_dynamic
-                              , is_leaf
-                              , traverse
-                              , find_index
-                              , startdir
-                              , pathparts
-                               )
-
-    debug(lambda: "dispatch_abstract returned: " + repr(result))
-
-    # Protect against escaping the www_root.
-    if result.match and not result.match.startswith(startdir):
-        # Attempted breakout, e.g. a request for `/../secrets`
-        return MISSING
-
-    return result

@@ -3,7 +3,7 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-from . import dispatcher, typecasting
+from . import typecasting
 from .dispatcher import DispatchStatus
 from .. import resources
 from ..http.request import Path, Querystring
@@ -17,13 +17,8 @@ def hydrate_querystring(querystring):
     return {'querystring': Querystring(querystring)}
 
 
-def dispatch_path_to_filesystem(request_processor, path, querystring):
-    result = dispatcher.dispatch( indices               = request_processor.indices
-                                , is_dynamic            = request_processor.is_dynamic
-                                , pathparts             = path.parts
-                                , uripath               = path.decoded
-                                , startdir              = request_processor.www_root
-                                 )
+def dispatch_path_to_filesystem(request_processor, path):
+    result = request_processor.dispatcher.dispatch(path.decoded, path.parts)
     if result.wildcards:
         for k, v in result.wildcards.items():
             path[k] = v

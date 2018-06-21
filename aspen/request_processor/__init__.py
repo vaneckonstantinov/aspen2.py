@@ -25,6 +25,7 @@ from collections import defaultdict
 
 from algorithm import Algorithm
 
+from .dispatcher import SystemDispatcher
 from .typecasting import defaults as default_typecasters
 from ..http.resource import Static
 from ..exceptions import ConfigurationError
@@ -40,6 +41,7 @@ default_indices = [
 KNOBS = {
     'changes_reload': False,
     'charset_static': None,
+    'dispatcher_class': SystemDispatcher,
     'encode_output_as': 'UTF-8',
     'indices': default_indices,
     'media_type_default': 'text/plain',
@@ -152,6 +154,11 @@ class RequestProcessor(object):
 
         # set up dynamic class mapping
         self.dynamic_classes_by_file_extension = dict(spt=Simplate)
+
+        # create the dispatcher
+        self.dispatcher = self.dispatcher_class(
+            self.www_root, self.is_dynamic, self.indices, self.typecasters
+        )
 
         # mime.types
         # ==========
