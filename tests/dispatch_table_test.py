@@ -98,7 +98,9 @@ def test_all_table_entries(harness, files, request_uri, expected):
     state = harness._hit('GET', request_uri, want='state',
                          return_after='dispatch_path_to_filesystem')
     dispatch_result = state['dispatch_result']
-    if dispatch_result.status == DispatchStatus.okay:
+    if dispatch_result.canonical:
+        result = '302 ' + dispatch_result.canonical
+    elif dispatch_result.status == DispatchStatus.okay:
         result = '200'
         path = format_result(**state)
         if os.sep != posixpath.sep:
@@ -106,8 +108,6 @@ def test_all_table_entries(harness, files, request_uri, expected):
         path = path[len(harness.fs.www.root)+1:]
         if path:
             result += " " + path
-    elif dispatch_result.canonical:
-        result = '302 ' + dispatch_result.canonical
     else:
         result = '404'
     if expected.endswith("*"):

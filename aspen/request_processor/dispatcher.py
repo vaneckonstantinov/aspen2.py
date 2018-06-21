@@ -8,6 +8,8 @@ import posixpath
 from collections import namedtuple
 from functools import reduce
 
+from ..utils import Constant
+
 
 def debug_noop(*args, **kwargs):
     pass
@@ -48,15 +50,16 @@ class DispatchStatus(object):
     """
     okay - found a matching leaf node
     missing - no matching file found
-    non_leaf - found a matching node, but it's a non-leaf node
     unindexed - found a matching node, but it's a directory without an index
     """
-    okay, missing, non_leaf, unindexed = range(4)
+    okay = Constant('okay')
+    missing = Constant('missing')
+    unindexed = Constant('unindexed')
 
 
 DispatchResult = namedtuple('DispatchResult', 'status match wildcards extension canonical')
 """
-    status - A DispatchStatus object encoding the overall result
+    status - A DispatchStatus constant encoding the overall result
     match - the matching path (if status != 'missing')
     wildcards - a dict of whose keys are wildcard path parts, and values are as supplied by the path
     extension - e.g. `json` when `foo.spt` is matched to `foo.json`
@@ -143,18 +146,17 @@ def dispatch_abstract(listnodes, is_dynamic, is_leaf, traverse, find_index, star
             if node == '':  # dir request
                 debug(lambda: "...last node is empty")
                 path_so_far = traverse(curnode, node)
-                status = DispatchStatus.okay if canonical is None else DispatchStatus.non_leaf
                 index = find_index(path_so_far)
                 if index:
                     debug(lambda: "found index: %r" % index)
-                    return DispatchResult(status, index, wildvals, None, canonical)
+                    return DispatchResult(DispatchStatus.okay, index, wildvals, None, canonical)
                 if wild_leaf_ns:
                     found_n = wild_leaf_ns[0]
                     debug(lambda: "found wild leaf: %r" % found_n)
                     curnode = traverse(curnode, found_n)
                     node_name = found_n[1:-4]  # strip leading % and trailing .spt
                     wildvals[node_name] = node
-                    return DispatchResult(status, curnode, wildvals, None, canonical)
+                    return DispatchResult(DispatchStatus.okay, curnode, wildvals, None, canonical)
                 debug(lambda: "no match")
                 return DispatchResult(
                     DispatchStatus.unindexed, curnode + os.path.sep, None, None, canonical
