@@ -28,8 +28,7 @@ debug = debug_stdout if 'ASPEN_DEBUG' in os.environ else debug_noop
 
 
 def splitext(name):
-    parts = name.rsplit('.', 1) + [None]
-    return parts[:2]
+    return name.rsplit('.', 1) if '.' in name else [name, None]
 
 
 def strip_matching_ext(a, b):
