@@ -103,46 +103,46 @@ def test_alternate_index_is_not_found(harness):
     assert result.status == DispatchStatus.unindexed
 
 def test_alternate_index_is_found(harness):
-    harness.request_processor.indices += ["default.html"]
     harness.fs.www.mk(('default.html', "Greetings, program!"),)
+    harness.hydrate_request_processor(indices=["index.html", "default.html"])
     assert_fs(harness, '/', 'default.html')
 
 def test_configure_aspen_py_setting_override_works_too(harness):
-    harness.hydrate_request_processor(indices=["default.html"])
     harness.fs.www.mk(('index.html', "Greetings, program!"),)
+    harness.hydrate_request_processor(indices=["default.html"])
     result = harness.simple(uripath='/', filepath=None, want='dispatch_result')
     assert result.status == DispatchStatus.unindexed
 
 def test_configure_aspen_py_setting_takes_first(harness):
-    harness.hydrate_request_processor(indices=["index.html", "default.html"])
     harness.fs.www.mk( ('index.html', "Greetings, program!")
                      , ('default.html', "Greetings, program!")
                       )
+    harness.hydrate_request_processor(indices=["index.html", "default.html"])
     assert_fs(harness, '/', 'index.html')
 
 def test_configure_aspen_py_setting_takes_second_if_first_is_missing(harness):
-    harness.hydrate_request_processor(indices=["index.html", "default.html"])
     harness.fs.www.mk(('default.html', "Greetings, program!"),)
+    harness.hydrate_request_processor(indices=["index.html", "default.html"])
     assert_fs(harness, '/', 'default.html')
 
 def test_configure_aspen_py_setting_strips_commas(harness):
-    harness.hydrate_request_processor(indices=["index.html", "default.html"])
     harness.fs.www.mk(('default.html', "Greetings, program!"),)
+    harness.hydrate_request_processor(indices=["index.html", "default.html"])
     assert_fs(harness, '/', 'default.html')
 
 def test_redirect_indices_to_slash(harness):
-    harness.hydrate_request_processor(indices=["index.html", "default.html"])
     harness.fs.www.mk(('index.html', "Greetings, program!"),)
+    harness.hydrate_request_processor(indices=["index.html", "default.html"])
     assert_canonical(harness, '/index.html', '/')
 
 def test_redirect_second_index_to_slash(harness):
-    harness.hydrate_request_processor(indices=["index.html", "default.html"])
     harness.fs.www.mk(('default.html', "Greetings, program!"),)
+    harness.hydrate_request_processor(indices=["index.html", "default.html"])
     assert_canonical(harness, '/default.html', '/')
 
 def test_dont_redirect_second_index_if_first(harness):
-    harness.hydrate_request_processor(indices=["index.html", "default.html"])
     harness.fs.www.mk(('default.html', "Greetings, program!"), ('index.html', "Greetings, program!"),)
+    harness.hydrate_request_processor(indices=["index.html", "default.html"])
     # first index redirects
     assert_canonical(harness, '/index.html', '/')
     # second shouldn't
@@ -251,7 +251,7 @@ def test_virtual_path_file_only_last_part(harness):
     assert_fs(harness, '/foo/blah/baz.html', 'foo/%bar.html.spt')
 
 def test_virtual_path_file_only_last_part____no_really(harness):
-    harness.fs.www.mk(('foo/%bar.html', "Greetings, program!"),)
+    harness.fs.www.mk(('foo/%bar.html.spt', "Greetings, program!"),)
     assert_missing(harness, '/foo/blah.html/')
 
 def test_virtual_path_file_key_val_set(harness):
@@ -276,6 +276,11 @@ def test_virtual_path_file_not_dir(harness):
            )
     assert_fs(harness, '/bal.html', '%baz.html.spt')
 
+def test_static_files_are_not_wild(harness):
+    harness.fs.www.mk(('foo/%bar.html', "Greetings, program!"),)
+    assert_missing(harness, '/foo/blah.html')
+    assert_fs(harness, '/foo/%25bar.html', 'foo/%bar.html')
+
 # custom cast
 
 class User:
@@ -288,10 +293,10 @@ class User:
         return cls(name)
 
 def test_virtual_path_file_key_val_cast_custom(harness):
-    harness.request_processor.typecasters['user'] = User.toUser
     harness.fs.www.mk(( 'user/%user.user.html.spt'
                       , "[-----]\nusername=path['user']\n[-----]\nGreetings, %(username)s!"
                        ),)
+    harness.hydrate_request_processor(typecasters={'user': User.toUser})
     actual = harness.simple(filepath=None, uripath='/user/chad.html', want='path',
             return_after='apply_typecasters_to_path')
     assert actual['user'].username == 'chad'

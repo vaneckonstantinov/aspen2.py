@@ -25,7 +25,7 @@ from collections import defaultdict
 
 from algorithm import Algorithm
 
-from .dispatcher import SystemDispatcher
+from .dispatcher import UserlandDispatcher
 from .typecasting import defaults as default_typecasters
 from ..http.resource import Static
 from ..exceptions import ConfigurationError
@@ -41,7 +41,7 @@ default_indices = [
 KNOBS = {
     'changes_reload': False,
     'charset_static': None,
-    'dispatcher_class': SystemDispatcher,
+    'dispatcher_class': UserlandDispatcher,
     'encode_output_as': 'UTF-8',
     'indices': default_indices,
     'media_type_default': 'text/plain',
@@ -79,7 +79,7 @@ class RequestProcessor(object):
 
         # XXX register codecs here
 
-        self.typecasters = default_typecasters
+        self.typecasters = dict(kwargs.get('typecasters', default_typecasters))
 
 
         # Configure from defaults and kwargs.
