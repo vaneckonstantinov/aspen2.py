@@ -251,7 +251,7 @@ def test_virtual_path_file_only_last_part(harness):
     assert_fs(harness, '/foo/blah/baz.html', 'foo/%bar.html.spt')
 
 def test_virtual_path_file_only_last_part____no_really(harness):
-    harness.fs.www.mk(('foo/%bar.html', "Greetings, program!"),)
+    harness.fs.www.mk(('foo/%bar.html.spt', "Greetings, program!"),)
     assert_missing(harness, '/foo/blah.html/')
 
 def test_virtual_path_file_key_val_set(harness):
@@ -275,6 +275,11 @@ def test_virtual_path_file_not_dir(harness):
           , ('%baz.html.spt', NEGOTIATED_SIMPLATE)
            )
     assert_fs(harness, '/bal.html', '%baz.html.spt')
+
+def test_static_files_are_not_wild(harness):
+    harness.fs.www.mk(('foo/%bar.html', "Greetings, program!"),)
+    assert_missing(harness, '/foo/blah.html')
+    assert_fs(harness, '/foo/%25bar.html', 'foo/%bar.html')
 
 # custom cast
 
