@@ -113,9 +113,12 @@ class Harness(object):
         base = attr_path[0]
         attr_path = attr_path[1:]
 
-        out = state[base]
-        for name in attr_path:
-            out = getattr(out, name)
+        try:
+            out = state[base]
+            for name in attr_path:
+                out = getattr(out, name)
+        except (KeyError, AttributeError) as e:
+            raise e.__class__(str(e) + '\nDebug info: out = ' + repr(out))
 
         return out
 
