@@ -79,7 +79,7 @@ class RequestProcessor(object):
 
         # XXX register codecs here
 
-        self.typecasters = default_typecasters
+        self.typecasters = dict(kwargs.get('typecasters', default_typecasters))
 
 
         # Configure from defaults and kwargs.

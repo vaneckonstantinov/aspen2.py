@@ -82,6 +82,9 @@ class Harness(object):
             else:
                 encoding = 'utf8'
             self.fs.www.mk((filepath, contents, True, encoding))
+            if self._request_processor:
+                # Rebuild the dispatch tree since we've just added a file
+                self._request_processor.dispatcher.build_dispatch_tree()
         if request_processor_configuration is not None:
             self.hydrate_request_processor(**request_processor_configuration)
 
