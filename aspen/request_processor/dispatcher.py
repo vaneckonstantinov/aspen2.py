@@ -201,6 +201,32 @@ class Dispatcher(object):
                 return index
         return None
 
+    def split_wildcard(self, wildcard, is_dir):
+        """Splits a wildcard into its components.
+
+        :arg str wildcard: the string to split, e.g. :obj:`'year.int'`
+        :arg bool is_dir: :obj:`True` if the wildcard is from a directory name
+        :returns: a 3-tuple ``(varname, vartype, extension)``
+        """
+        if '.' not in wildcard:
+            return wildcard, None, None
+        if is_dir:
+            extension = None
+            varname, vartype = wildcard.rsplit('.', 1)
+            if vartype not in self.typecasters:
+                varname, vartype = wildcard, None
+        else:
+            try:
+                varname, vartype, extension = wildcard.split('.', 2)
+            except ValueError:
+                varname, ambiguous = wildcard.split('.')
+                if ambiguous in self.typecasters:
+                    vartype, extension = ambiguous, None
+                else:
+                    vartype, extension = None, ambiguous
+                del ambiguous
+        return varname, vartype, extension
+
 
 class SystemDispatcher(Dispatcher):
     """Aspen's legacy dispatcher, not optimized for production use.
@@ -423,21 +449,7 @@ class UserlandDispatcher(Dispatcher):
                     node_type = 'static'
                     slug = name
                 if slug.startswith('%') and node_type != 'static':
-                    if is_dir:
-                        varname, vartype, extension = slug[1:], None, None
-                    else:
-                        if '.' in slug:
-                            try:
-                                varname, vartype, extension = slug[1:].split('.', 2)
-                            except ValueError:
-                                varname, ambiguous = slug[1:].split('.')
-                                if ambiguous in self.typecasters:
-                                    vartype, extension = ambiguous, None
-                                else:
-                                    vartype, extension = None, ambiguous
-                                del ambiguous
-                        else:
-                            varname, vartype, extension = slug[1:], None, None
+                    varname, vartype, extension = self.split_wildcard(slug[1:], is_dir)
                     if varname in varnames and varnames[varname] != dirpath:
                         raise WildcardCollision(varname)
                     varnames[varname] = dirpath
