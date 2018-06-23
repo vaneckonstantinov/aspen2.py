@@ -1,15 +1,7 @@
 """
-################################
- :mod:`aspen.request_processor`
-################################
-
-The request processor dispatches requests to the filesystem (typecasting URL
-path variables), loads the resource from the filesystem, and then renders and
-encodes the resource.
-
-.. contents::
-    :local:
-
+The request processor dispatches requests to the filesystem, typecasts URL
+path variables, loads the resource from the filesystem, and then renders and
+encodes the resource (if it's dynamic).
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -37,34 +29,14 @@ default_indices = [
 ]
 
 
-#: Dict of configuration variables to their default values.
-KNOBS = {
-    'changes_reload': False,
-    'charset_static': None,
-    'dispatcher_class': UserlandDispatcher,
-    'encode_output_as': 'UTF-8',
-    'indices': default_indices,
-    'media_type_default': 'text/plain',
-    'media_type_json': 'application/json',
-    'project_root': None,
-    'renderer_default': 'stdlib_percent',
-    'store_static_files_in_ram': False,
-    'www_root': None,
-}
-
-
 class RequestProcessor(object):
-    """Define a parasitic request processor.
+    """A core request processor designed for integration into a host framework.
 
-    It depends on a host framework for real request/response objects.
-
+    The ``kwargs`` are for configuration, see :class:`DefaultConfiguration`
+    for valid keys and default values.
     """
 
     def __init__(self, **kwargs):
-        """Takes configuration in kwargs.
-
-        See the :obj:`.KNOBS` global variable for valid keys and default values.
-        """
         self.algorithm = Algorithm.from_dotted_name('aspen.request_processor.algorithm')
 
         # Do some base-line configuration.
@@ -79,13 +51,12 @@ class RequestProcessor(object):
 
         # XXX register codecs here
 
-        self.typecasters = dict(kwargs.get('typecasters', default_typecasters))
-
 
         # Configure from defaults and kwargs.
         # ===================================
 
-        for name, default in sorted(KNOBS.items()):
+        defaults = [(k, v) for k, v in DefaultConfiguration.__dict__.items() if k[0] != '_']
+        for name, default in sorted(defaults):
             if name in kwargs:
                 self.__dict__[name] = kwargs[name]
             else:
@@ -197,3 +168,53 @@ class RequestProcessor(object):
         parts = fspath.split('.')
         extension = parts[-1] if len(parts) > 1 else None
         return self.dynamic_classes_by_file_extension.get(extension, Static)
+
+
+class DefaultConfiguration(object):
+    """Default configuration values.
+    """
+
+    changes_reload = False
+    """
+    Reload files on every request if they've been modified. This can be costly,
+    so it should be turned off in production.
+    """
+
+    charset_static = None
+    """
+    The charset of your static files. It ends up as a ``charset=`` parameter in
+    ``Content-Type`` HTTP headers (if the framework on top of Aspen supports that).
+    """
+
+    dispatcher_class = UserlandDispatcher
+    "The kind of dispatcher that will be used to route requests to files."
+
+    encode_output_as = 'UTF-8'
+    "The encoding to use for dynamically-generated output."
+
+    indices = default_indices
+    "List of file names that will be treated as directory indexes. The order matters."
+
+    media_type_default = 'text/plain'
+    "If the ``Content-Type`` of a response can't be determined, then this one is used."
+
+    media_type_json = 'application/json'
+    "The media type to use for the JSON format."
+
+    project_root = None
+    "The root directory of your project."
+
+    renderer_default = 'stdlib_percent'
+    "The default renderer for simplates."
+
+    store_static_files_in_ram = False
+    "If set to ``True``, store the contents of static files in RAM."
+
+    typecasters = default_typecasters
+    "See :mod:`aspen.request_processor.typecasting`."
+
+    www_root = None
+    """
+    The root directory of your web app, containing the files it will serve.
+    Defaults to the current directory.
+    """

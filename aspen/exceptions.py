@@ -1,13 +1,5 @@
 """
-#########################
- :mod:`aspen.exceptions`
-#########################
-
 This module defines all of the custom exceptions used across the Aspen library.
-
-.. contents::
-    :local:
-
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -28,6 +20,8 @@ class ConfigurationError(Exception):
 
 
 class NegotiationFailure(Exception):
+    """The requested media type isn't available (HTTP status code 406).
+    """
 
     def __init__(self, accept, available_types):
         self.accept = accept
@@ -40,13 +34,18 @@ class NegotiationFailure(Exception):
 
 
 class TypecastError(Exception):
+    """Parsing a segment of the request path failed (HTTP status code 404).
+    """
 
     def __init__(self, extension):
         self.msg = "Failure to typecast extension '{0}'".format(extension)
         Exception.__init__(self)
 
 
-class NotFound(NegotiationFailure):
+class NotFound(Exception):
+    """The requested resource isn't available (HTTP status code 404).
+    """
+
     def __init__(self, message=''):
         self.message = message or "not found"
 
@@ -54,13 +53,11 @@ class NotFound(NegotiationFailure):
 class SlugCollision(Exception):
     """Raised if two files claim the same URL path.
 
-    Example: `www/foo.html` and `www/foo.html.spt` both claim `/foo.html`
+    Example: ``foo.html`` and ``foo.html.spt`` both claim ``/foo.html``.
     """
 
 class WildcardCollision(Exception):
     """Raised if a filesystem path contains multiple wildcards with the same name.
 
-    Examples:
-    - `www/%foo/%foo/index.spt`
-    - `www/%foo/bar/%foo.spt`
+    Examples: ``www/%foo/%foo/index.spt``, ``www/%foo/bar/%foo.spt``.
     """

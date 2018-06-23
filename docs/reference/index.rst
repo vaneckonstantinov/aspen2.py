@@ -12,5 +12,7 @@ exceptions that Aspen raises.
     :maxdepth: 1
 
     request_processor
+    dispatcher
+    typecasting
     testing
     exceptions
