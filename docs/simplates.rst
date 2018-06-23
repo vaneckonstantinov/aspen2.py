@@ -97,7 +97,7 @@ Here's what you get:
 
 - ``path``---a representation of the URL path
 - ``querystring``---a representation of the URL querystring
-- ``request_processor``---a :py:mod:`~aspen.request_processor.RequestProcessor` instance
+- ``request_processor``---a :mod:`~aspen.request_processor.RequestProcessor` instance
 - ``resource``---a representation of the HTTP resource
 - ``state``---the dictionary that contains the request state
 
