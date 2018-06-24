@@ -12,6 +12,7 @@ from aspen.request_processor import ConfigurationError, RequestProcessor
 
 
 def test_defaults_to_defaults(harness):
+    os.chdir(harness.fs.www.root)
     rp = RequestProcessor()
     actual = ( rp.project_root
              , rp.www_root
