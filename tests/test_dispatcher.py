@@ -462,6 +462,13 @@ def test_file_matches_in_face_of_dir(harness):
            )
     assert_virtvals(harness, '/baz.txt', {'value': ['baz']})
 
+def test_file_doesnt_match_if_extensions_dont_match(harness):
+    harness.fs.www.mk(
+        ('%page/index.html.spt', NEGOTIATED_SIMPLATE),
+        ('%value.txt.spt', NEGOTIATED_SIMPLATE)
+    )
+    assert_virtvals(harness, '/baz.html', {'page': ['baz.html']})
+
 def test_file_matches_extension(harness):
     harness.fs.www.mk( ('%value.json.spt', '[-----]\n[-----]\n{"Greetings,": "program!"}')
           , ('%value.txt.spt', NEGOTIATED_SIMPLATE)
