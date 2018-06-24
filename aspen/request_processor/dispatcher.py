@@ -15,7 +15,7 @@ from ..exceptions import SlugCollision, WildcardCollision
 from ..utils import Constant
 
 
-def debug_noop(*args, **kwargs):
+def debug_noop(msg, *args):
     pass
 
 
@@ -26,7 +26,8 @@ def debug_stdout(msg, *args):
     except Exception:
         print("DEBUG: " + repr(r))
 
-debug = debug_stdout if 'ASPEN_DEBUG' in os.environ else debug_noop
+ASPEN_DEBUG = 'ASPEN_DEBUG' in os.environ
+debug = debug_stdout if ASPEN_DEBUG else debug_noop
 
 
 def splitext(name):
@@ -492,7 +493,7 @@ class UserlandDispatcher(Dispatcher):
         LEAF_WILDCARDS = self.LEAF_WILDCARDS
 
         extension, canonical = None, None
-        fallback_wildleafs = {}
+        fallback_wildleafs = None
 
         def fallback():
             if fallback_wildleafs:
@@ -504,7 +505,7 @@ class UserlandDispatcher(Dispatcher):
                 else:
                     debug("no suitable wildleaf fallback")
                     return DispatchResult(DispatchStatus.missing, None, wildcards, None, None)
-                debug("falling back to wild leaf: %r", (node,))
+                debug("falling back to wild leaf: %r", node)
                 tail = '/'.join(path_segments[depth:])
                 if node.extension:
                     wildcards[node.wildcard] = tail[:-len(node.extension)-1]
@@ -514,71 +515,83 @@ class UserlandDispatcher(Dispatcher):
             debug("no wildleaf fallback")
             return DispatchResult(DispatchStatus.missing, None, wildcards, None, canonical)
 
+        def success():
+            return DispatchResult(
+                DispatchStatus.okay, node.fspath, wildcards, extension, canonical
+            )
+
         wildcards = {}
         node = self.tree
         max_depth = len(path_segments) - 1
         for depth, segment in enumerate(path_segments):
             files, dirs = node.files, node.dirs
-            if segment in files:
-                if segment == '':
-                    # Empty segment
-                    if depth == max_depth:
-                        debug("index match")
-                        break
-                    else:
-                        debug("encountered a non-final empty path segment")
-                        return fallback()
-                else:
-                    # Exact file match
+
+            if segment:
+                # The segment isn't empty. Look for a match in files and dirs.
+                if segment in files:
                     debug("exact file match: %r", segment)
                     node = files[segment]
                     if depth == max_depth:
                         if segment == files.get(''):
                             # The canonical path of `/index.html` is `/`
                             canonical = path[:-len(segment)]
-                        break
-            if '.' in segment:
-                base, extension = segment.rsplit('.', 1)
-                if base in files and files[base].type == 'dynamic':
-                    # Base match (e.g. `foo.spt` for `/foo.json`)
-                    debug("base match: %r", base)
-                    node = files[base]
-                    if segment == node.fspath.rsplit(os.path.sep, 1)[1]:
-                        # Don't route a request for `/bar.html.spt` to `bar.html.spt`
-                        return MISSING
-                    if depth < max_depth:
-                        # This would be a dead end, avoid it
-                        pass
-                    else:
-                        continue
-                extension = None
-            if segment in dirs:
-                # Directory match
-                debug("directory match: %r", segment)
-                node = dirs[segment]
-                continue
+                        return success()
+                if depth == max_depth and '.' in segment:
+                    base, extension = segment.rsplit('.', 1)
+                    if base in files and files[base].type == 'dynamic':
+                        # Base match (e.g. `foo.spt` for `/foo.json`)
+                        debug("base match: %r", base)
+                        node = files[base]
+                        if segment == node.fspath.rsplit(os.path.sep, 1)[-1]:
+                            # Don't route a request for `/bar.html.spt` to `bar.html.spt`
+                            return MISSING
+                        return success()
+                    extension = None
+                if segment in dirs:
+                    debug("exact directory match: %r", segment)
+                    node = dirs[segment]
+                    continue
+            elif depth == max_depth:
+                # The segment is empty and it's the last one.
+                # Look for an index first, then for a wildleaf.
+                if segment in files:
+                    debug("index match")
+                    node = files[files['']]
+                    return success()
+                if LEAF_WILDCARDS in files:
+                    debug("wildleaf match")
+                    wildleafs = files[LEAF_WILDCARDS]
+                    # Legacy behavior: dispatch to the "first" wildleaf
+                    node = wildleafs[min(wildleafs)]
+                    wildcards[node.wildcard] = segment
+                    return DispatchResult(
+                        DispatchStatus.okay, node.fspath, wildcards, None, None
+                    )
+                break
+
+            # This segment hasn't matched anything so far, look for wildcards.
             if LEAF_WILDCARDS in files:
                 fallback_wildleafs = files[LEAF_WILDCARDS]
-                debug("found fallback wildleafs")
-                if segment == '':
-                    # Legacy behavior: dispatch to the "first" wildleaf
-                    node = fallback_wildleafs[min(fallback_wildleafs)]
-                    wildcards[node.wildcard] = segment
-                    return DispatchResult(DispatchStatus.okay, node.fspath, wildcards, None, None)
-                if depth == max_depth:
-                    return fallback()
+                debug("found fallback wildleafs: %r", fallback_wildleafs)
             if DIR_WILDCARD in dirs:
+                # Try to find a wildleaf match first, so that `/foo.txt` matches
+                # `/%bar.txt.spt` instead of `/%dir/`.
+                if fallback_wildleafs and depth == max_depth:
+                    result = fallback()
+                    if result.status == DispatchStatus.okay:
+                        return result
+                # No suitable wildleaf was found, match the virtual directory.
+                # Note: empty segments are allowed on purpose.
                 node = dirs[DIR_WILDCARD]
-                debug("directory wildcard match: %r", node.wildcard)
+                debug("virtual directory match: %r", node.wildcard)
                 wildcards[node.wildcard] = segment
                 continue
-            if depth == max_depth and node.type == 'directory' and segment == '':
-                break
+
             return fallback()
-        files, dirs = node.files, node.dirs
 
         if node.type == 'directory':
             debug("final node is a directory")
+            files, dirs = node.files, node.dirs
             canonical = path + '/' if path_segments[-1] != '' else None
             # Look for an index file
             if '' in files:
@@ -592,4 +605,4 @@ class UserlandDispatcher(Dispatcher):
                     DispatchStatus.unindexed, fspath, wildcards, extension, canonical
                 )
 
-        return DispatchResult(DispatchStatus.okay, node.fspath, wildcards, extension, canonical)
+        return success()
