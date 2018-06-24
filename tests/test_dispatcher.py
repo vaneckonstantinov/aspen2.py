@@ -276,10 +276,25 @@ def test_virtual_path_file_not_dir(harness):
            )
     assert_fs(harness, '/bal.html', '%baz.html.spt')
 
+def test_virtual_path_when_dir_is_more_specific(harness):
+    harness.fs.www.mk(
+        ('%foo/%bar/file.html.spt', "Hello world!"),
+        ('%foo.html.spt', "Hello world!")
+    )
+    assert_virtvals(harness, '/~/x/file.html', {'foo': ['~'], 'bar': ['x']})
+
 def test_static_files_are_not_wild(harness):
     harness.fs.www.mk(('foo/%bar.html', "Greetings, program!"),)
     assert_missing(harness, '/foo/blah.html')
     assert_fs(harness, '/foo/%25bar.html', 'foo/%bar.html')
+
+def test_fallback_to_wildleaf_in_parent_directory(harness):
+    harness.fs.www.mk(
+        ('%foo/%bar/file.html', "Hello world!"),
+        ('%foo/%bar.html', "Hello world!"),
+        ('%foo.spt', NEGOTIATED_SIMPLATE)
+    )
+    assert_fs(harness, '/~/x/file.txt', '%foo.spt')
 
 # custom cast
 
