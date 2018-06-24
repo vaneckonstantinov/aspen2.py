@@ -31,12 +31,6 @@ def test_defaults_to_defaults(harness):
                 )
     assert actual == expected
 
-def test_www_root_defaults_to_cwd():
-    p = RequestProcessor()
-    expected = os.path.realpath(os.getcwd())
-    actual = p.www_root
-    assert actual == expected
-
 @mark.skipif(sys.platform == 'win32',
              reason="Windows file locking makes this fail")
 def test_ConfigurationError_raised_if_no_cwd(harness):
