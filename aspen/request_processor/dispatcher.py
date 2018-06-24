@@ -374,7 +374,9 @@ def _dispatch_abstract(listnodes, is_dynamic, is_leaf, traverse, find_index, sta
                 result = get_wildleaf_fallback()
                 if result:
                     return result
-                curnode = traverse(curnode, wild_nonleaf_ns[0])
+                found_n = wild_nonleaf_ns[0]
+                wildvals[found_n[1:]] = node
+                curnode = traverse(curnode, found_n)
                 nodepath.append('')
                 canonical = '/' + '/'.join(nodepath)
             elif node in subnodes:
