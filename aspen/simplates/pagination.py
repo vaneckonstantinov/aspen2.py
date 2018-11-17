@@ -6,9 +6,9 @@ from __future__ import unicode_literals
 import re
 
 
-SPLITTER = '^\[---+\](?P<header>.*?)(\n|$)'
-ESCAPED_SPLITTER = '^\\\\(\\\\*)(\[---+\].*?(\n|$))'
-SPECLINE_SPLIT = '(?:\s+|^)via\s+'
+SPLITTER = r'^\[---+\](?P<header>.*?)(\n|$)'
+ESCAPED_SPLITTER = r'^\\(\\*)(\[---+\].*?(\n|$))'
+SPECLINE_SPLIT = r'(?:\s+|^)via\s+'
 
 SPLITTER = re.compile(SPLITTER, re.MULTILINE)
 ESCAPED_SPLITTER = re.compile(ESCAPED_SPLITTER, re.MULTILINE)
