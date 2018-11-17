@@ -12,7 +12,7 @@ import posixpath
 
 from ..exceptions import SlugCollision, WildcardCollision
 
-from ..utils import Constant
+from ..utils import auto_repr, Constant
 
 
 def debug_noop(msg, *args):
@@ -63,6 +63,7 @@ class DispatchStatus(object):
     "Found a matching node, but it's a directory without an index."
 
 
+@auto_repr
 class DispatchResult(object):
     """The result of a dispatch operation."""
 
@@ -88,6 +89,7 @@ class DispatchResult(object):
 MISSING = DispatchResult(DispatchStatus.missing, None, None, None, None)
 
 
+@auto_repr
 class Node(object):
     """A node of a dispatch tree."""
 
