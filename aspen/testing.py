@@ -1,13 +1,5 @@
 """
-######################
- :mod:`aspen.testing`
-######################
-
 This module provides helpers for testing applications that use Aspen.
-
-.. contents::
-    :local:
-
 """
 from __future__ import absolute_import
 from __future__ import division

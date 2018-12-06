@@ -1,3 +1,7 @@
+"""
+This module handles the parsing of path variables.
+"""
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -6,35 +10,30 @@ from __future__ import unicode_literals
 from ..exceptions import TypecastError
 
 
-"""
-   A typecast dict (like 'defaults' below) is a map of
-   suffix -> typecasting function.  The functions must take one unicode
-   argument, but may return any value.  If they raise an error, the
-   typecasted key (the one without the suffix) will not be set, and
-   a TypecastError will be thrown.
-"""
-
+#: Aspen's default typecasters.
 defaults = { 'int': lambda pathpart, state: int(pathpart)
            , 'float': lambda pathpart, state: float(pathpart)
             }
 
-def apply_typecasters(typecasters, path, state):
-    """Perform the typecasts (in-place!) on the supplied path Mapping.
-       Note that the supplied mapping has keys with the typecast extensions
-       still attached (and unicode values).  This routine adds keys
-       *without* those extensions attached anymore, but with typecast values.
-       It also then removes the string-value keys (the ones with the extensions).
+
+def apply_typecasters(typecasters, path_vars, state):
+    """Perform typecasting (in-place!).
+
+    :arg typecasters: a :class:`dict` of type names to typecast functions
+    :arg path_vars: a :class:`~aspen.http.mapping.Mapping` of path variables
+    :arg state: a :class:`dict` passed to typecast functions as second argument
+    :raises TypecastError: if a typecast function raises an exception
     """
-    for part in list(path.keys()):
+    for part in list(path_vars.keys()):
         pieces = part.rsplit('.',1)
         if len(pieces) > 1:
             var, ext = pieces
             if ext in typecasters:
                 try:
-                    # path is a Mapping not a dict, so:
-                    for v in path.all(part):
-                        path.add(var, typecasters[ext](v, state))
-                    path.popall(part)
+                    # path_vars is a Mapping not a dict, so:
+                    for v in path_vars.all(part):
+                        path_vars.add(var, typecasters[ext](v, state))
+                    path_vars.popall(part)
                 except:
                     raise TypecastError(ext)
 

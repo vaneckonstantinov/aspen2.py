@@ -1,9 +1,11 @@
+"""
+This module implements finding the file that matches a request path.
+"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-from collections import namedtuple
 from functools import reduce
 import os
 import posixpath
@@ -48,44 +50,73 @@ def strip_matching_ext(a, b):
 
 
 class DispatchStatus(object):
-    """
-    okay - found a matching leaf node
-    missing - no matching file found
-    unindexed - found a matching node, but it's a directory without an index
-    """
+    """The attributes of this class are constants that represent dispatch statuses."""
+
     okay = Constant('okay')
+    "Found a matching file."
+
     missing = Constant('missing')
+    "No match found."
+
     unindexed = Constant('unindexed')
+    "Found a matching node, but it's a directory without an index."
 
 
-DispatchResult = namedtuple('DispatchResult', 'status match wildcards extension canonical')
-"""
-    status - A DispatchStatus constant encoding the overall result
-    match - the matching path (if status != 'missing')
-    wildcards - a dict whose keys are wildcard names, and values are as supplied by the path
-    extension - e.g. `json` when `foo.spt` is matched to `foo.json`
-    canonical - the canonical path of the resource, e.g. `/` for `/index.html`
-"""
+class DispatchResult(object):
+    """The result of a dispatch operation."""
+
+    __slots__ = ('status', 'match', 'wildcards', 'extension', 'canonical')
+
+    def __init__(self, status, match, wildcards, extension, canonical):
+        self.status = status
+        "A :class:`DispatchStatus` constant encoding the overall result."
+
+        self.match = match
+        "The matching filesystem path (if status != 'missing')."
+
+        self.wildcards = wildcards
+        "A dict whose keys are wildcard names, and values are as supplied by the path."
+
+        self.extension = extension
+        "A file extension, e.g. ``json`` when ``foo.spt`` is matched to ``foo.json``."
+
+        self.canonical = canonical
+        "The canonical path of the resource, e.g. ``/`` for ``/index.html``."
+
 
 MISSING = DispatchResult(DispatchStatus.missing, None, None, None, None)
 
 
-Node = namedtuple('Node', 'fspath type wildcard extension files dirs')
-"""
-    fspath - absolute filesystem path of this node
-    type - 'directory', 'dynamic', or 'static'
-    wildcard - the name of the path variable if the node is a wildcard
-    extension - the sub-extension of a dynamic file, e.g. `json` for `foo.json.spt`
-    files - a `dict` of the node's leaf children
-    dirs - a `dict` of the node's directory children
-"""
+class Node(object):
+    """A node of a dispatch tree."""
+
+    __slots__ = ('fspath', 'type', 'wildcard', 'extension', 'files', 'dirs')
+
+    def __init__(self, fspath, type, wildcard, extension, files, dirs):
+        self.fspath = fspath
+        "The absolute filesystem path of this node."
+
+        self.type = type
+        "The node's type: 'directory', 'dynamic', or 'static'."
+
+        self.wildcard = wildcard
+        "The name of the path variable if the node is a wildcard."
+
+        self.extension = extension
+        "The sub-extension of a dynamic file, e.g. ``json`` for ``foo.json.spt``."
+
+        self.files = files
+        "A :class:`dict` of the node's leaf children."
+
+        self.dirs = dirs
+        "A :class:`dict` of the node's directory children."
 
 
 # Collision handlers
 # ==================
 
 def legacy_collision_handler(slug, node1, node2):
-    """The old dispatcher always ignored collisions.
+    """Ignores all collisions, like :class:`SystemDispatcher` does.
     """
     return 'ignore_second_node'
 
@@ -99,7 +130,7 @@ def strict_collision_handler(*args):
 def hybrid_collision_handler(slug, node1, node2):
     """This collision handler allows a static file to shadow a dynamic resource.
 
-    Example: `/file.js` will be preferred over `/file.js.spt`.
+    Example: ``/file.js`` will be preferred over ``/file.js.spt``.
     """
     if node2.type == 'dynamic' and node2.fspath.startswith(node1.fspath + '.'):
         return 'ignore_second_node'
@@ -110,7 +141,7 @@ def hybrid_collision_handler(slug, node1, node2):
 # =============
 
 def skip_hidden_files(name, dirpath):
-    """Skip all names starting with a dot (.), except `.well-known`.
+    """Skip all names starting with a dot, except ``.well-known``.
     """
     return name[0] == '.' and name != '.well-known'
 
@@ -127,10 +158,10 @@ def skip_nothing(name, dirpath):
 class Dispatcher(object):
     """The abstract base class of dispatchers.
 
-    :param www_root: the absolute path to a filesystem directory
-    :param is_dynamic: a function that takes a file name and returns a boolean
-    :param indices: a list of filenames that should be treated as directory indexes
-    :param typecasters: a dict of typecasters, keys are strings and values are functions
+    :arg www_root: the path to a filesystem directory
+    :arg is_dynamic: a function that takes a file name and returns a boolean
+    :arg indices: a list of filenames that should be treated as directory indexes
+    :arg typecasters: a dict of typecasters, keys are strings and values are functions
     """
 
     def __init__(self, www_root, is_dynamic, indices, typecasters, **kw):
@@ -151,8 +182,8 @@ class Dispatcher(object):
     def dispatch(self, path, path_segments):
         """Dispatch a request.
 
-        :param str path: the request path, e.g. ``'/'``
-        :param list path_segments: the path split into segments, e.g. ``['']``
+        :arg str path: the request path, e.g. ``'/'``
+        :arg list path_segments: the path split into segments, e.g. ``['']``
 
         Subclasses **must** implement this method.
         """
@@ -160,8 +191,41 @@ class Dispatcher(object):
 
     def find_index(self, dirpath):
         """Looks for an index file in a directory.
+
+        :returns: the full path of the first index file, or :obj:`None` if no
+                  index was found
         """
-        return _match_index(self.indices, dirpath)
+        for filename in self.indices:
+            index = os.path.join(dirpath, filename)
+            if os.path.isfile(index):
+                return index
+        return None
+
+    def split_wildcard(self, wildcard, is_dir):
+        """Splits a wildcard into its components.
+
+        :arg str wildcard: the string to split, e.g. :obj:`'year.int'`
+        :arg bool is_dir: :obj:`True` if the wildcard is from a directory name
+        :returns: a 3-tuple ``(varname, vartype, extension)``
+        """
+        if '.' not in wildcard:
+            return wildcard, None, None
+        if is_dir:
+            extension = None
+            varname, vartype = wildcard.rsplit('.', 1)
+            if vartype not in self.typecasters:
+                varname, vartype = wildcard, None
+        else:
+            try:
+                varname, vartype, extension = wildcard.split('.', 2)
+            except ValueError:
+                varname, ambiguous = wildcard.split('.')
+                if ambiguous in self.typecasters:
+                    vartype, extension = ambiguous, None
+                else:
+                    vartype, extension = None, ambiguous
+                del ambiguous
+        return varname, vartype, extension
 
 
 class SystemDispatcher(Dispatcher):
@@ -348,20 +412,11 @@ def _dispatch_abstract(listnodes, is_dynamic, is_leaf, traverse, find_index, sta
     return DispatchResult(DispatchStatus.okay, curnode, wildvals, extension, canonical)
 
 
-def _match_index(indices, indir):
-    """return the full path of the first index in indir, or None if not found"""
-    for filename in indices:
-        index = os.path.join(indir, filename)
-        if os.path.isfile(index):
-            return index
-    return None
-
-
 class UserlandDispatcher(Dispatcher):
     """This is Aspen's new dispatcher, optimized for production use.
 
-    This implementation builds a complete dispatch tree when it is first created.
-    That allows it to route requests efficiently, with fewer computations and
+    This dispatcher builds a complete tree when it is first created. It then uses
+    this dispatch tree to route requests efficiently, with fewer computations and
     memory allocations than the old dispatcher, and without making any system
     call, thus avoiding FFI and context switching costs as well.
     """
@@ -394,21 +449,7 @@ class UserlandDispatcher(Dispatcher):
                     node_type = 'static'
                     slug = name
                 if slug.startswith('%') and node_type != 'static':
-                    if is_dir:
-                        varname, vartype, extension = slug[1:], None, None
-                    else:
-                        if '.' in slug:
-                            try:
-                                varname, vartype, extension = slug[1:].split('.', 2)
-                            except ValueError:
-                                varname, ambiguous = slug[1:].split('.')
-                                if ambiguous in self.typecasters:
-                                    vartype, extension = ambiguous, None
-                                else:
-                                    vartype, extension = None, ambiguous
-                                del ambiguous
-                        else:
-                            varname, vartype, extension = slug[1:], None, None
+                    varname, vartype, extension = self.split_wildcard(slug[1:], is_dir)
                     if varname in varnames and varnames[varname] != dirpath:
                         raise WildcardCollision(varname)
                     varnames[varname] = dirpath
