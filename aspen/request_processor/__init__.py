@@ -15,10 +15,10 @@ import os
 import sys
 from collections import defaultdict
 
-from algorithm import Algorithm
-
-from .dispatcher import HybridDispatcher, UserlandDispatcher
+from . import typecasting
+from .dispatcher import DispatchStatus, HybridDispatcher, UserlandDispatcher
 from .typecasting import defaults as default_typecasters
+from .. import resources
 from ..http.resource import Static
 from ..exceptions import ConfigurationError
 
@@ -37,8 +37,6 @@ class RequestProcessor(object):
     """
 
     def __init__(self, **kwargs):
-        self.algorithm = Algorithm.from_dotted_name('aspen.request_processor.algorithm')
-
         # Do some base-line configuration.
         # ================================
         # We want to do the following configuration of our Python environment
@@ -146,18 +144,51 @@ class RequestProcessor(object):
             mimetypes.init()
 
 
-    def process(self, path, querystring, accept_header, raise_immediately=None, return_after=None,
-                **kw):
-        """Given a path, querystring, and Accept header, return a state dict.
+    def dispatch(self, path):
+        """Call the dispatcher and inject the path variables into the given path object.
+
+        Args:
+            path (Path): the requested path, e.g. :obj:`'/foo'`
+
+        Returns:
+            A :class:`DispatchResult` object.
         """
-        return self.algorithm.run( request_processor=self
-                                 , path=path
-                                 , querystring=querystring
-                                 , accept_header=accept_header
-                                 , _raise_immediately=raise_immediately
-                                 , _return_after=return_after
-                                 , **kw
-                                  )
+        dispatch_result = self.dispatcher.dispatch(path.decoded, path.parts)
+        if dispatch_result.wildcards:
+            for k, v in dispatch_result.wildcards.items():
+                path[k] = v
+        return dispatch_result
+
+
+    def process(self, path, querystring, accept_header, context):
+        """Process a request.
+
+        Args:
+            path (Path): the requested path, e.g. :obj:`Path('/foo')`
+            querystring (Querystring): the query parameters, e.g. :obj:`Querystring('?bar=baz')`
+            accept_header (str): the value of the HTTP header ``Accept``
+            context (dict): the context variables passed to dynamic resources
+
+        Returns:
+            A 3-tuple ``(dispatch_result, resource, output)``. The latter two are
+            set to :obj:`None` if dispatching failed.
+
+        """
+
+        dispatch_result = self.dispatch(path)
+
+        typecasting.apply_typecasters(self.typecasters, path, context)
+
+        if dispatch_result.match and dispatch_result.status == DispatchStatus.okay:
+            resource = resources.get(self, dispatch_result.match)
+            context['querystring'] = querystring
+            output = resource.render(context, dispatch_result, accept_header)
+            if not isinstance(output.body, bytes):
+                output.charset = self.encode_output_as
+                output.body = output.body.encode(output.charset)
+            return dispatch_result, resource, output
+
+        return dispatch_result, None, None
 
 
     def is_dynamic(self, fspath):

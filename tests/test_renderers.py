@@ -97,7 +97,7 @@ def test_renderer_padding_achieves_correct_line_numbers_in_tracebacks(harness):
     [---] text/html via stdlib_template
     Greetings, $!
     '''))
-    actual = str(raises(ValueError, harness._hit, 'GET', '/').value)
+    actual = str(raises(ValueError, harness.hit, '/').value)
     assert 'line 3' in actual
 
 

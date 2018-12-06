@@ -23,7 +23,7 @@ class Static(object):
             except UnicodeDecodeError:
                 pass
 
-    def render(self, context):
+    def render(self, *ignored):
         """Returns the file's content as :class:`bytes`.
 
         If the ``store_static_files_in_ram`` configuration option was set to
@@ -45,24 +45,33 @@ class Dynamic(object):
 
     available_types = []  # populate in your subclass
 
-    def render(self, state):
-        """Render the resource with the given state as context, return Output.
+    def render(self, context, dispatch_result, accept_header):
+        """Render the resource.
 
         Before rendering we need to determine what type of content we're going
         to send back, by trying to find a match between the media types the
         client wants and the ones provided by the resource.
 
         The two sources for what the client wants are the extension in the
-        request URL, and the Accept header. If the former fails to match we
-        raise NotFound (404), if the latter fails we raise NegotiationFailure
-        (406).
+        request URL (:obj:`dispatch_result.extension`), and the ``Accept``
+        header (:obj:`accept_header`). If the former fails to match we raise
+        :class:`NotFound` (404), if the latter fails we raise
+        :class:`NegotiationFailure` (406).
 
-        Note that we don't always respect the `Accept` header (the spec says
+        Note that we don't always respect the ``Accept`` header (the spec says
         we can ignore it: <https://tools.ietf.org/html/rfc7231#section-5.3.2>).
+
+        Args:
+            context (dict): the variables you want to pass to the resource
+            dispatch_result (DispatchResult): the object returned by the dispatcher
+            accept_header (str): the requested media types
+
+        Returns: an :class:`Output` object.
+
         """
         available = self.available_types
 
-        dispatch_extension = state['dispatch_result'].extension
+        dispatch_extension = dispatch_result.extension
         if dispatch_extension:
             # There's an extension in the URI path, guess the media type from it
             dispatch_accept = mimetypes.guess_type('a.' + dispatch_extension, strict=False)[0]
@@ -80,10 +89,10 @@ class Dynamic(object):
         elif len(available) == 1:
             # If there's only one available type and no extension in the path,
             # then we ignore the Accept header
-            return self.render_for_type(available[0], state)
+            return self.render_for_type(available[0], context)
         else:
             dispatch_accept = None
-            accept = state.get('accept_header')
+            accept = accept_header
 
         if accept:
             try:
@@ -92,7 +101,7 @@ class Dynamic(object):
                 # Unparseable accept header
                 best_match = None
             if best_match:
-                return self.render_for_type(best_match, state)
+                return self.render_for_type(best_match, context)
             elif best_match == '':
                 if dispatch_accept is not None:
                     # e.g. client requested `/foo.json` but `/foo.spt` has no JSON page
@@ -100,4 +109,4 @@ class Dynamic(object):
                 raise NegotiationFailure(accept, available)
 
         # Fall back to the first available type
-        return self.render_for_type(available[0], state)
+        return self.render_for_type(available[0], context)

@@ -283,44 +283,8 @@ def test_default_media_type_works(harness):
     output = harness.simple("""
 [---]
 [---]
-plaintext""", raise_immediately=False)
+plaintext""")
     assert "plaintext" in output.text
-
-SIMPLATE_TMPL="""
-foo = %s
-[---] via stdlib_format
-{foo}"""
-
-def test_can_use_path(harness):
-    output = harness.simple(SIMPLATE_TMPL % "path.raw")
-    assert output.text == '/'
-
-
-def test_cant_implicitly_override_state(harness):
-    state = harness.simple("[---]\n"
-        "resource = 'foo'\n"
-        "[---] via stdlib_format\n"
-        "{resource}",
-        want='state'
-    )
-    assert state['output'].text == 'foo'
-    assert state['resource'] != 'foo'
-
-
-def test_can_explicitly_override_state(harness):
-    state = harness.simple("# coding: utf8\n"
-        "[---]\n"
-        "class Output: body='thé'.encode('utf16'); media_type='text/x-foobar'; charset='utf16'\n"
-        "state['output'] = Output()\n"
-        "state['resource'] = 'foo'\n"
-        "[---]\n",
-        want='state'
-    )
-    output = state['output']
-    assert output.body == 'thé'.encode('utf16')
-    assert output.media_type == 'text/x-foobar'
-    assert output.charset == 'utf16'
-    assert state['resource'] == 'foo'
 
 
 def test_but_python_sections_exhibit_module_scoping_behavior(harness):
@@ -340,7 +304,10 @@ def test_one_page_works(harness):
 
 
 def test_two_pages_works(harness):
-    output = harness.simple(SIMPLATE_TMPL % "'Template'")
+    output = harness.simple("""
+foo = 'Template'
+[---] via stdlib_format
+{foo}""")
     assert output.text == 'Template'
 
 

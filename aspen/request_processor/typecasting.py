@@ -11,18 +11,18 @@ from ..exceptions import TypecastError
 
 
 #: Aspen's default typecasters.
-defaults = { 'int': lambda pathpart, state: int(pathpart)
-           , 'float': lambda pathpart, state: float(pathpart)
+defaults = { 'int': lambda pathpart, context: int(pathpart)
+           , 'float': lambda pathpart, context: float(pathpart)
             }
 
 
-def apply_typecasters(typecasters, path_vars, state):
+def apply_typecasters(typecasters, path_vars, context):
     """Perform typecasting (in-place!).
 
     Args:
         typecasters: a :class:`dict` of type names to typecast functions
         path_vars: a :class:`~aspen.http.mapping.Mapping` of path variables
-        state: a :class:`dict` passed to typecast functions as second argument
+        context: a :class:`dict` passed to typecast functions as second argument
 
     Raises:
         TypecastError: if a typecast function raises an exception
@@ -35,7 +35,7 @@ def apply_typecasters(typecasters, path_vars, state):
                 try:
                     # path_vars is a Mapping not a dict, so:
                     for v in path_vars.all(part):
-                        path_vars.add(var, typecasters[ext](v, state))
+                        path_vars.add(var, typecasters[ext](v, context))
                     path_vars.popall(part)
                 except:
                     raise TypecastError(ext)

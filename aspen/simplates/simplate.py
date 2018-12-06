@@ -103,25 +103,24 @@ class Simplate(Dynamic):
 
 
     def render_for_type(self, media_type, context):
-        """
-        Get the response to a request for this page::
+        """Render the simplate.
 
-            media_type - the media type of the page to render
-            context - a dict of execution context values you wish to supply
-                      * Note that these are overriden by values that are carried
-                      over from the execution of the zeroth page
+        Args:
+            media_type (str): the media type of the page to render
+            context (dict): execution context values you wish to supply
+
+        .. warning: The ``context`` dict is updated with values from the first
+                    and second pages of the simplate.
+
+        Returns: an :class:`Output` object.
         """
 
-        # create Output object and put it in the state
+        # create Output object and put it in the context
         output = context['output'] = Output(media_type=media_type)
-        # copy the state dict to avoid accidentally mutating it
-        context = dict(context)
-        # override it with values from the first page
+        # update the context with values from the first page
         context.update(self.pages[0])
         # use this as the context to execute the second page in
         exec(self.pages[1], context)
-        # refetch output, this allows the second page to override it
-        output = context['state']['output']
         # skip rendering if the second page has already filled output.body
         if output.body is not None:
             return output
@@ -130,9 +129,9 @@ class Simplate(Dynamic):
             # templates will only see variables named in __all__
             context = dict([ (k, context[k]) for k in context['__all__'] ])
 
-        # load that renderer
+        # load the renderer
         render = self.renderers[media_type]
-        # render it
+        # render
         output.body = render(context)
 
         return output
