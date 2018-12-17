@@ -12,6 +12,7 @@ from aspen.request_processor import ConfigurationError, RequestProcessor
 
 
 def test_defaults_to_defaults(harness):
+    os.chdir(harness.fs.www.root)
     rp = RequestProcessor()
     actual = ( rp.project_root
              , rp.www_root
@@ -28,12 +29,6 @@ def test_defaults_to_defaults(harness):
                , ['index.html', 'index.json', 'index', 'index.html.spt', 'index.json.spt', 'index.spt']
                , 'text/plain', 'application/json', 'stdlib_percent'
                 )
-    assert actual == expected
-
-def test_www_root_defaults_to_cwd():
-    p = RequestProcessor()
-    expected = os.path.realpath(os.getcwd())
-    actual = p.www_root
     assert actual == expected
 
 @mark.skipif(sys.platform == 'win32',
