@@ -88,34 +88,34 @@ def check_escape(content_to_escape, expected):
     assert actual == expected, repr(actual) + " should be " + repr(expected)
 
 def test_basic_escape_1():
-    check_escape('\[---]', '[---]')
+    check_escape(r'\[---]', '[---]')
 
 def test_basic_escape_2():
-    check_escape('\\\\\\[---]', '\\\[---]')
+    check_escape(r'\\\[---]', r'\\[---]')
 
 def test_inline_sep_ignored_1():
     check_escape('inline[---]break', 'inline[---]break')
 
 def test_inline_sep_ignored_2():
-    check_escape('inline\\\[---]break', 'inline\\\[---]break')
+    check_escape(r'inline\\[---]break', r'inline\\[---]break')
 
 def test_escape_preserves_extra_content():
-    check_escape('\\\\[---] content ', '\[---] content ')
+    check_escape(r'\\[---] content ', r'\[---] content ')
 
 def test_multiple_escapes():
-    to_escape = '1\n\[---]\n2\n\[---]'
+    to_escape = '1\n\\[---]\n2\n\\[---]'
     result = '1\n[---]\n2\n[---]'
     check_escape(to_escape, result)
 
 def test_long_break():
-    check_escape('\[----------]', '[----------]')
+    check_escape(r'\[----------]', '[----------]')
 
 def test_escaped_pages():
     raw = '''\
 1
 [---]
 2
-\[---]
+\\[---]
 3
 '''
     check_page_content(raw, ['1\n', '2\n\\[---]\n3\n'])

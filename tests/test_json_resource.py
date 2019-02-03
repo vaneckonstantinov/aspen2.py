@@ -59,7 +59,7 @@ def test_json_content_type_is_per_file_configurable(harness):
 
 def test_json_handles_unicode(harness):
     expected = b'''{
-    "Greetings": "\u00b5"
+    "Greetings": "\\u00b5"
 }'''
     actual = harness.simple('''
         from six import unichr
