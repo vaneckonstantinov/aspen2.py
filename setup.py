@@ -1,3 +1,5 @@
+from os import dirname, join
+
 try:
     import setuptools  # noqa
 except ImportError:
@@ -27,6 +29,7 @@ setup( author = 'Chad Whitacre et al.'
      , author_email = 'team@aspen.io'
      , classifiers = classifiers
      , description = 'A filesystem router for Python web frameworks'
+     , long_description=open(join(dirname(__file__), 'README.rst')).read()
      , name = 'aspen'
      , packages = find_packages()
      , url = 'https://github.com/AspenWeb/aspen.py'
