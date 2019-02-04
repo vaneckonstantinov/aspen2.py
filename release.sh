@@ -46,7 +46,7 @@ else
         python setup.py sdist --formats=zip
         python setup.py bdist_wheel --universal
 
-        twine upload dist/aspen-$1.*
+        twine upload dist/aspen-$1*
 
         printf "\055dev" >> version.txt
         git commit version.txt -m"Bump version to $1-dev"

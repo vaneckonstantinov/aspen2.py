@@ -1,4 +1,4 @@
-from os import dirname, join
+from os.path import dirname, join
 
 try:
     import setuptools  # noqa
