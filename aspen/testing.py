@@ -8,7 +8,6 @@ from __future__ import unicode_literals
 
 import os
 import sys
-from collections import namedtuple
 
 from filesystem_tree import FilesystemTree
 
@@ -57,14 +56,20 @@ def resolve_want(available, want):
     return out
 
 
+class FileSystem(object):
+    __slots__ = ('project', 'www')
+
+    def __init__(self):
+        self.project = FilesystemTree()
+        self.www = FilesystemTree()
+
+
 class Harness(object):
     """A harness to be used in the Aspen test suite itself. Probably not useful to you.
     """
 
     def __init__(self):
-        self.fs = namedtuple('fs', 'www project')
-        self.fs.www = FilesystemTree()
-        self.fs.project = FilesystemTree()
+        self.fs = FileSystem()
         self._request_processor = None
 
     def teardown(self):
