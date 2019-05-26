@@ -518,6 +518,10 @@ def test_dont_serve_hidden_files(harness):
     harness.fs.www.mk(('.secret_data', ''),)
     assert_missing(harness, '/.secret_data')
 
+def test_do_serve_files_under_well_known_directory(harness):
+    harness.fs.www.mk(('.well-known/security.txt', 'Lorem ipsum'),)
+    assert_fs(harness, '/.well-known/security.txt', '.well-known/security.txt')
+
 def test_dont_serve_spt_file_source(harness):
     harness.fs.www.mk(('foo.html.spt', "Greetings, program!"),)
     assert_missing(harness, '/foo.html.spt')

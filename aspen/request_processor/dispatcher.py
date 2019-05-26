@@ -167,6 +167,8 @@ class Dispatcher(object):
     :arg typecasters: a dict of typecasters, keys are strings and values are functions
     """
 
+    file_skipper = staticmethod(skip_hidden_files)
+
     def __init__(self, www_root, is_dynamic, indices, typecasters, **kw):
         self.www_root = os.path.realpath(www_root)
         self.is_dynamic = is_dynamic
@@ -245,8 +247,8 @@ class SystemDispatcher(Dispatcher):
         is_leaf = os.path.isfile
         traverse = os.path.join
         result = _dispatch_abstract(
-            listnodes, self.is_dynamic, is_leaf, traverse, self.find_index,
-            self.www_root, path_segments,
+            self, listnodes, self.is_dynamic, is_leaf, traverse, self.find_index,
+            self.www_root, path_segments
         )
         debug(lambda: "dispatch_abstract returned: " + repr(result))
 
@@ -258,7 +260,7 @@ class SystemDispatcher(Dispatcher):
         return result
 
 
-def _dispatch_abstract(listnodes, is_dynamic, is_leaf, traverse, find_index, startnode, nodepath):
+def _dispatch_abstract(dispatcher, listnodes, is_dynamic, is_leaf, traverse, find_index, startnode, nodepath):
     """Given a list of nodenames (in 'nodepath'), return a DispatchResult.
 
     We try to traverse the directed graph rooted at 'startnode' using the
@@ -283,6 +285,8 @@ def _dispatch_abstract(listnodes, is_dynamic, is_leaf, traverse, find_index, sta
     isfile(virtual-no-extension) then isdir(virtual)
 
     """
+    file_skipper = dispatcher.file_skipper
+
     nodepath = nodepath[:]  # copy it so we can mutate it if necessary
     wildvals, wildleafs = {}, {}
     curnode = startnode
@@ -306,7 +310,7 @@ def _dispatch_abstract(listnodes, is_dynamic, is_leaf, traverse, find_index, sta
         # node.html, node.html.spt, node.spt, node.html/, %node.html/ %*.html.spt, %*.spt
 
         # don't serve hidden files
-        subnodes = set([ n for n in listnodes(curnode) if not n.startswith('.') ])
+        subnodes = set([ n for n in listnodes(curnode) if not file_skipper(n, curnode) ])
 
         node_noext, node_ext = splitext(node)
 
@@ -430,7 +434,6 @@ class UserlandDispatcher(Dispatcher):
     LEAF_WILDCARDS = Constant('LEAF_WILDCARDS')
 
     collision_handler = staticmethod(legacy_collision_handler)
-    file_skipper = staticmethod(skip_hidden_files)
 
     def build_dispatch_tree(self):
         def f(dirpath, varnames):
