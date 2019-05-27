@@ -3,12 +3,11 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-from inspect import isclass
 import os
 import pytest
 
 import aspen
-from aspen.request_processor.dispatcher import Dispatcher, DispatchStatus
+from aspen.request_processor.dispatcher import DISPATCHER_CLASSES, DispatchStatus
 
 
 # Helpers
@@ -47,11 +46,6 @@ Greetings, program!
 
 # dispatcher.dispatch
 # ===================
-
-DISPATCHER_CLASSES = [
-    o for o in aspen.request_processor.dispatcher.__dict__.values()
-    if isclass(o) and issubclass(o, Dispatcher) and o != Dispatcher
-]
 
 @pytest.mark.parametrize('dispatcher_class', DISPATCHER_CLASSES)
 def test_dispatcher_returns_a_result(harness, dispatcher_class):

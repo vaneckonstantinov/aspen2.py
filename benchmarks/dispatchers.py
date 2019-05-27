@@ -1,20 +1,12 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
 
 import gc
-from inspect import isclass
 import json
 from timeit import timeit
 
 from filesystem_tree import FilesystemTree
 
 import aspen.request_processor
-
-
-Dispatcher = aspen.request_processor.dispatcher.Dispatcher
-dispatcher_classes = sorted([
-    o for o in aspen.request_processor.dispatcher.__dict__.values()
-    if isclass(o) and issubclass(o, Dispatcher) and o != Dispatcher
-], key=lambda c: c.__name__)
 
 
 def is_dynamic(fspath):
@@ -45,7 +37,7 @@ URLS = [
 
 
 times = {}
-for dispatcher_class in dispatcher_classes:
+for dispatcher_class in aspen.request_processor.dispatcher.DISPATCHER_CLASSES:
     print("Timing", dispatcher_class.__name__)
     total_time = 0
     with FilesystemTree() as ft:

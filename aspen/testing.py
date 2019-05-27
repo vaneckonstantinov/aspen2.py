@@ -12,6 +12,7 @@ from collections import namedtuple
 
 from . import resources
 from .request_processor import RequestProcessor
+from .request_processor.dispatcher import TestDispatcher
 from filesystem_tree import FilesystemTree
 
 
@@ -53,6 +54,7 @@ class Harness(object):
         if (self._request_processor is None) or kwargs:
             _kwargs = { 'www_root': self.fs.www.root
                       , 'project_root': self.fs.project.root
+                      , 'dispatcher_class': TestDispatcher
                        }
             _kwargs.update(kwargs)
             self._request_processor = RequestProcessor(**_kwargs)

@@ -7,6 +7,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 from functools import reduce
+from inspect import isclass
 import os
 import posixpath
 
@@ -84,6 +85,31 @@ class DispatchResult(object):
 
         self.canonical = canonical
         "The canonical path of the resource, e.g. ``/`` for ``/index.html``."
+
+    def __eq__(self, other):
+        return (
+            isinstance(other, DispatchResult) and
+            self.status == other.status and
+            self.match == other.match and
+            self.wildcards == other.wildcards and
+            self.extension == other.extension and
+            self.canonical == other.canonical
+        )
+
+    def __ne__(self, other):
+        return not (self == other)
+
+    def _as_tuple(self):
+        # We can't give this class a proper `__hash__` method because
+        # `DispatchResult` objects aren't immutable, so we use this method
+        # instead to get a hashable tuple.
+        return (
+            self.status,
+            self.match,
+            frozenset(self.wildcards.items()) if self.wildcards else self.wildcards,
+            self.extension,
+            self.canonical
+        )
 
 
 MISSING = DispatchResult(DispatchStatus.missing, None, None, None, None)
@@ -611,3 +637,38 @@ class UserlandDispatcher(Dispatcher):
                 )
 
         return success()
+
+
+class TestDispatcher(object):
+    """
+    This pseudo-dispatcher calls all the other dispatchers and checks that their
+    results are identical. It's only meant to be used in Aspen's own tests.
+    """
+
+    def __init__(self, *args, **kw):
+        self.dispatchers = [cls(*args, **kw) for cls in DISPATCHER_CLASSES]
+
+    def build_dispatch_tree(self):
+        for dispatcher in self.dispatchers:
+            dispatcher.build_dispatch_tree()
+
+    def dispatch(self, path, path_segments):
+        results = [
+            (dispatcher, dispatcher.dispatch(path, path_segments))
+            for dispatcher in self.dispatchers
+        ]
+        if len(set(t[1]._as_tuple() for t in results)) != 1:
+            raise AssertionError(
+                "the dispatchers disagree:\n    " +
+                "\n    ".join(
+                    "%s returned %r" % (dispatcher.__class__.__name__, result)
+                    for dispatcher, result in results
+                )
+            )
+        return results[0][1]
+
+
+DISPATCHER_CLASSES = [
+    o for o in globals().values() if isclass(o) and issubclass(o, Dispatcher) and o != Dispatcher
+]
+DISPATCHER_CLASSES.sort(key=lambda c: c.__name__)
