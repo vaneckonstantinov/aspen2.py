@@ -17,7 +17,7 @@ from collections import defaultdict
 
 from algorithm import Algorithm
 
-from .dispatcher import UserlandDispatcher
+from .dispatcher import SystemDispatcher, UserlandDispatcher
 from .typecasting import defaults as default_typecasters
 from ..http.resource import Static
 from ..exceptions import ConfigurationError
@@ -127,6 +127,10 @@ class RequestProcessor(object):
         self.dynamic_classes_by_file_extension = dict(spt=Simplate)
 
         # create the dispatcher
+        if self.dispatcher_class is None:
+            self.dispatcher_class = (
+                SystemDispatcher if self.changes_reload else UserlandDispatcher
+            )
         self.dispatcher = self.dispatcher_class(
             self.www_root, self.is_dynamic, self.indices, self.typecasters
         )
@@ -186,8 +190,12 @@ class DefaultConfiguration(object):
     ``Content-Type`` HTTP headers (if the framework on top of Aspen supports that).
     """
 
-    dispatcher_class = UserlandDispatcher
-    "The kind of dispatcher that will be used to route requests to files."
+    dispatcher_class = None
+    """
+    The kind of dispatcher that will be used to route requests to files. By
+    default :class:`UserlandDispatcher` is used, unless ``changes_reload`` is
+    set to ``True``, then :class:`SystemDispatcher` is used.
+    """
 
     encode_output_as = 'UTF-8'
     "The encoding to use for dynamically-generated output."
