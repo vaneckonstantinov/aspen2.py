@@ -121,8 +121,3 @@ class Harness(object):
             raise AttributeError(str(e) + '\nDebug info: out = ' + repr(out))
 
         return out
-
-    def make_dispatch_result(self, *a, **kw):
-        kw['return_after'] = 'dispatch_path_to_filesystem'
-        kw['want'] = 'dispatch_result'
-        return self.simple(*a, **kw)
