@@ -77,7 +77,7 @@ class DispatchResult(object):
         self.match = match
         "The matching filesystem path (if status != 'missing')."
 
-        self.wildcards = wildcards
+        self.wildcards = wildcards or None
         "A dict whose keys are wildcard names, and values are as supplied by the path."
 
         self.extension = extension

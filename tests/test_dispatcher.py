@@ -58,7 +58,7 @@ def test_dispatcher_returns_a_result(harness, dispatcher_class):
     result = dispatcher.dispatch('/', [''])
     assert result.status == DispatchStatus.okay
     assert result.match == os.path.join(harness.fs.www.root, 'index.html')
-    assert result.wildcards == {}
+    assert result.wildcards == None
 
 @pytest.mark.parametrize('dispatcher_class', DISPATCHER_CLASSES)
 def test_dispatcher_returns_unindexed_for_unindexed_directory(harness, dispatcher_class):
