@@ -594,20 +594,6 @@ class UserlandDispatcher(Dispatcher):
                     continue
             elif depth == max_depth:
                 # The segment is empty and it's the last one.
-                # Look for an index first, then for a wildleaf.
-                if segment in files:
-                    debug("index match")
-                    node = files[files['']]
-                    return success()
-                if LEAF_WILDCARDS in files:
-                    debug("wildleaf match")
-                    wildleafs = files[LEAF_WILDCARDS]
-                    # Legacy behavior: dispatch to the "first" wildleaf
-                    node = wildleafs[min(wildleafs)]
-                    wildcards[node.wildcard] = segment
-                    return DispatchResult(
-                        DispatchStatus.okay, node.fspath, wildcards, None, None
-                    )
                 break
 
             # This segment hasn't matched anything so far, look for wildcards.
@@ -636,11 +622,19 @@ class UserlandDispatcher(Dispatcher):
             canonical = path + '/' if path_segments[-1] != '' else None
             # Look for an index file
             if '' in files:
+                debug("index match")
                 node = files[files['']]
-            elif wildcards:
-                # e.g. request for `/bar` is matched to empty wildcard directory `%foo/`
-                return fallback()
+            elif LEAF_WILDCARDS in files:
+                debug("wildleaf match")
+                wildleafs = files[LEAF_WILDCARDS]
+                # Legacy behavior: dispatch to the "first" wildleaf
+                node = wildleafs[min(wildleafs)]
+                wildcards[node.wildcard] = ''
             else:
+                # e.g. request for `/bar` is matched to empty wildcard directory `%foo/`
+                result = fallback()
+                if result.status == DispatchStatus.okay:
+                    return result
                 fspath = node.fspath + os.path.sep
                 return DispatchResult(
                     DispatchStatus.unindexed, fspath, wildcards, extension, canonical
