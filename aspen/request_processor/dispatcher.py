@@ -372,8 +372,9 @@ def _dispatch_abstract(dispatcher, listnodes, is_dynamic, is_leaf, traverse, fin
                     found_n = wild_leaf_ns[0]
                     debug(lambda: "found wild leaf: %r" % found_n)
                     curnode = traverse(curnode, found_n)
-                    node_name = found_n[1:-4]  # strip leading % and trailing .spt
-                    wildvals[node_name] = node
+                    varname, vartype, _ = dispatcher.split_wildcard(splitext(found_n[1:])[0], False)
+                    wildcard = '.'.join((varname, vartype)) if vartype else varname
+                    wildvals[wildcard] = node
                     return DispatchResult(DispatchStatus.okay, curnode, wildvals, None, canonical)
                 debug(lambda: "no match")
                 return DispatchResult(
