@@ -350,10 +350,13 @@ def _dispatch_abstract(dispatcher, listnodes, is_dynamic, is_leaf, traverse, fin
         remaining = reduce(posixpath.join, nodepath[depth:])
         for n in wild_leaf_ns:
             wildwildvals = wildvals.copy()
-            k, v = strip_matching_ext(n[1:-4], remaining)
-            wildwildvals[k] = v
-            n_ext = splitext(n[:-4])[1]
-            wildleafs[n_ext] = (traverse(curnode, n), wildwildvals)
+            varname, vartype, leaf_ext = dispatcher.split_wildcard(splitext(n[1:])[0], False)
+            wildcard = '.'.join((varname, vartype)) if vartype else varname
+            if leaf_ext and remaining.endswith(leaf_ext):
+                wildwildvals[wildcard] = remaining[:-len(leaf_ext)-1]
+            else:
+                wildwildvals[wildcard] = remaining
+            wildleafs[leaf_ext] = (traverse(curnode, n), wildwildvals)
 
         debug(lambda: "wildleafs is %r" % wildleafs)
 
