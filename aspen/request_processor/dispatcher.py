@@ -529,16 +529,25 @@ class UserlandDispatcher(Dispatcher):
 
         def fallback():
             if fallback_wildleafs:
+                f_wildleafs, f_depth = fallback_wildleafs
                 requested_extension = splitext(path_segments[-1])[1]
-                if requested_extension in fallback_wildleafs:
-                    node = fallback_wildleafs[requested_extension]
-                elif None in fallback_wildleafs:
-                    node = fallback_wildleafs[None]
+                if requested_extension in f_wildleafs:
+                    node = f_wildleafs[requested_extension]
+                elif None in f_wildleafs:
+                    node = f_wildleafs[None]
                 else:
                     debug("no suitable wildleaf fallback")
                     return DispatchResult(DispatchStatus.missing, None, wildcards, None, None)
                 debug("falling back to wild leaf: %r", node)
-                tail = '/'.join(path_segments[depth:])
+                if wildcards and f_depth < depth:
+                    # We need to recreate the wildcards dict from scratch.
+                    wildcards.clear()
+                    fspath_segments = node.fspath[len(self.www_root)+1:].split(os.path.sep)
+                    for i in range(f_depth):
+                        fspath_segment = fspath_segments[i]
+                        if fspath_segment.startswith('%'):
+                            wildcards[fspath_segment[1:]] = path_segments[i]
+                tail = '/'.join(path_segments[f_depth:])
                 if node.extension:
                     wildcards[node.wildcard] = tail[:-len(node.extension)-1]
                 else:
@@ -603,7 +612,7 @@ class UserlandDispatcher(Dispatcher):
 
             # This segment hasn't matched anything so far, look for wildcards.
             if LEAF_WILDCARDS in files:
-                fallback_wildleafs = files[LEAF_WILDCARDS]
+                fallback_wildleafs = (files[LEAF_WILDCARDS], depth)
                 debug("found fallback wildleafs: %r", fallback_wildleafs)
             if DIR_WILDCARD in dirs:
                 # Try to find a wildleaf match first, so that `/foo.txt` matches
