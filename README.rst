@@ -1,7 +1,7 @@
 Aspen is a filesystem router for Python web frameworks. See `aspen.io`_ for
 framework wrappers.
 
-.. _aspen_io: http://aspen.io/
+.. _aspen.io: http://aspen.io/
 
 
 Installation, Testing, and License
