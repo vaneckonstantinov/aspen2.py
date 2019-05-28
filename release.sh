@@ -46,6 +46,7 @@ else
         python setup.py sdist --formats=zip
         python setup.py bdist_wheel --universal
 
+        twine check dist/aspen-$1*
         twine upload dist/aspen-$1*
 
         printf "\055dev" >> version.txt
