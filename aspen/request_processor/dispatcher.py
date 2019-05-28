@@ -540,7 +540,7 @@ class UserlandDispatcher(Dispatcher):
                     node = f_wildleafs[None]
                 else:
                     debug("no suitable wildleaf fallback")
-                    return DispatchResult(DispatchStatus.missing, None, wildcards, None, None)
+                    return MISSING
                 debug("falling back to wild leaf: %r", node)
                 if wildcards and f_depth < depth:
                     # We need to recreate the wildcards dict from scratch.
@@ -557,7 +557,7 @@ class UserlandDispatcher(Dispatcher):
                     wildcards[node.wildcard] = tail
                 return DispatchResult(DispatchStatus.okay, node.fspath, wildcards, None, None)
             debug("no wildleaf fallback")
-            return DispatchResult(DispatchStatus.missing, None, wildcards, None, canonical)
+            return MISSING
 
         def success():
             return DispatchResult(
