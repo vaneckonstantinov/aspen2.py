@@ -191,16 +191,20 @@ class Dispatcher(object):
     :arg is_dynamic: a function that takes a file name and returns a boolean
     :arg indices: a list of filenames that should be treated as directory indexes
     :arg typecasters: a dict of typecasters, keys are strings and values are functions
+    :arg file_skipper: a function that takes a file name and a directory path and returns a boolean
+    :arg collision_handler: a function that takes 3 arguments (`slug, node1, node2`) and returns a string
     """
 
-    file_skipper = staticmethod(skip_hidden_files)
-
-    def __init__(self, www_root, is_dynamic, indices, typecasters, **kw):
+    def __init__(
+        self, www_root, is_dynamic, indices, typecasters,
+        file_skipper=skip_hidden_files, collision_handler=legacy_collision_handler
+    ):
         self.www_root = os.path.realpath(www_root)
         self.is_dynamic = is_dynamic
         self.indices = indices
         self.typecasters = typecasters
-        self.__dict__.update(kw)
+        self.file_skipper = file_skipper
+        self.collision_handler = collision_handler
         self.build_dispatch_tree()
 
     def build_dispatch_tree(self):
@@ -264,11 +268,11 @@ class SystemDispatcher(Dispatcher):
     """
 
     def build_dispatch_tree(self):
-        """This method does nothing.
-        """
+        """"""
         pass
 
     def dispatch(self, path, path_segments):
+        """"""
         listnodes = os.listdir
         is_leaf = os.path.isfile
         traverse = os.path.join
@@ -463,9 +467,8 @@ class UserlandDispatcher(Dispatcher):
     DIR_WILDCARD = Constant('DIR_WILDCARD')
     LEAF_WILDCARDS = Constant('LEAF_WILDCARDS')
 
-    collision_handler = staticmethod(legacy_collision_handler)
-
     def build_dispatch_tree(self):
+        """"""
         def f(dirpath, varnames):
             files, dirs = {}, {}
             index = self.find_index(dirpath)
@@ -524,6 +527,7 @@ class UserlandDispatcher(Dispatcher):
         self.tree = Node(self.www_root, 'directory', None, None, files, dirs)
 
     def dispatch(self, path, path_segments):
+        """"""
         DIR_WILDCARD = self.DIR_WILDCARD
         LEAF_WILDCARDS = self.LEAF_WILDCARDS
 
