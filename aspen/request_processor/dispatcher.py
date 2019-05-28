@@ -381,7 +381,7 @@ def _dispatch_abstract(dispatcher, listnodes, is_dynamic, is_leaf, traverse, fin
                     return DispatchResult(DispatchStatus.okay, curnode, wildvals, None, canonical)
                 debug(lambda: "no match")
                 return DispatchResult(
-                    DispatchStatus.unindexed, curnode + os.path.sep, None, None, canonical
+                    DispatchStatus.unindexed, curnode + os.path.sep, wildvals, None, canonical
                 )
             elif node in subnodes and is_leaf_node(node):
                 debug(lambda: "...found exact file, must be static")
