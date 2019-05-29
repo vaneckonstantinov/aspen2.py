@@ -17,7 +17,7 @@ from collections import defaultdict
 
 from algorithm import Algorithm
 
-from .dispatcher import SystemDispatcher, UserlandDispatcher
+from .dispatcher import HybridDispatcher, UserlandDispatcher
 from .typecasting import defaults as default_typecasters
 from ..http.resource import Static
 from ..exceptions import ConfigurationError
@@ -129,7 +129,7 @@ class RequestProcessor(object):
         # create the dispatcher
         if self.dispatcher_class is None:
             self.dispatcher_class = (
-                SystemDispatcher if self.changes_reload else UserlandDispatcher
+                HybridDispatcher if self.changes_reload else UserlandDispatcher
             )
         self.dispatcher = self.dispatcher_class(
             self.www_root, self.is_dynamic, self.indices, self.typecasters
@@ -194,7 +194,7 @@ class DefaultConfiguration(object):
     """
     The kind of dispatcher that will be used to route requests to files. By
     default :class:`UserlandDispatcher` is used, unless ``changes_reload`` is
-    set to ``True``, then :class:`SystemDispatcher` is used.
+    set to ``True``, then :class:`HybridDispatcher` is used.
     """
 
     encode_output_as = 'UTF-8'
