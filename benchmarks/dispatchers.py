@@ -60,7 +60,6 @@ print("Totals:", json.dumps(times, indent=4, sort_keys=True), end='\n\n')
 
 ordered = sorted(times.items(), key=lambda t: t[1])
 if len(ordered) > 2:
-    print("The winner is", ordered[0], ", with a gain of ")
     print(
         "The winner is %s: it's %.2f times faster than the second best %s, and %.2f times faster than the slowest %s." %
         ( ordered[0][0], ordered[1][1] / ordered[0][1], ordered[1][0]
