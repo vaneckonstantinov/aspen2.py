@@ -24,6 +24,12 @@ class Static(object):
                 pass
 
     def render(self, context):
+        """Returns the file's content as :class:`bytes`.
+
+        If the ``store_static_files_in_ram`` configuration option was set to
+        :obj:`False` (the default), then the file is read from the filesystem,
+        otherwise its content is returned directly.
+        """
         output = Output(media_type=self.media_type, charset=self.charset)
         if self.raw is None:
             with open(self.fspath, 'rb') as f:
