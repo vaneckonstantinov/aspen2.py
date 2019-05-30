@@ -233,7 +233,7 @@ def skip_hidden_files(name, dirpath):
 
 
 def skip_nothing(name, dirpath):
-    """Always returns `False`.
+    """Always returns :obj:`False`.
     """
     return False
 
@@ -244,12 +244,20 @@ def skip_nothing(name, dirpath):
 class Dispatcher(object):
     """The abstract base class of dispatchers.
 
-    :arg www_root: the path to a filesystem directory
-    :arg is_dynamic: a function that takes a file name and returns a boolean
-    :arg indices: a list of filenames that should be treated as directory indexes
-    :arg typecasters: a dict of typecasters, keys are strings and values are functions
-    :arg file_skipper: a function that takes a file name and a directory path and returns a boolean
-    :arg collision_handler: a function that takes 3 arguments (`slug, node1, node2`) and returns a string
+    Args
+    ----
+    www_root
+        the path to a filesystem directory
+    is_dynamic
+        a function that takes a file name and returns a boolean
+    indices
+        a list of filenames that should be treated as directory indexes
+    typecasters
+        a dict of typecasters, keys are strings and values are functions
+    file_skipper
+        a function that takes a file name and a directory path and returns a boolean
+    collision_handler
+        a function that takes 3 arguments (`slug, node1, node2`) and returns a string
     """
 
     def __init__(
@@ -274,8 +282,9 @@ class Dispatcher(object):
     def dispatch(self, path, path_segments):
         """Dispatch a request.
 
-        :arg str path: the request path, e.g. ``'/'``
-        :arg list path_segments: the path split into segments, e.g. ``['']``
+        Args:
+            path (str): the request path, e.g. ``'/'``
+            path_segments (list): the path split into segments, e.g. ``['']``
 
         Subclasses **must** implement this method.
         """
@@ -284,8 +293,8 @@ class Dispatcher(object):
     def find_index(self, dirpath):
         """Looks for an index file in a directory.
 
-        :returns: the full path of the first index file, or :obj:`None` if no
-                  index was found
+        Returns:
+            the full path of the first index file, or :obj:`None` if no index was found
         """
         for filename in self.indices:
             index = os.path.join(dirpath, filename)
@@ -296,9 +305,12 @@ class Dispatcher(object):
     def split_wildcard(self, wildcard, is_dir):
         """Splits a wildcard into its components.
 
-        :arg str wildcard: the string to split, e.g. :obj:`'year.int'`
-        :arg bool is_dir: :obj:`True` if the wildcard is from a directory name
-        :returns: a 3-tuple ``(varname, vartype, extension)``
+        Args:
+            wildcard (str): the string to split, e.g. :obj:`'year.int'`
+            is_dir (bool): :obj:`True` if the wildcard is from a directory name
+
+        Returns:
+            a 3-tuple ``(varname, vartype, extension)``
         """
         if '.' not in wildcard:
             return wildcard, None, None

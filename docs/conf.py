@@ -21,7 +21,8 @@ sys.path.insert(0, os.path.abspath('..'))
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 extensions = [
     'sphinx.ext.autodoc', 'sphinx.ext.doctest', 'sphinx.ext.intersphinx',
-    'sphinx.ext.todo', 'sphinx.ext.coverage', 'sphinx.ext.ifconfig'
+    'sphinx.ext.todo', 'sphinx.ext.coverage', 'sphinx.ext.ifconfig',
+    'sphinx.ext.napoleon',
 ]
 
 # The suffix of source filenames.
