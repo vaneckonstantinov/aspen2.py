@@ -1,5 +1,6 @@
 from __future__ import division, print_function, unicode_literals, with_statement
 
+import fnmatch
 import os
 import shlex
 import sys
@@ -9,10 +10,8 @@ from fabricate import ExecutionError, main, run, shell, autoclean
 # Core Executables
 # ================
 
-ENV_ARGS = [
-    '-m', 'virtualenv',
-    '--prompt=[aspen]',
-    ]
+# See https://github.com/AspenWeb/pando.py/issues/542
+USE_PY_VENV = sys.version_info > (3, 3)
 
 
 def _virt(cmd, envdir='env'):
@@ -49,8 +48,17 @@ def __env(envdir):
         # We've already built our own virtualenv.
         return envdir
 
-    args = [sys.executable] + ENV_ARGS + [envdir]
-    run(*args)
+    if USE_PY_VENV:
+        # use built-in venv module
+        run(sys.executable, '-m', 'venv', envdir)
+    else:
+        # use virtualenv instead
+        try:
+            import virtualenv
+        except ImportError:
+            # install it when missing
+            run(sys.executable, '-m', 'pip', 'install', '--user', 'virtualenv')
+        run(sys.executable, '-m', 'virtualenv', envdir)
     return envdir
 
 
@@ -96,7 +104,7 @@ def clean_env():
 def clean():
     """clean all artifacts"""
     autoclean()
-    shell('find', '.', '-name', '*.pyc', '-delete')
+    delete_files('*.pyc', '.')
     clean_env()
     clean_sphinx()
     clean_test()
@@ -147,6 +155,7 @@ def test():
 
 def _test(pytest_args=()):
     _test_deps()
+    delete_files('*.pyc', 'aspen', 'tests')
     pytest_args = pytest_args or shlex.split(os.environ.get('PYTEST_ARGS', ''))
     shell('python', '-m', 'pytest', 'tests', *pytest_args, ignore_status=False, silent=False)
     shell('pyflakes', 'aspen', 'tests', ignore_status=False, silent=False)
@@ -197,9 +206,9 @@ def clean_test():
     shell('rm', '-rf', '.tox')
     shell('rm', '-rf', '.coverage', 'coverage.xml', 'testresults.xml', 'htmlcov', 'pylint.out')
 
+
 # Build
 # =====
-
 
 def build():
     """build an egg"""
@@ -215,6 +224,20 @@ def clean_build():
     """clean build artifacts"""
     run('python', 'setup.py', 'clean', '-a')
     run('rm', '-rf', 'dist')
+
+
+# Utils
+# =====
+
+def find_files(directory, pattern):
+    for root, dirs, files in os.walk(directory):
+        for filename in fnmatch.filter(files, pattern):
+            yield os.path.join(root, filename)
+
+def delete_files(pattern, *directories):
+    for d in directories:
+        for fpath in find_files(d, pattern):
+            os.remove(fpath)
 
 
 def show_targets():
