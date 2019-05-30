@@ -31,6 +31,12 @@ ASPEN_DEBUG = 'ASPEN_DEBUG' in os.environ
 debug = debug_stdout if ASPEN_DEBUG else debug_noop
 
 
+def get_mtime_ns(fspath):
+    # For compatibility with Python < 3.3
+    st = os.stat(fspath)
+    return getattr(st, 'st_mtime_ns', int(st.st_mtime * 1000000000))
+
+
 def splitext(name):
     return name.rsplit('.', 1) if '.' in name else [name, None]
 
@@ -116,17 +122,17 @@ MISSING = DispatchResult(DispatchStatus.missing, None, None, None, None)
 
 
 @auto_repr
-class Node(object):
-    """A node of a dispatch tree."""
+class FileNode(object):
+    """Represents a file in a dispatch tree."""
 
-    __slots__ = ('fspath', 'type', 'wildcard', 'extension', 'files', 'dirs')
+    __slots__ = ('fspath', 'type', 'wildcard', 'extension')
 
-    def __init__(self, fspath, type, wildcard, extension, files, dirs):
+    def __init__(self, fspath, type, wildcard, extension):
         self.fspath = fspath
         "The absolute filesystem path of this node."
 
         self.type = type
-        "The node's type: 'directory', 'dynamic', or 'static'."
+        "The node's type: 'dynamic' or 'static'."
 
         self.wildcard = wildcard
         "The name of the path variable if the node is a wildcard."
@@ -134,11 +140,62 @@ class Node(object):
         self.extension = extension
         "The sub-extension of a dynamic file, e.g. ``json`` for ``foo.json.spt``."
 
-        self.files = files
-        "A :class:`dict` of the node's leaf children."
 
-        self.dirs = dirs
-        "A :class:`dict` of the node's directory children."
+@auto_repr
+class DirectoryNode(object):
+    """Represents a directory in a dispatch tree."""
+
+    __slots__ = ('fspath', 'wildcard', 'children')
+
+    type = 'directory'
+
+    def __init__(self, fspath, wildcard, children):
+        self.fspath = fspath
+        "The absolute filesystem path of this node."
+
+        self.wildcard = wildcard
+        "The name of the path variable if the node is a wildcard."
+
+        self.children = children
+        "The node's children, a 2-tuple of dicts: ``(files, dirs)``."
+
+
+@auto_repr
+class LiveDirectoryNode(object):
+    """Dynamically represents a directory in a dispatch tree."""
+
+    __slots__ = ('fspath', 'wildcard', '_children', 'mtime', 'dispatcher')
+
+    type = 'directory'
+
+    def __init__(self, fspath, wildcard, children, mtime, dispatcher):
+        self.fspath = fspath
+        "The absolute filesystem path of this node."
+
+        self.wildcard = wildcard
+        "The name of the path variable if the node is a wildcard."
+
+        self._children = children
+        "The node's children, a 2-tuple of dicts: ``(files, dirs)``."
+
+        self.mtime = mtime
+        "The last modification time of the directory, in nanoseconds."
+
+        self.dispatcher = dispatcher
+        "Points to the :class:`Dispatcher` object that created this node."
+
+    @property
+    def children(self):
+        mtime = get_mtime_ns(self.fspath)
+        if mtime != self.mtime:
+            dirnames = self.fspath[len(self.dispatcher.www_root)+1:].split(os.path.sep)
+            varnames = {
+                dirname[1:]: os.path.sep.join([self.dispatcher.www_root] + dirnames[:i+1])
+                for i, dirname in enumerate(dirnames)
+                if dirname.startswith('%')
+            }
+            self._children, self.mtime = self.dispatcher._build_subtree(self.fspath, varnames)
+        return self._children
 
 
 # Collision handlers
@@ -264,7 +321,7 @@ class Dispatcher(object):
 
 
 class SystemDispatcher(Dispatcher):
-    """Aspen's legacy dispatcher, not optimized for production use.
+    """Aspen's original dispatcher, it's very inefficient.
     """
 
     def build_dispatch_tree(self):
@@ -456,75 +513,86 @@ def _dispatch_abstract(dispatcher, listnodes, is_dynamic, is_leaf, traverse, fin
 
 
 class UserlandDispatcher(Dispatcher):
-    """This is Aspen's new dispatcher, optimized for production use.
+    """A dispatcher optimized for production use.
 
-    This dispatcher builds a complete tree when it is first created. It then uses
-    this dispatch tree to route requests efficiently, with fewer computations and
-    memory allocations than the old dispatcher, and without making any system
-    call, thus avoiding FFI and context switching costs as well.
+    This dispatcher builds a complete and static tree when it is first created.
+    It then uses this dispatch tree to route requests without making any system
+    call, thus avoiding FFI and context switching costs.
+
+    This is the default dispatcher (when the ``changes_reload`` configuration
+    option is ``False``).
     """
 
     DIR_WILDCARD = Constant('DIR_WILDCARD')
     LEAF_WILDCARDS = Constant('LEAF_WILDCARDS')
 
+    def make_dir_node(self, fspath, wildcard, children, mtime):
+        return DirectoryNode(fspath, wildcard, children)
+
     def build_dispatch_tree(self):
         """"""
-        def f(dirpath, varnames):
-            files, dirs = {}, {}
-            index = self.find_index(dirpath)
-            for name in sorted(os.listdir(dirpath)):
-                if self.file_skipper(name, dirpath):
-                    continue
-                fspath = os.path.realpath(os.path.join(dirpath, name))
-                if not fspath.startswith(self.www_root):
-                    # Prevent escaping the www_root
-                    continue
-                is_dir = os.path.isdir(fspath)
-                if is_dir:
-                    node_type = 'directory'
-                    slug = name
-                elif self.is_dynamic(name):
-                    node_type = 'dynamic'
-                    slug = name.rsplit('.', 1)[0]
-                else:
-                    node_type = 'static'
-                    slug = name
-                if slug.startswith('%') and node_type != 'static':
-                    varname, vartype, extension = self.split_wildcard(slug[1:], is_dir)
-                    if varname in varnames and varnames[varname] != dirpath:
-                        raise WildcardCollision(varname)
-                    varnames[varname] = dirpath
-                    wildcard = '.'.join((varname, vartype)) if vartype else varname
-                    del varname, vartype
-                    if is_dir:
-                        slug = self.DIR_WILDCARD
-                    else:
-                        node = Node(fspath, node_type, wildcard, extension, None, None)
-                        wildleafs = files.setdefault(self.LEAF_WILDCARDS, {})
-                        wildleafs[extension] = node
-                        continue
-                else:
-                    wildcard, extension = None, None
-                subtree = f(fspath, varnames.copy()) if is_dir else (None, None)
-                node = Node(fspath, node_type, wildcard, extension, *subtree)
-                goes_into = dirs if is_dir else files
-                if slug in goes_into:
-                    action = self.collision_handler(slug, goes_into[slug], node)
-                    debug("collision: %r is claimed by both %r and %r | action: %r"
-                         , slug, goes_into[slug].fspath, node.fspath, action)
-                    if action == 'raise':
-                        raise SlugCollision(slug, goes_into[slug], node)
-                    if action == 'ignore_second_node':
-                        continue
-                    if action != 'replace_first_node':
-                        raise ValueError("%r is not a valid collision action" % action)
-                goes_into[slug] = node
-                if fspath == index:
-                    files[''] = slug
-            return files, dirs
+        children, mtime = self._build_subtree(self.www_root, {})
+        self.tree = self.make_dir_node(self.www_root, None, children, mtime)
 
-        files, dirs = f(self.www_root, {})
-        self.tree = Node(self.www_root, 'directory', None, None, files, dirs)
+    def _build_subtree(self, dirpath, varnames):
+        """This method recursively builds a dispacth subtree.
+        """
+        files, dirs = {}, {}
+        mtime = get_mtime_ns(dirpath)
+        index = self.find_index(dirpath)
+        for name in sorted(os.listdir(dirpath)):
+            if self.file_skipper(name, dirpath):
+                continue
+            fspath = os.path.realpath(os.path.join(dirpath, name))
+            if not fspath.startswith(self.www_root):
+                # Prevent escaping the www_root
+                continue
+            is_dir = os.path.isdir(fspath)
+            if is_dir:
+                node_type = 'directory'
+                slug = name
+            elif self.is_dynamic(name):
+                node_type = 'dynamic'
+                slug = name.rsplit('.', 1)[0]
+            else:
+                node_type = 'static'
+                slug = name
+            if slug.startswith('%') and node_type != 'static':
+                varname, vartype, extension = self.split_wildcard(slug[1:], is_dir)
+                if varname in varnames and varnames[varname] != dirpath:
+                    raise WildcardCollision(varname)
+                varnames[varname] = dirpath
+                wildcard = '.'.join((varname, vartype)) if vartype else varname
+                del varname, vartype
+                if is_dir:
+                    slug = self.DIR_WILDCARD
+                else:
+                    node = FileNode(fspath, node_type, wildcard, extension)
+                    wildleafs = files.setdefault(self.LEAF_WILDCARDS, {})
+                    wildleafs[extension] = node
+                    continue
+            else:
+                wildcard, extension = None, None
+            if is_dir:
+                subtree, mtime = self._build_subtree(fspath, varnames.copy())
+                node = self.make_dir_node(fspath, wildcard, subtree, mtime)
+            else:
+                node = FileNode(fspath, node_type, wildcard, extension)
+            goes_into = dirs if is_dir else files
+            if slug in goes_into:
+                action = self.collision_handler(slug, goes_into[slug], node)
+                debug("collision: %r is claimed by both %r and %r | action: %r"
+                     , slug, goes_into[slug].fspath, node.fspath, action)
+                if action == 'raise':
+                    raise SlugCollision(slug, goes_into[slug], node)
+                if action == 'ignore_second_node':
+                    continue
+                if action != 'replace_first_node':
+                    raise ValueError("%r is not a valid collision action" % action)
+            goes_into[slug] = node
+            if fspath == index:
+                files[''] = slug
+        return (files, dirs), mtime
 
     def dispatch(self, path, path_segments):
         """"""
@@ -572,7 +640,7 @@ class UserlandDispatcher(Dispatcher):
         node = self.tree
         max_depth = len(path_segments) - 1
         for depth, segment in enumerate(path_segments):
-            files, dirs = node.files, node.dirs
+            files, dirs = node.children
 
             if segment:
                 # The segment isn't empty. Look for a match in files and dirs.
@@ -625,7 +693,7 @@ class UserlandDispatcher(Dispatcher):
 
         if node.type == 'directory':
             debug("final node is a directory")
-            files, dirs = node.files, node.dirs
+            files, dirs = node.children
             canonical = path + '/' if path_segments[-1] != '' else None
             # Look for an index file
             if '' in files:
@@ -648,6 +716,22 @@ class UserlandDispatcher(Dispatcher):
                 )
 
         return success()
+
+
+class HybridDispatcher(UserlandDispatcher):
+    """A dispatcher optimized for development environments.
+
+    This dispatcher is almost identical to :class:`UserlandDispatcher`, except
+    that it does make some system calls to check that the matched filesystem
+    directories haven't been modified. If changes are detected, then the
+    dispacth tree is updated accordingly.
+
+    This is the default dispatcher when the ``changes_reload`` configuration
+    option is set to ``True``.
+    """
+
+    def make_dir_node(self, fspath, wildcard, children, mtime):
+        return LiveDirectoryNode(fspath, wildcard, children, mtime, self)
 
 
 class TestDispatcher(object):

@@ -6,6 +6,8 @@ from __future__ import unicode_literals
 import os
 import pytest
 
+from filesystem_tree import FilesystemTree
+
 import aspen
 from aspen.request_processor.dispatcher import DISPATCHER_CLASSES, DispatchStatus
 
@@ -47,30 +49,62 @@ Greetings, program!
 # ===================
 
 @pytest.mark.parametrize('dispatcher_class', DISPATCHER_CLASSES)
-def test_dispatcher_returns_a_result(harness, dispatcher_class):
-    harness.fs.www.mk(('index.html', 'Greetings, program!'),)
+def test_dispatcher_returns_a_result(dispatcher_class):
+    www = FilesystemTree()
+    www.mk(('index.html', 'Greetings, program!'),)
     dispatcher = dispatcher_class(
-        www_root    = harness.fs.www.root,
+        www_root    = www.root,
         is_dynamic  = lambda n: n.endswith('.spt'),
         indices     = ['index.html'],
         typecasters = {},
     )
     result = dispatcher.dispatch('/', [''])
     assert result.status == DispatchStatus.okay
-    assert result.match == os.path.join(harness.fs.www.root, 'index.html')
+    assert result.match == os.path.join(www.root, 'index.html')
     assert result.wildcards == None
 
 @pytest.mark.parametrize('dispatcher_class', DISPATCHER_CLASSES)
-def test_dispatcher_returns_unindexed_for_unindexed_directory(harness, dispatcher_class):
+def test_dispatcher_returns_unindexed_for_unindexed_directory(dispatcher_class):
+    www = FilesystemTree()
     dispatcher = dispatcher_class(
-        www_root    = harness.fs.www.root,
+        www_root    = www.root,
         is_dynamic  = lambda n: n.endswith('.spt'),
         indices     = [],
         typecasters = {},
     )
     r = dispatcher.dispatch('/', [''])
     assert r.status == DispatchStatus.unindexed
-    assert r.match == harness.fs.www.root + os.path.sep
+    assert r.match == www.root + os.path.sep
+
+def test_dispatch_when_filesystem_has_been_modified():
+    # Create an empty www_root
+    www = FilesystemTree()
+    # Help the dispatchers that rely on `mtime`
+    st = os.stat(www.root)
+    os.utime(www.root, (st.st_atime - 10, st.st_mtime - 10))
+    # Initialize the dispatchers
+    dispatchers = []
+    for dispatcher_class in DISPATCHER_CLASSES:
+        dispatchers.append(dispatcher_class(
+            www_root    = www.root,
+            is_dynamic  = lambda n: n.endswith('.spt'),
+            indices     = ['index.html'],
+            typecasters = {},
+        ))
+    # Now add an index file and try to dispatch
+    www.mk(('index.html', 'Greetings, program!'))
+    for dispatcher in dispatchers:
+        print("Attempting dispatch with", dispatcher.__class__.__name__)
+        result = dispatcher.dispatch('/', [''])
+        if dispatcher.__class__.__name__ == 'UserlandDispatcher':
+            assert result.status == DispatchStatus.unindexed
+            assert result.match == www.root + os.path.sep
+        else:
+            assert result.status == DispatchStatus.okay
+            assert result.match == www.resolve('index.html')
+        assert result.wildcards is None
+        assert result.extension is None
+        assert result.canonical is None
 
 
 # Indices
