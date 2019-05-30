@@ -7,6 +7,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 from functools import reduce
+from inspect import isclass
 import os
 import posixpath
 
@@ -76,7 +77,7 @@ class DispatchResult(object):
         self.match = match
         "The matching filesystem path (if status != 'missing')."
 
-        self.wildcards = wildcards
+        self.wildcards = wildcards or None
         "A dict whose keys are wildcard names, and values are as supplied by the path."
 
         self.extension = extension
@@ -84,6 +85,31 @@ class DispatchResult(object):
 
         self.canonical = canonical
         "The canonical path of the resource, e.g. ``/`` for ``/index.html``."
+
+    def __eq__(self, other):
+        return (
+            isinstance(other, DispatchResult) and
+            self.status == other.status and
+            self.match == other.match and
+            self.wildcards == other.wildcards and
+            self.extension == other.extension and
+            self.canonical == other.canonical
+        )
+
+    def __ne__(self, other):
+        return not (self == other)
+
+    def _as_tuple(self):
+        # We can't give this class a proper `__hash__` method because
+        # `DispatchResult` objects aren't immutable, so we use this method
+        # instead to get a hashable tuple.
+        return (
+            self.status,
+            self.match,
+            frozenset(self.wildcards.items()) if self.wildcards else self.wildcards,
+            self.extension,
+            self.canonical
+        )
 
 
 MISSING = DispatchResult(DispatchStatus.missing, None, None, None, None)
@@ -165,14 +191,20 @@ class Dispatcher(object):
     :arg is_dynamic: a function that takes a file name and returns a boolean
     :arg indices: a list of filenames that should be treated as directory indexes
     :arg typecasters: a dict of typecasters, keys are strings and values are functions
+    :arg file_skipper: a function that takes a file name and a directory path and returns a boolean
+    :arg collision_handler: a function that takes 3 arguments (`slug, node1, node2`) and returns a string
     """
 
-    def __init__(self, www_root, is_dynamic, indices, typecasters, **kw):
+    def __init__(
+        self, www_root, is_dynamic, indices, typecasters,
+        file_skipper=skip_hidden_files, collision_handler=legacy_collision_handler
+    ):
         self.www_root = os.path.realpath(www_root)
         self.is_dynamic = is_dynamic
         self.indices = indices
         self.typecasters = typecasters
-        self.__dict__.update(kw)
+        self.file_skipper = file_skipper
+        self.collision_handler = collision_handler
         self.build_dispatch_tree()
 
     def build_dispatch_tree(self):
@@ -236,17 +268,17 @@ class SystemDispatcher(Dispatcher):
     """
 
     def build_dispatch_tree(self):
-        """This method does nothing.
-        """
+        """"""
         pass
 
     def dispatch(self, path, path_segments):
+        """"""
         listnodes = os.listdir
         is_leaf = os.path.isfile
         traverse = os.path.join
         result = _dispatch_abstract(
-            listnodes, self.is_dynamic, is_leaf, traverse, self.find_index,
-            self.www_root, path_segments,
+            self, listnodes, self.is_dynamic, is_leaf, traverse, self.find_index,
+            self.www_root, path_segments
         )
         debug(lambda: "dispatch_abstract returned: " + repr(result))
 
@@ -258,7 +290,7 @@ class SystemDispatcher(Dispatcher):
         return result
 
 
-def _dispatch_abstract(listnodes, is_dynamic, is_leaf, traverse, find_index, startnode, nodepath):
+def _dispatch_abstract(dispatcher, listnodes, is_dynamic, is_leaf, traverse, find_index, startnode, nodepath):
     """Given a list of nodenames (in 'nodepath'), return a DispatchResult.
 
     We try to traverse the directed graph rooted at 'startnode' using the
@@ -283,6 +315,8 @@ def _dispatch_abstract(listnodes, is_dynamic, is_leaf, traverse, find_index, sta
     isfile(virtual-no-extension) then isdir(virtual)
 
     """
+    file_skipper = dispatcher.file_skipper
+
     nodepath = nodepath[:]  # copy it so we can mutate it if necessary
     wildvals, wildleafs = {}, {}
     curnode = startnode
@@ -306,7 +340,7 @@ def _dispatch_abstract(listnodes, is_dynamic, is_leaf, traverse, find_index, sta
         # node.html, node.html.spt, node.spt, node.html/, %node.html/ %*.html.spt, %*.spt
 
         # don't serve hidden files
-        subnodes = set([ n for n in listnodes(curnode) if not n.startswith('.') ])
+        subnodes = set([ n for n in listnodes(curnode) if not file_skipper(n, curnode) ])
 
         node_noext, node_ext = splitext(node)
 
@@ -320,10 +354,13 @@ def _dispatch_abstract(listnodes, is_dynamic, is_leaf, traverse, find_index, sta
         remaining = reduce(posixpath.join, nodepath[depth:])
         for n in wild_leaf_ns:
             wildwildvals = wildvals.copy()
-            k, v = strip_matching_ext(n[1:-4], remaining)
-            wildwildvals[k] = v
-            n_ext = splitext(n[:-4])[1]
-            wildleafs[n_ext] = (traverse(curnode, n), wildwildvals)
+            varname, vartype, leaf_ext = dispatcher.split_wildcard(splitext(n[1:])[0], False)
+            wildcard = '.'.join((varname, vartype)) if vartype else varname
+            if leaf_ext and remaining.endswith(leaf_ext):
+                wildwildvals[wildcard] = remaining[:-len(leaf_ext)-1]
+            else:
+                wildwildvals[wildcard] = remaining
+            wildleafs[leaf_ext] = (traverse(curnode, n), wildwildvals)
 
         debug(lambda: "wildleafs is %r" % wildleafs)
 
@@ -342,12 +379,13 @@ def _dispatch_abstract(listnodes, is_dynamic, is_leaf, traverse, find_index, sta
                     found_n = wild_leaf_ns[0]
                     debug(lambda: "found wild leaf: %r" % found_n)
                     curnode = traverse(curnode, found_n)
-                    node_name = found_n[1:-4]  # strip leading % and trailing .spt
-                    wildvals[node_name] = node
+                    varname, vartype, _ = dispatcher.split_wildcard(splitext(found_n[1:])[0], False)
+                    wildcard = '.'.join((varname, vartype)) if vartype else varname
+                    wildvals[wildcard] = node
                     return DispatchResult(DispatchStatus.okay, curnode, wildvals, None, canonical)
                 debug(lambda: "no match")
                 return DispatchResult(
-                    DispatchStatus.unindexed, curnode + os.path.sep, None, None, canonical
+                    DispatchStatus.unindexed, curnode + os.path.sep, wildvals, None, canonical
                 )
             elif node in subnodes and is_leaf_node(node):
                 debug(lambda: "...found exact file, must be static")
@@ -429,10 +467,8 @@ class UserlandDispatcher(Dispatcher):
     DIR_WILDCARD = Constant('DIR_WILDCARD')
     LEAF_WILDCARDS = Constant('LEAF_WILDCARDS')
 
-    collision_handler = staticmethod(legacy_collision_handler)
-    file_skipper = staticmethod(skip_hidden_files)
-
     def build_dispatch_tree(self):
+        """"""
         def f(dirpath, varnames):
             files, dirs = {}, {}
             index = self.find_index(dirpath)
@@ -491,6 +527,7 @@ class UserlandDispatcher(Dispatcher):
         self.tree = Node(self.www_root, 'directory', None, None, files, dirs)
 
     def dispatch(self, path, path_segments):
+        """"""
         DIR_WILDCARD = self.DIR_WILDCARD
         LEAF_WILDCARDS = self.LEAF_WILDCARDS
 
@@ -499,23 +536,32 @@ class UserlandDispatcher(Dispatcher):
 
         def fallback():
             if fallback_wildleafs:
+                f_wildleafs, f_depth = fallback_wildleafs
                 requested_extension = splitext(path_segments[-1])[1]
-                if requested_extension in fallback_wildleafs:
-                    node = fallback_wildleafs[requested_extension]
-                elif None in fallback_wildleafs:
-                    node = fallback_wildleafs[None]
+                if requested_extension in f_wildleafs:
+                    node = f_wildleafs[requested_extension]
+                elif None in f_wildleafs:
+                    node = f_wildleafs[None]
                 else:
                     debug("no suitable wildleaf fallback")
-                    return DispatchResult(DispatchStatus.missing, None, wildcards, None, None)
+                    return MISSING
                 debug("falling back to wild leaf: %r", node)
-                tail = '/'.join(path_segments[depth:])
+                if wildcards and f_depth < depth:
+                    # We need to recreate the wildcards dict from scratch.
+                    wildcards.clear()
+                    fspath_segments = node.fspath[len(self.www_root)+1:].split(os.path.sep)
+                    for i in range(f_depth):
+                        fspath_segment = fspath_segments[i]
+                        if fspath_segment.startswith('%'):
+                            wildcards[fspath_segment[1:]] = path_segments[i]
+                tail = '/'.join(path_segments[f_depth:])
                 if node.extension:
                     wildcards[node.wildcard] = tail[:-len(node.extension)-1]
                 else:
                     wildcards[node.wildcard] = tail
                 return DispatchResult(DispatchStatus.okay, node.fspath, wildcards, None, None)
             debug("no wildleaf fallback")
-            return DispatchResult(DispatchStatus.missing, None, wildcards, None, canonical)
+            return MISSING
 
         def success():
             return DispatchResult(
@@ -555,25 +601,11 @@ class UserlandDispatcher(Dispatcher):
                     continue
             elif depth == max_depth:
                 # The segment is empty and it's the last one.
-                # Look for an index first, then for a wildleaf.
-                if segment in files:
-                    debug("index match")
-                    node = files[files['']]
-                    return success()
-                if LEAF_WILDCARDS in files:
-                    debug("wildleaf match")
-                    wildleafs = files[LEAF_WILDCARDS]
-                    # Legacy behavior: dispatch to the "first" wildleaf
-                    node = wildleafs[min(wildleafs)]
-                    wildcards[node.wildcard] = segment
-                    return DispatchResult(
-                        DispatchStatus.okay, node.fspath, wildcards, None, None
-                    )
                 break
 
             # This segment hasn't matched anything so far, look for wildcards.
             if LEAF_WILDCARDS in files:
-                fallback_wildleafs = files[LEAF_WILDCARDS]
+                fallback_wildleafs = (files[LEAF_WILDCARDS], depth)
                 debug("found fallback wildleafs: %r", fallback_wildleafs)
             if DIR_WILDCARD in dirs:
                 # Try to find a wildleaf match first, so that `/foo.txt` matches
@@ -597,14 +629,57 @@ class UserlandDispatcher(Dispatcher):
             canonical = path + '/' if path_segments[-1] != '' else None
             # Look for an index file
             if '' in files:
+                debug("index match")
                 node = files[files['']]
-            elif wildcards:
-                # e.g. request for `/bar` is matched to empty wildcard directory `%foo/`
-                return fallback()
+            elif LEAF_WILDCARDS in files:
+                debug("wildleaf match")
+                wildleafs = files[LEAF_WILDCARDS]
+                # Legacy behavior: dispatch to the "first" wildleaf
+                node = wildleafs[min(wildleafs)]
+                wildcards[node.wildcard] = ''
             else:
+                # e.g. request for `/bar` is matched to empty wildcard directory `%foo/`
+                result = fallback()
+                if result.status == DispatchStatus.okay:
+                    return result
                 fspath = node.fspath + os.path.sep
                 return DispatchResult(
                     DispatchStatus.unindexed, fspath, wildcards, extension, canonical
                 )
 
         return success()
+
+
+class TestDispatcher(object):
+    """
+    This pseudo-dispatcher calls all the other dispatchers and checks that their
+    results are identical. It's only meant to be used in Aspen's own tests.
+    """
+
+    def __init__(self, *args, **kw):
+        self.dispatchers = [cls(*args, **kw) for cls in DISPATCHER_CLASSES]
+
+    def build_dispatch_tree(self):
+        for dispatcher in self.dispatchers:
+            dispatcher.build_dispatch_tree()
+
+    def dispatch(self, path, path_segments):
+        results = [
+            (dispatcher, dispatcher.dispatch(path, path_segments))
+            for dispatcher in self.dispatchers
+        ]
+        if len(set(t[1]._as_tuple() for t in results)) != 1:
+            raise AssertionError(
+                "the dispatchers disagree:\n    " +
+                "\n    ".join(
+                    "%s returned %r" % (dispatcher.__class__.__name__, result)
+                    for dispatcher, result in results
+                )
+            )
+        return results[0][1]
+
+
+DISPATCHER_CLASSES = [
+    o for o in globals().values() if isclass(o) and issubclass(o, Dispatcher) and o != Dispatcher
+]
+DISPATCHER_CLASSES.sort(key=lambda c: c.__name__)
