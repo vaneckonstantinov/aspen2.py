@@ -78,18 +78,18 @@ class SimplateDefaults(object):
 
 class Simplate(Dynamic):
     """A simplate is a dynamic resource with multiple syntaxes in one file.
+
+    Args:
+        fs (str): the absolute filesystem path of this simplate
+        raw (bytes): raw content of this simplate as bytes
+        fs_media_type (str): the content type derived from the extension in the
+                             simplate's filesystem name, if it has one
+
     """
 
     defaults = None # type: SimplateDefaults
 
     def __init__(self, request_processor, fs, raw, fs_media_type):
-        """Instantiate a simplate.
-
-        fs - path to this simplate
-        raw - raw content of this simplate as bytes
-        decoded - content of this simplate as unicode
-        fs_media_type - the filesystem content_type of this simplate
-        """
         self.request_processor = request_processor
         self.fs = fs                                  # type: str
         self.raw = raw                                # type: bytes
@@ -142,8 +142,10 @@ class Simplate(Dynamic):
         """Given a bytestring that is the entire simplate, return a list of pages.
 
         If there's one page, it's a template.
+
         If there's more than one page, the first page is always python and the last is always a template.
-        If there's more than two pages, the second page is python *unless it has a specline*, which makes it a template
+
+        If there's more than two pages, the second page is python *unless it has a specline*, which makes it a template.
 
         """
 
@@ -165,11 +167,13 @@ class Simplate(Dynamic):
         """Given a list of pages, replace the pages with objects.
 
         Page 0 is the 'run once' page - it is executed and the resulting
-            context stored in self.pages[0]
+        context stored in :obj:`self.pages[0]`.
+
         Page 1 is the 'run every' page - it is compiled for easier execution
-            later, and stored in self.pages[1]
-        Subsequent pages are templates, so each one's content_type and
-            respective renderer are stored as a tuple in self.pages[n]
+        later, and stored in :obj:`self.pages[1]`.
+
+        Subsequent pages are templates, so each one's content type and
+        respective renderer are stored as a tuple in :obj:`self.pages[n]`.
         """
 
         # Exec the first page and compile the second.
@@ -194,7 +198,7 @@ class Simplate(Dynamic):
 
 
     def compile_page(self, page):
-        """Given a Page, return a (renderer, media type) pair.
+        """Given a :class:`Page`, return a :obj:`(renderer, media type)` pair.
         """
         make_renderer, media_type = self._parse_specline(page.header)
         renderer = make_renderer(self.fs, page.content, media_type, page.offset)

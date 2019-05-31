@@ -15,5 +15,6 @@ exceptions that Aspen raises.
     request_processor
     dispatcher
     typecasting
+    simplates
     testing
     exceptions

@@ -49,6 +49,8 @@ def factories(configuration):
 # The base is actually functional. It's a pass-through.
 
 class Renderer(object):
+    """The base class of renderers.
+    """
 
     def __init__(self, factory, filepath, raw, media_type, offset):
         """Takes a Factory, three bytestrings, and an int.
@@ -101,6 +103,8 @@ class Renderer(object):
 
 
 class Factory(object):
+    """The base class of renderer factories.
+    """
 
     Renderer = Renderer
 
