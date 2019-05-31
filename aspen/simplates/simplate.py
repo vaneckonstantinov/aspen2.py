@@ -88,14 +88,14 @@ class Simplate(Dynamic):
     """
 
     __slots__ = (
-        'fs', 'default_media_type', 'renderers', 'page_one', 'page_two',
+        'fspath', 'default_media_type', 'renderers', 'page_one', 'page_two',
     )
 
     defaults = None # type: SimplateDefaults
 
-    def __init__(self, request_processor, fs, raw, fs_media_type):
+    def __init__(self, request_processor, fspath, raw, fs_media_type):
         self.request_processor = request_processor
-        self.fs = fs
+        self.fspath = fspath
         self.default_media_type = fs_media_type or request_processor.media_type_default
 
         self.renderers = {}         # mapping of media type to Renderer objects
@@ -184,26 +184,24 @@ class Simplate(Dynamic):
         one, two = pages[:2]
 
         context = dict()
-        context['__file__'] = self.fs
+        context['__file__'] = self.fspath
         context.update(self.defaults.initial_context)
 
-        one = compile(one.padded_content, self.fs, 'exec')
+        one = compile(one.padded_content, self.fspath, 'exec')
         exec(one, context)    # mutate context
         one = context          # store it
 
-        two = compile(two.padded_content, self.fs, 'exec')
+        two = compile(two.padded_content, self.fspath, 'exec')
 
         pages[:2] = (one, two)
         pages[2:] = [self.compile_page(page) for page in pages[2:]]
 
-        return pages
-
 
     def compile_page(self, page):
-        """Given a :class:`Page`, return a :obj:`(renderer, media type)` pair.
+        """Given a :class:`Page`, return a :obj:`(renderer, media_type)` pair.
         """
         make_renderer, media_type = self._parse_specline(page.header)
-        renderer = make_renderer(self.fs, page.content, media_type, page.offset)
+        renderer = make_renderer(self.fspath, page.content, media_type, page.offset)
         if media_type in self.renderers:
             raise SyntaxError("Two content pages defined for %s." % media_type)
 
