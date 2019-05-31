@@ -80,26 +80,29 @@ class Simplate(Dynamic):
     """A simplate is a dynamic resource with multiple syntaxes in one file.
 
     Args:
-        fs (str): the absolute filesystem path of this simplate
+        fspath (str): the absolute filesystem path of this simplate
         raw (bytes): raw content of this simplate as bytes
         fs_media_type (str): the content type derived from the extension in the
                              simplate's filesystem name, if it has one
 
     """
 
+    __slots__ = (
+        'fs', 'default_media_type', 'renderers', 'page_one', 'page_two',
+    )
+
     defaults = None # type: SimplateDefaults
 
     def __init__(self, request_processor, fs, raw, fs_media_type):
         self.request_processor = request_processor
-        self.fs = fs                                  # type: str
-        self.raw = raw                                # type: bytes
-        self.decoded = _decode(raw)                   # type: str
+        self.fs = fs
         self.default_media_type = fs_media_type or request_processor.media_type_default
 
         self.renderers = {}         # mapping of media type to Renderer objects
         self.available_types = []   # ordered sequence of media types
-        pages = self.parse_into_pages(self.decoded)
-        self.pages = self.compile_pages(pages)
+        pages = self.parse_into_pages(_decode(raw))
+        self.compile_pages(pages)
+        self.page_one, self.page_two = pages[0], pages[1]
 
 
     def render_for_type(self, media_type, context):
@@ -118,9 +121,9 @@ class Simplate(Dynamic):
         # create Output object and put it in the context
         output = context['output'] = Output(media_type=media_type)
         # update the context with values from the first page
-        context.update(self.pages[0])
+        context.update(self.page_one)
         # use this as the context to execute the second page in
-        exec(self.pages[1], context)
+        exec(self.page_two, context)
         # skip rendering if the second page has already filled output.body
         if output.body is not None:
             return output

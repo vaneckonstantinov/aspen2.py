@@ -9,6 +9,8 @@ class Static(object):
     """Model a static HTTP resource.
     """
 
+    __slots__ = ('fspath', 'raw', 'fs_media_type', 'media_type', 'charset')
+
     def __init__(self, request_processor, fspath, raw, fs_media_type):
         assert type(raw) is bytes  # sanity check
         self.fspath = fspath
@@ -43,7 +45,7 @@ class Dynamic(object):
     """Model a dynamic HTTP resource.
     """
 
-    available_types = []  # populate in your subclass
+    __slots__ = ('request_processor', 'available_types')
 
     def render(self, context, dispatch_result, accept_header):
         """Render the resource.
