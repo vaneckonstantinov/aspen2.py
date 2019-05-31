@@ -38,10 +38,12 @@ def test_dynamic_resource_is_instantiable(harness):
     assert actual is Simplate
 
 
-# compile_page
+def test_duplicate_media_type_causes_SyntaxError(get):
+    with raises(SyntaxError):
+        get(raw=b"[---]\n[---] text/plain\n[---] text/plain\n")
 
-def test_compile_page_chokes_on_truly_empty_page(get):
-    raises(SyntaxError, get().compile_page, Page(''))
+
+# compile_page
 
 def test_compile_page_compiles_empty_page(get):
     page = get().compile_page(Page('', 'text/html'))

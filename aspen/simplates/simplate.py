@@ -103,6 +103,11 @@ class Simplate(Dynamic):
         pages = self.parse_into_pages(_decode(raw))
         self.compile_pages(pages)
         self.page_one, self.page_two = pages[0], pages[1]
+        for renderer, media_type in pages[2:]:
+            if media_type in self.renderers:
+                raise SyntaxError("Two content pages defined for %s." % media_type)
+            self.available_types.append(media_type)
+            self.renderers[media_type] = renderer
 
 
     def render_for_type(self, media_type, context):
@@ -202,14 +207,7 @@ class Simplate(Dynamic):
         """
         make_renderer, media_type = self._parse_specline(page.header)
         renderer = make_renderer(self.fspath, page.content, media_type, page.offset)
-        if media_type in self.renderers:
-            raise SyntaxError("Two content pages defined for %s." % media_type)
-
-        # update internal data structures
-        self.renderers[media_type] = renderer
-        self.available_types.append(media_type)
-
-        return (renderer, media_type)  # back to parent class
+        return (renderer, media_type)
 
     def _parse_specline(self, specline):
         """Given a bytestring, return a two-tuple.
