@@ -80,26 +80,34 @@ class Simplate(Dynamic):
     """A simplate is a dynamic resource with multiple syntaxes in one file.
 
     Args:
-        fs (str): the absolute filesystem path of this simplate
+        fspath (str): the absolute filesystem path of this simplate
         raw (bytes): raw content of this simplate as bytes
         fs_media_type (str): the content type derived from the extension in the
                              simplate's filesystem name, if it has one
 
     """
 
+    __slots__ = (
+        'fspath', 'default_media_type', 'renderers', 'page_one', 'page_two',
+    )
+
     defaults = None # type: SimplateDefaults
 
-    def __init__(self, request_processor, fs, raw, fs_media_type):
+    def __init__(self, request_processor, fspath, raw, fs_media_type):
         self.request_processor = request_processor
-        self.fs = fs                                  # type: str
-        self.raw = raw                                # type: bytes
-        self.decoded = _decode(raw)                   # type: str
+        self.fspath = fspath
         self.default_media_type = fs_media_type or request_processor.media_type_default
 
         self.renderers = {}         # mapping of media type to Renderer objects
         self.available_types = []   # ordered sequence of media types
-        pages = self.parse_into_pages(self.decoded)
-        self.pages = self.compile_pages(pages)
+        pages = self.parse_into_pages(_decode(raw))
+        self.compile_pages(pages)
+        self.page_one, self.page_two = pages[0], pages[1]
+        for renderer, media_type in pages[2:]:
+            if media_type in self.renderers:
+                raise SyntaxError("Two content pages defined for %s." % media_type)
+            self.available_types.append(media_type)
+            self.renderers[media_type] = renderer
 
 
     def render_for_type(self, media_type, context):
@@ -118,9 +126,9 @@ class Simplate(Dynamic):
         # create Output object and put it in the context
         output = context['output'] = Output(media_type=media_type)
         # update the context with values from the first page
-        context.update(self.pages[0])
+        context.update(self.page_one)
         # use this as the context to execute the second page in
-        exec(self.pages[1], context)
+        exec(self.page_two, context)
         # skip rendering if the second page has already filled output.body
         if output.body is not None:
             return output
@@ -181,34 +189,25 @@ class Simplate(Dynamic):
         one, two = pages[:2]
 
         context = dict()
-        context['__file__'] = self.fs
+        context['__file__'] = self.fspath
         context.update(self.defaults.initial_context)
 
-        one = compile(one.padded_content, self.fs, 'exec')
+        one = compile(one.padded_content, self.fspath, 'exec')
         exec(one, context)    # mutate context
         one = context          # store it
 
-        two = compile(two.padded_content, self.fs, 'exec')
+        two = compile(two.padded_content, self.fspath, 'exec')
 
         pages[:2] = (one, two)
         pages[2:] = [self.compile_page(page) for page in pages[2:]]
 
-        return pages
-
 
     def compile_page(self, page):
-        """Given a :class:`Page`, return a :obj:`(renderer, media type)` pair.
+        """Given a :class:`Page`, return a :obj:`(renderer, media_type)` pair.
         """
         make_renderer, media_type = self._parse_specline(page.header)
-        renderer = make_renderer(self.fs, page.content, media_type, page.offset)
-        if media_type in self.renderers:
-            raise SyntaxError("Two content pages defined for %s." % media_type)
-
-        # update internal data structures
-        self.renderers[media_type] = renderer
-        self.available_types.append(media_type)
-
-        return (renderer, media_type)  # back to parent class
+        renderer = make_renderer(self.fspath, page.content, media_type, page.offset)
+        return (renderer, media_type)
 
     def _parse_specline(self, specline):
         """Given a bytestring, return a two-tuple.

@@ -20,7 +20,7 @@ from aspen.simplates.renderers.stdlib_percent import Factory as PercentFactory
 def get(harness):
     def get(**_kw):
         kw = dict( request_processor = harness.request_processor
-                 , fs = ''
+                 , fspath = ''
                  , raw = b'[---]\n[---] text/plain via stdlib_template\n'
                  , fs_media_type = ''
                   )
@@ -31,17 +31,19 @@ def get(harness):
 
 def test_dynamic_resource_is_instantiable(harness):
     request_processor = harness.request_processor
-    fs = ''
+    fspath = ''
     raw = b'[---]\n[---] text/plain via stdlib_template\n'
     media_type = ''
-    actual = Simplate(request_processor, fs, raw, media_type).__class__
+    actual = Simplate(request_processor, fspath, raw, media_type).__class__
     assert actual is Simplate
 
 
-# compile_page
+def test_duplicate_media_type_causes_SyntaxError(get):
+    with raises(SyntaxError):
+        get(raw=b"[---]\n[---] text/plain\n[---] text/plain\n")
 
-def test_compile_page_chokes_on_truly_empty_page(get):
-    raises(SyntaxError, get().compile_page, Page(''))
+
+# compile_page
 
 def test_compile_page_compiles_empty_page(get):
     page = get().compile_page(Page('', 'text/html'))

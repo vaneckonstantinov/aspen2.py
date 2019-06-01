@@ -8,8 +8,14 @@ from __future__ import unicode_literals
 
 from functools import reduce
 from inspect import isclass
+from operator import attrgetter
 import os
 import posixpath
+
+try:
+    from os import scandir
+except ImportError:
+    from scandir import scandir
 
 from ..exceptions import SlugCollision, WildcardCollision
 
@@ -552,14 +558,17 @@ class UserlandDispatcher(Dispatcher):
         files, dirs = {}, {}
         mtime = get_mtime_ns(dirpath)
         index = self.find_index(dirpath)
-        for name in sorted(os.listdir(dirpath)):
+        for entry in sorted(scandir(dirpath), key=attrgetter('name')):
+            name = entry.name
             if self.file_skipper(name, dirpath):
                 continue
-            fspath = os.path.realpath(os.path.join(dirpath, name))
-            if not fspath.startswith(self.www_root):
-                # Prevent escaping the www_root
-                continue
-            is_dir = os.path.isdir(fspath)
+            fspath = entry.path
+            if entry.is_symlink():
+                fspath = os.path.realpath(fspath)
+                if not fspath.startswith(self.www_root):
+                    # Prevent escaping the www_root
+                    continue
+            is_dir = entry.is_dir()
             if is_dir:
                 node_type = 'directory'
                 slug = name
