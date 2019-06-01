@@ -8,7 +8,7 @@ import pytest
 
 from filesystem_tree import FilesystemTree
 
-import aspen
+from aspen.http.request import Path
 from aspen.request_processor.dispatcher import DISPATCHER_CLASSES, DispatchStatus
 
 
@@ -19,7 +19,7 @@ def assert_match(
     harness, request_path, expected_match,
     status=DispatchStatus.okay, wildcards=None, extension=None, canonical=None
 ):
-    result = harness.simple(uripath=request_path, filepath=None, want='dispatch_result')
+    result = harness.request_processor.dispatch(Path(request_path))
     assert result.status == status
     assert result.match == harness.fs.www.resolve(expected_match)
     assert result.wildcards == wildcards
@@ -27,16 +27,16 @@ def assert_match(
     assert result.canonical == canonical
 
 def assert_missing(harness, request_path):
-    result = harness.simple(uripath=request_path, filepath=None, want='dispatch_result')
+    result = harness.request_processor.dispatch(Path(request_path))
     assert result.status == DispatchStatus.missing
     assert result.match is None
 
-def assert_wildcards(harness, uripath, expected_vals):
-    actual = harness.simple(filepath=None, uripath=uripath, want='dispatch_result.wildcards')
-    assert actual == expected_vals
+def assert_wildcards(harness, request_path, expected_vals):
+    result = harness.request_processor.dispatch(Path(request_path))
+    assert result.wildcards == expected_vals
 
 def dispatch(harness, request_path):
-    return harness.simple(uripath=request_path, filepath=None, want='dispatch_result')
+    return harness.request_processor.dispatch(Path(request_path))
 
 NEGOTIATED_SIMPLATE="""[-----]
 [-----] text/plain
@@ -239,11 +239,6 @@ def test_virtual_path_with_typecast(harness):
     harness.fs.www.mk(('%year.int/foo.html', "Greetings, program!"),)
     assert_wildcards(harness, '/1999/foo.html', {'year.int': '1999'})
 
-def test_virtual_path_raises_on_bad_typecast(harness):
-    harness.fs.www.mk(('%year.int/foo.html', "Greetings, program!"),)
-    with pytest.raises(aspen.exceptions.TypecastError):
-        assert_match(harness, '/I am not a year./foo.html', '')
-
 def test_virtual_path_raises_on_direct_access(harness):
     assert_missing(harness, '/%name/foo.html')
 
@@ -314,25 +309,6 @@ def test_fallback_to_wildleaf_in_parent_directory(harness):
     )
     assert_match(harness, '/~/x/file.txt', '%foo.spt', wildcards={'foo': '~/x/file.txt'})
 
-# custom cast
-
-class User:
-
-    def __init__(self, name):
-        self.username = name
-
-    @classmethod
-    def toUser(cls, name, context):
-        return cls(name)
-
-def test_virtual_path_file_key_val_cast_custom(harness):
-    harness.fs.www.mk(( 'user/%user.user.html.spt'
-                      , "[-----]\nusername=path['user']\n[-----]\nGreetings, %(username)s!"
-                       ),)
-    harness.hydrate_request_processor(typecasters={'user': User.toUser})
-    actual = harness.simple(filepath=None, uripath='/user/chad.html', want='path',
-            return_after='apply_typecasters_to_path')
-    assert actual['user'].username == 'chad'
 
 # negotiated *and* virtual paths
 # ==============================
@@ -522,28 +498,13 @@ def test_dont_serve_spt_file_source(harness):
 # =========================
 
 def test_dispatcher_sets_extension(harness):
-    dispatch_result = harness.simple(
-        filepath='foo.spt',
-        uripath='/foo.css',
-        return_after='dispatch_path_to_filesystem',
-        want='dispatch_result',
-    )
-    assert dispatch_result.extension == 'css'
+    harness.fs.www.mk(('foo.spt', "Greetings, program!"))
+    assert_match(harness, '/foo.css', 'foo.spt', extension='css')
 
 def test_extension_is_set_even_when_unknown(harness):
-    dispatch_result = harness.simple(
-        filepath='foo.spt',
-        uripath='/foo.unknown-extension',
-        return_after='dispatch_path_to_filesystem',
-        want='dispatch_result',
-    )
-    assert dispatch_result.extension == 'unknown-extension'
+    harness.fs.www.mk(('foo.spt', "Greetings, program!"))
+    assert_match(harness, '/foo.unknown-extension', 'foo.spt', extension='unknown-extension')
 
 def test_extension_is_None_when_url_doesnt_contain_any(harness):
-    dispatch_result = harness.simple(
-        filepath='foo.spt',
-        uripath='/foo',
-        return_after='dispatch_path_to_filesystem',
-        want='dispatch_result',
-    )
-    assert dispatch_result.extension is None
+    harness.fs.www.mk(('foo.spt', "Greetings, program!"))
+    assert_match(harness, '/foo', 'foo.spt', extension=None)

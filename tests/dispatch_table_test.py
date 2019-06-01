@@ -5,6 +5,7 @@ import posixpath
 
 import pytest
 
+from aspen.http.request import Path
 from aspen.request_processor.dispatcher import DispatchStatus
 from aspen.testing import Harness
 
@@ -75,14 +76,23 @@ def get_table_entries():
                      for i, r in enumerate(requests) ]
     return results
 
-def format_result(path, dispatch_result=None, **ignored):
-    """
-    turn a raw request result into a string compatible with the table-driven test
-    """
-    wilds = path
-    wildtext = ",".join("%s='%s'" % (k, wilds[k]) for k in sorted(wilds))
-    result = dispatch_result.match if dispatch_result else ''
-    if wildtext: result += " (%s)" % wildtext
+def get_result(harness, request_uri):
+    url_path = Path(request_uri)
+    dispatch_result = harness.request_processor.dispatch(url_path)
+    if dispatch_result.canonical:
+        result = '302 ' + dispatch_result.canonical
+    elif dispatch_result.status == DispatchStatus.okay:
+        result = '200'
+        fspath = dispatch_result.match
+        if os.sep != posixpath.sep:
+            fspath = fspath.replace(os.sep, posixpath.sep)
+        result += " " + fspath[len(harness.fs.www.root)+1:]
+        wilds = url_path
+        wildtext = ",".join("%s='%s'" % (k, wilds[k]) for k in sorted(wilds))
+        if wildtext:
+            result += " (%s)" % wildtext
+    else:
+        result = '404'
     return result
 
 GENERIC_SPT = """
@@ -96,21 +106,7 @@ def test_all_table_entries(harness, files, request_uri, expected):
     # set up the specified files
     realfiles = tuple([ f if f.endswith('/') else (f, GENERIC_SPT) for f in files ])
     harness.fs.www.mk(*realfiles)
-    state = harness._hit('GET', request_uri, want='state',
-                         return_after='dispatch_path_to_filesystem')
-    dispatch_result = state['dispatch_result']
-    if dispatch_result.canonical:
-        result = '302 ' + dispatch_result.canonical
-    elif dispatch_result.status == DispatchStatus.okay:
-        result = '200'
-        path = format_result(**state)
-        if os.sep != posixpath.sep:
-            path = path.replace(os.sep, posixpath.sep)
-        path = path[len(harness.fs.www.root)+1:]
-        if path:
-            result += " " + path
-    else:
-        result = '404'
+    result = get_result(harness, request_uri)
     if expected.endswith("*"):
         expected = expected[:-1]
     assert result == expected, "Requesting %r, got %r instead of %r" % (request_uri, result, expected)
@@ -144,23 +140,10 @@ if __name__ == '__main__':
         harness = Harness()
         realfiles = tuple([ f if f.endswith('/') else (f, GENERIC_SPT) for f in files ])
         harness.fs.www.mk(*realfiles)
-        for i,request_uri in enumerate(requests):
-            result = str(harness.simple(uripath=request_uri, filepath=None, want='response.code', raise_immediately=False))
-            if result != '404':
-                state = harness.simple( uripath=request_uri
-                                      , filepath=None
-                                      , want='state'
-                                      , raise_immediately=False
-                                       )
-                path = format_result(**state)
-                path = path[len(harness.fs.www.root)+1:]
-                if path:
-                    result += " " + path
+        for i, request_uri in enumerate(requests):
+            result = get_result(harness, request_uri)
             col = answercol + i
             resultline += result + (' ' * (cols[col][1] - cols[col][0] - len(result)))
             if col < len(cols) - 1:
                 resultline += ' ' * (cols[col+1][0] - cols[col][1])
         print(resultline)
-
-
-

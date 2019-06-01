@@ -12,6 +12,15 @@ CALLBACK_RE = re.compile(r'[^_a-zA-Z0-9]')
 
 
 class Renderer(JsonRenderer):
+    """A JSON renderer that also supports JSONP.
+
+    .. note:: This renderer needs access to the HTTP querystring. It expects a
+              dict-like object stored as :obj:`'querystring'` in the context.
+
+    .. warning:: JSONP can lead to information disclosure vulnerabilities
+                 (`example <https://hackerone.com/reports/361951>`_).
+
+    """
 
     def render_content(self, context):
         # get the jsonp callback

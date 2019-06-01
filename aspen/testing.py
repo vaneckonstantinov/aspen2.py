@@ -10,10 +10,12 @@ import os
 import sys
 from collections import namedtuple
 
+from filesystem_tree import FilesystemTree
+
 from . import resources
+from .http.request import Path, Querystring
 from .request_processor import RequestProcessor
 from .request_processor.dispatcher import TestDispatcher
-from filesystem_tree import FilesystemTree
 
 
 CWD = os.getcwd()
@@ -34,6 +36,25 @@ def teardown():
     sys.path_importer_cache = {} # see test_weird.py
 
 teardown() # start clean
+
+
+def resolve_want(available, want):
+    if '.' in want:
+        attr_path = want.split('.')
+        base, attr_path = attr_path[0], attr_path[1:]
+    else:
+        base, attr_path = want, None
+    try:
+        out = available[base]
+    except KeyError as e:
+        raise KeyError('%r not found. available = %r' % (e, available))
+    if attr_path:
+        try:
+            for name in attr_path:
+                out = getattr(out, name)
+        except AttributeError as e:
+            raise AttributeError('%r not found. out = %r' % (e, out))
+    return out
 
 
 class Harness(object):
@@ -61,10 +82,6 @@ class Harness(object):
         return self._request_processor
 
     request_processor = property(hydrate_request_processor)
-
-
-    # Simple API
-    # ==========
 
     def simple(self, contents='Greetings, program!', filepath='index.html.spt', uripath=None,
             querystring='', request_processor_configuration=None, **kw):
@@ -94,30 +111,14 @@ class Harness(object):
                         uripath = uripath[:-len(indexname)]
                         break
 
-        return self._hit('GET', uripath, querystring, **kw)
+        return self.hit(uripath, querystring, **kw)
 
-    def _hit(self, method, path='/', querystring='', raise_immediately=True, return_after=None,
-             want='output', accept_header=None):
-
-        state = self.request_processor.process( path
-                                              , querystring
-                                              , accept_header=accept_header
-                                              , raise_immediately=raise_immediately
-                                              , return_after=return_after
-                                               )
-
-        attr_path = want.split('.')
-        base = attr_path[0]
-        attr_path = attr_path[1:]
-
-        try:
-            out = state[base]
-        except KeyError as e:
-            raise KeyError(str(e) + '\nDebug info: state = ' + repr(state))
-        try:
-            for name in attr_path:
-                out = getattr(out, name)
-        except AttributeError as e:
-            raise AttributeError(str(e) + '\nDebug info: out = ' + repr(out))
-
-        return out
+    def hit(self, path, querystring='', accept_header=None, want=None, **context):
+        path = context['path'] = Path(path)
+        querystring = Querystring(querystring)
+        dispatch_result, resource, output = self.request_processor.process(
+            path, querystring, accept_header, context
+        )
+        if want is None:
+            return output
+        return resolve_want(locals(), want)
