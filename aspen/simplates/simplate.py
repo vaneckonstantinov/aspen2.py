@@ -6,18 +6,28 @@ from __future__ import unicode_literals
 from io import BytesIO
 import re
 
+from six import PY2
+
 from ..output import Output
 from .pagination import split_and_escape, parse_specline, Page
 from aspen.http.resource import Dynamic
+
+
+DEFAULT_ENCODING = 'ascii' if PY2 else 'utf8'
+
 
 renderer_re = re.compile(r'[a-z0-9.-_]+$')
 media_type_re = re.compile(r'[A-Za-z0-9.+*-]+/[A-Za-z0-9.+*-]+$')
 
 
 def _decode(raw):
-    """As per PEP 263, decode raw data according to the encoding specified in
-       the first couple lines of the data, or in ASCII.  Non-ASCII data without
-       an encoding specified will cause UnicodeDecodeError to be raised.
+    """Decode the raw bytes of a simplate.
+
+    As per PEP 263, decode raw data according to the encoding specified in the
+    first couple lines of the data, or using the default encoding (ASCII in
+    Python 2, UTF-8 in Python 3 per PEP 3120).
+
+    Raises: :class:`UnicodeDecodeError` if decoding fails.
     """
     assert type(raw) is bytes  # sanity check
 
@@ -58,7 +68,7 @@ def _decode(raw):
         fulltext += line
     fulltext += sio.read()
     sio.close()
-    encoding = encoding.decode('ascii') if encoding else 'ascii'
+    encoding = encoding.decode('ascii') if encoding else DEFAULT_ENCODING
     return fulltext.decode(encoding)
 
 
