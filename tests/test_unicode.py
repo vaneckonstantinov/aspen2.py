@@ -5,15 +5,22 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 from pytest import raises
+from six import PY2
 
 
-def test_non_ascii_bytes_fail_without_encoding(harness):
-    raises(UnicodeDecodeError, harness.simple, ("""
+def test_with_non_ascii_bytes_and_without_encoding(harness):
+    harness.fs.www.mk(('index.spt', """
         [------------------]
         text = u'א'
-        [------------------]
+        [------------------] text/plain
         %(text)s
     """, 'utf8'))
+    if PY2:
+        with raises(UnicodeDecodeError):
+            harness.hit('/')
+    else:
+        output = harness.hit('/')
+        assert output.text.strip() == 'א'
 
 def test_non_ascii_bytes_work_with_encoding(harness):
     expected = 'א'.encode('utf8')
