@@ -11,8 +11,10 @@ exceptions that Aspen raises.
 .. toctree::
     :maxdepth: 1
 
+    http
     request_processor
     dispatcher
     typecasting
+    simplates
     testing
     exceptions

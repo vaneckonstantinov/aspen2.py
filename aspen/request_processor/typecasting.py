@@ -19,10 +19,13 @@ defaults = { 'int': lambda pathpart, state: int(pathpart)
 def apply_typecasters(typecasters, path_vars, state):
     """Perform typecasting (in-place!).
 
-    :arg typecasters: a :class:`dict` of type names to typecast functions
-    :arg path_vars: a :class:`~aspen.http.mapping.Mapping` of path variables
-    :arg state: a :class:`dict` passed to typecast functions as second argument
-    :raises TypecastError: if a typecast function raises an exception
+    Args:
+        typecasters: a :class:`dict` of type names to typecast functions
+        path_vars: a :class:`~aspen.http.mapping.Mapping` of path variables
+        state: a :class:`dict` passed to typecast functions as second argument
+
+    Raises:
+        TypecastError: if a typecast function raises an exception
     """
     for part in list(path_vars.keys()):
         pieces = part.rsplit('.',1)

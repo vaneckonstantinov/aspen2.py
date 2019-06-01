@@ -18,7 +18,11 @@ def path_decode(bs):
 
 
 class PathPart(str):
-    """A string with a mapping for extra data about it."""
+    """Represents a segment of a URL path.
+
+    Attributes:
+        params (Mapping): extra data attached to this segment
+    """
 
     __slots__ = ['params']
 
@@ -27,19 +31,27 @@ class PathPart(str):
         obj.params = params
         return obj
 
+    def __repr__(self):
+        return '%s(%r, params=%r)' % (self.__class__.__name__, str(self), self.params)
+
 
 def extract_rfc2396_params(path):
-    """RFC2396 section 3.3 says that path components of a URI can have
-    'a sequence of parameters, indicated by the semicolon ";" character.'
-    and that ' Within a path segment, the characters "/", ";", "=", and
-    "?" are reserved.'  This way you can do
-    /frisbee;color=red;size=small/logo;sponsor=w3c;color=black/image.jpg
-    and each path segment gets its own params.
-
-    https://tools.ietf.org/html/rfc3986#section-3.3
+    """This function implements parsing URL path parameters, per `section 3.3 of RFC2396`_.
 
     * path should be raw so we don't split or operate on a decoded character
     * output is decoded
+
+    Example:
+
+    >>> path = '/frisbee;color=red;size=small/logo;sponsor=w3c;color=black/image.jpg'
+    >>> extract_rfc2396_params(path) == [
+    ...     PathPart('frisbee', params={'color': ['red'], 'size': ['small']}),
+    ...     PathPart('logo', params={'sponsor': ['w3c'], 'color': ['black']}),
+    ...     PathPart('image.jpg', params={})
+    ... ]
+    True
+
+    .. _Section 3.3 of RFC2396: https://tools.ietf.org/html/rfc3986#section-3.3
     """
     pathsegs = path.lstrip('/').split('/')
     segments_with_params = []
@@ -65,6 +77,11 @@ def split_path_no_params(path):
 
 class Path(Mapping):
     """Represent the path of a resource.
+
+    Attributes:
+        raw: the unparsed form of the path - :class:`bytes`
+        decoded: the decoded form of the path - :class:`str`
+        parts: the segments of the path - :class:`list` of :class:`PathPart` objects
     """
 
     def __init__(self, raw, split_path=extract_rfc2396_params):
@@ -75,6 +92,10 @@ class Path(Mapping):
 
 class Querystring(Mapping):
     """Represent an HTTP querystring.
+
+    Attributes:
+        raw: the unparsed form of the querystring - :class:`bytes`
+        decoded: the decoded form of the querystring - :class:`str`
     """
 
     def __init__(self, raw, errors='replace'):
