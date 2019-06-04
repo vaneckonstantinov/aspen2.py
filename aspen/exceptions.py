@@ -61,3 +61,10 @@ class WildcardCollision(Exception):
 
     Examples: ``www/%foo/%foo/index.spt``, ``www/%foo/bar/%foo.spt``.
     """
+
+    def __init__(self, varname, fspath):
+        self.varname = varname
+        self.fspath = fspath
+
+    def __str__(self):
+        return "%r appears twice in the filesystem path %r" % ('%' + self.varname, self.fspath)

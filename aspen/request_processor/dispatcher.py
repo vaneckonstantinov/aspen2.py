@@ -580,11 +580,9 @@ class UserlandDispatcher(Dispatcher):
                 slug = name
             if slug.startswith('%') and node_type != 'static':
                 varname, vartype, extension = self.split_wildcard(slug[1:], is_dir)
-                if varname in varnames and varnames[varname] != dirpath:
-                    raise WildcardCollision(varname)
-                varnames[varname] = dirpath
+                if varname in varnames:
+                    raise WildcardCollision(varname, fspath)
                 wildcard = '.'.join((varname, vartype)) if vartype else varname
-                del varname, vartype
                 if is_dir:
                     slug = self.DIR_WILDCARD
                 else:
@@ -595,7 +593,12 @@ class UserlandDispatcher(Dispatcher):
             else:
                 wildcard, extension = None, None
             if is_dir:
-                subtree, mtime = self._build_subtree(fspath, varnames.copy())
+                if wildcard:
+                    subvarnames = varnames.copy()
+                    subvarnames[varname] = fspath
+                else:
+                    subvarnames = varnames
+                subtree, mtime = self._build_subtree(fspath, subvarnames)
                 node = self.make_dir_node(fspath, wildcard, subtree, mtime)
             else:
                 node = FileNode(fspath, node_type, wildcard, extension)

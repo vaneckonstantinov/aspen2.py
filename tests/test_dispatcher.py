@@ -8,6 +8,7 @@ import pytest
 
 from filesystem_tree import FilesystemTree
 
+from aspen.exceptions import WildcardCollision
 from aspen.http.request import Path
 from aspen.request_processor.dispatcher import DISPATCHER_CLASSES, DispatchStatus
 
@@ -327,6 +328,31 @@ def test_virtual_path_and_indirect_neg_ext(harness):
     harness.fs.www.mk(('%foo/bar.spt', NEGOTIATED_SIMPLATE),)
     assert_match(harness, '/greet/bar.html', '%foo/bar.spt',
                  wildcards={'foo': 'greet'}, extension='html')
+
+
+# Collisions between path variables
+# =================================
+
+def test_variable_name_used_twice_in_path_results_in_WildcardCollision(harness):
+    harness.fs.www.mk(('%foo/bar/%foo.spt', "Hello world!"))
+    with pytest.raises(WildcardCollision):
+        harness.hydrate_request_processor()
+
+def test_same_name_used_in_different_dirs_is_okay(harness):
+    harness.fs.www.mk(
+        ('foo/%bar.spt', "Hello world!"),
+        ('foo/z/%bar.spt', "Hello world!"),
+    )
+    assert_match(harness, '/foo/y/bar', 'foo/%bar.spt', wildcards={'bar': 'y/bar'})
+    assert_match(harness, '/foo/z/bar', 'foo/z/%bar.spt', wildcards={'bar': 'bar'})
+
+def test_same_dir_name_used_in_different_paths_is_okay(harness):
+    harness.fs.www.mk(
+        ('%foo/bar.spt', "Hello world!"),
+        ('x/%foo/bar.spt', "Hello world!"),
+    )
+    assert_match(harness, '/foo/bar', '%foo/bar.spt', wildcards={'foo': 'foo'})
+    assert_match(harness, '/x/foo/bar', 'x/%foo/bar.spt', wildcards={'foo': 'foo'})
 
 
 # trailing slash
