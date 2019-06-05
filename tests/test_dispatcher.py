@@ -439,6 +439,15 @@ def test_wildleaf_without_extention_matches_trailing_slash(harness):
     assert_match(harness, '/chad/cheddar.txt/', '%name/%cheese.spt',
                  wildcards={'name': 'chad', 'cheese': 'cheddar.txt/'})
 
+def test_extra_slash_matches(harness):
+    harness.fs.www.mk(('foo/bar.spt', ''))
+    assert_match(harness, '/foo/bar/', 'foo/bar.spt', canonical='/foo/bar')
+
+def test_resource_in_parent_directory_is_used_as_index(harness):
+    harness.fs.www.mk(('foo/bar.spt', ''))
+    harness.fs.www.mk(('foo/bar/baz.spt', ''))
+    assert_match(harness, '/foo/bar/', 'foo/bar.spt')
+
 
 # path part params
 # ================

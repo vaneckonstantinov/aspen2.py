@@ -214,6 +214,9 @@ def legacy_collision_handler(slug, node1, node2):
         if not node1.children:
             # Ignore empty directory
             return 'replace_first_node'
+        if '' not in node1.children:
+            # Allow `/bar.spt` to act as the index of `/bar/`
+            return 'set_second_node_as_index_of_first_node'
     return 'ignore_second_node'
 
 
@@ -232,6 +235,9 @@ def hybrid_collision_handler(slug, node1, node2):
         if not node1.children:
             # Ignore empty directory
             return 'replace_first_node'
+        if '' not in node1.children:
+            # Allow `/bar.spt` to act as the index of `/bar/`
+            return 'set_second_node_as_index_of_first_node'
     elif node1.type == 'static' and node2.type == 'dynamic':
         # Allow `/foo.css` to shadow `/foo.css.spt`
         return 'ignore_second_node'
@@ -404,6 +410,7 @@ def _dispatch_abstract(dispatcher, listnodes, is_dynamic, is_leaf, traverse, fin
     nodepath = nodepath[:]  # copy it so we can mutate it if necessary
     wildvals, wildleafs = {}, {}
     curnode = startnode
+    subnodes = None
     extension, canonical = None, None
     is_dynamic_node = lambda n: is_dynamic(traverse(curnode, n))
     is_leaf_node = lambda n: is_leaf(traverse(curnode, n))
@@ -424,6 +431,7 @@ def _dispatch_abstract(dispatcher, listnodes, is_dynamic, is_leaf, traverse, fin
         # node.html, node.html.spt, node.spt, node.html/, %node.html/ %*.html.spt, %*.spt
 
         # don't serve hidden files
+        parent_subnodes = subnodes
         subnodes = set([ n for n in listnodes(curnode) if not file_skipper(n, curnode) ])
 
         node_noext, node_ext = splitext(node)
@@ -459,6 +467,15 @@ def _dispatch_abstract(dispatcher, listnodes, is_dynamic, is_leaf, traverse, fin
                 if index:
                     debug(lambda: "found index: %r" % index)
                     return DispatchResult(DispatchStatus.okay, index, wildvals, None, canonical)
+                if depth > 0 and nodepath[-2] + ".spt" in parent_subnodes:
+                    if '.' not in nodepath[-2]:
+                        debug(lambda: "slashless match")
+                        curnode = reduce(traverse, nodepath[:-1], startnode) + ".spt"
+                        if not subnodes:
+                            # The directory is empty, so the canonical path is
+                            # without the final slash
+                            canonical = '/' + '/'.join(nodepath[:-1])
+                        break
                 if wild_leaf_ns:
                     found_n = wild_leaf_ns[0]
                     debug(lambda: "found wild leaf: %r" % found_n)
@@ -522,6 +539,12 @@ def _dispatch_abstract(dispatcher, listnodes, is_dynamic, is_leaf, traverse, fin
                 found_n = node
                 debug(lambda: "Exact match " + repr(node))
                 curnode = traverse(curnode, found_n)
+            elif '.' not in node and node + ".spt" in subnodes and nodepath[depth+1:] == ['']:
+                found_n = node + ".spt"
+                debug(lambda: "Slashless match " + repr(found_n))
+                curnode = traverse(curnode, found_n)
+                canonical = '/' + '/'.join(nodepath[:-1])
+                break
             elif wild_nonleaf_ns:
                 # need to match a wildnode, and we're not the last node, so we should match
                 # non-leaf first, then leaf
@@ -620,6 +643,9 @@ class UserlandDispatcher(Dispatcher):
                     raise SlugCollision(slug, previous, node)
                 if action == 'ignore_second_node':
                     continue
+                if action == 'set_second_node_as_index_of_first_node':
+                    previous.children[''] = node
+                    continue
                 if action != 'replace_first_node':
                     raise ValueError("%r is not a valid collision action" % action)
             children[slug] = node
@@ -687,6 +713,11 @@ class UserlandDispatcher(Dispatcher):
                             # The canonical path of `/index.html` is `/`
                             canonical = path[:-len(segment)]
                         return success()
+                    elif depth == max_depth - 1 and path_segments[-1] == '':
+                        # There is an extra slash at the end of the URL path.
+                        if '.' not in segment:
+                            canonical = path[:-1]
+                            return success()
                 if depth == max_depth and '.' in segment:
                     base, extension = segment.rsplit('.', 1)
                     if base in children and children[base].type == 'dynamic':
