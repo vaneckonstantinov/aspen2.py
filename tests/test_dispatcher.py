@@ -32,6 +32,14 @@ def assert_missing(harness, request_path):
     assert result.status == DispatchStatus.missing
     assert result.match is None
 
+def assert_unindexed(harness, request_path, wildcards=None, extension=None, canonical=None):
+    result = harness.request_processor.dispatch(Path(request_path))
+    assert result.status == DispatchStatus.unindexed
+    assert result.match == harness.fs.www.resolve(request_path) + os.path.sep
+    assert result.wildcards == wildcards
+    assert result.extension == extension
+    assert result.canonical == canonical
+
 def assert_wildcards(harness, request_path, expected_vals):
     result = harness.request_processor.dispatch(Path(request_path))
     assert result.wildcards == expected_vals
@@ -111,36 +119,25 @@ def test_dispatch_when_filesystem_has_been_modified():
 # Indices
 # =======
 
-def test_index_is_found(harness):
+def test_static_index(harness):
     harness.fs.www.mk(('index.html', 'Greetings, program!'))
     assert_match(harness, '/', 'index.html')
 
-def test_negotiated_index_is_found(harness):
-    harness.fs.www.mk(('index.spt', '''
-        [----------] text/html
-        <h1>Greetings, program!</h1>
-        [----------] text/plain
-        Greetings, program!
-    '''))
+def test_index_without_extention(harness):
+    harness.fs.www.mk(('index', 'Greetings, program!'))
+    assert_match(harness, '/', 'index')
+
+def test_dynamic_index(harness):
+    harness.fs.www.mk(('index.spt', NEGOTIATED_SIMPLATE))
     assert_match(harness, '/', 'index.spt')
 
 def test_empty_root(harness):
-    result = dispatch(harness, '/')
-    assert result.status == DispatchStatus.unindexed
-    assert result.match == harness.fs.www.root + os.path.sep
-    assert result.wildcards is None
-    assert result.extension is None
-    assert result.canonical is None
+    assert_unindexed(harness, '/')
 
 def test_unrecognized_index(harness):
     harness.fs.www.mk(('index.html', "Greetings, program!"),)
     harness.hydrate_request_processor(indices=["default.html"])
-    result = dispatch(harness, '/')
-    assert result.status == DispatchStatus.unindexed
-    assert result.match == harness.fs.www.root + os.path.sep
-    assert result.wildcards is None
-    assert result.extension is None
-    assert result.canonical is None
+    assert_unindexed(harness, '/')
 
 def test_dispatcher_matches_second_index_if_first_is_missing(harness):
     harness.fs.www.mk(('default.html', "Greetings, program!"),)
@@ -372,10 +369,7 @@ def test_dispatcher_passes_through_virtual_dir_with_trailing_slash(harness):
 
 def test_dispatcher_matches_dir_even_without_trailing_slash(harness):
     harness.fs.www.mk('foo',)
-    result = dispatch(harness, '/foo')
-    assert result.status == DispatchStatus.unindexed
-    assert result.match == harness.fs.www.resolve('foo') + os.path.sep
-    assert result.canonical == '/foo/'
+    assert_unindexed(harness, '/foo', canonical='/foo/')
 
 def test_dispatcher_matches_virtual_dir_even_without_trailing_slash(harness):
     harness.fs.www.mk('%foo',)
@@ -409,6 +403,7 @@ def test_missing_trailing_slash_matches_wild_leaf(harness):
 
 def test_dont_confuse_files_for_dirs(harness):
     harness.fs.www.mk(('foo.html', 'Greetings, Program!'),)
+    assert_missing(harness, '/foo.html/')
     assert_missing(harness, '/foo.html/bar')
 
 def test_wildleaf_with_extention_doesnt_match_trailing_slash(harness):
