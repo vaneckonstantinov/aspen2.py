@@ -163,7 +163,7 @@ class DirectoryNode(object):
         "The name of the path variable if the node is a wildcard."
 
         self.children = children
-        "The node's children, a 2-tuple of dicts: ``(files, dirs)``."
+        "The node's children as a dict (keys are names and values are nodes)."
 
 
 @auto_repr
@@ -182,7 +182,7 @@ class LiveDirectoryNode(object):
         "The name of the path variable if the node is a wildcard."
 
         self._children = children
-        "The node's children, a 2-tuple of dicts: ``(files, dirs)``."
+        "The node's children as a dict (keys are names and values are nodes)."
 
         self.mtime = mtime
         "The last modification time of the directory, in nanoseconds."
@@ -210,6 +210,10 @@ class LiveDirectoryNode(object):
 def legacy_collision_handler(slug, node1, node2):
     """Ignores all collisions, like :class:`SystemDispatcher` does.
     """
+    if node1.type == 'directory' and node2.type != 'directory':
+        if not node1.children:
+            # Ignore empty directory
+            return 'replace_first_node'
     return 'ignore_second_node'
 
 
@@ -224,7 +228,12 @@ def hybrid_collision_handler(slug, node1, node2):
 
     Example: ``/file.js`` will be preferred over ``/file.js.spt``.
     """
-    if node2.type == 'dynamic' and node2.fspath.startswith(node1.fspath + '.'):
+    if node1.type == 'directory' and node2.type != 'directory':
+        if not node1.children:
+            # Ignore empty directory
+            return 'replace_first_node'
+    elif node1.type == 'static' and node2.type == 'dynamic':
+        # Allow `/foo.css` to shadow `/foo.css.spt`
         return 'ignore_second_node'
     return 'raise'
 
@@ -555,7 +564,7 @@ class UserlandDispatcher(Dispatcher):
     def _build_subtree(self, dirpath, varnames):
         """This method recursively builds a dispacth subtree.
         """
-        files, dirs = {}, {}
+        children = {}
         mtime = get_mtime_ns(dirpath)
         index = self.find_index(dirpath)
         for entry in sorted(scandir(dirpath), key=attrgetter('name')):
@@ -587,7 +596,7 @@ class UserlandDispatcher(Dispatcher):
                     slug = self.DIR_WILDCARD
                 else:
                     node = FileNode(fspath, node_type, wildcard, extension)
-                    wildleafs = files.setdefault(self.LEAF_WILDCARDS, {})
+                    wildleafs = children.setdefault(self.LEAF_WILDCARDS, {})
                     wildleafs[extension] = node
                     continue
             else:
@@ -602,21 +611,21 @@ class UserlandDispatcher(Dispatcher):
                 node = self.make_dir_node(fspath, wildcard, subtree, mtime)
             else:
                 node = FileNode(fspath, node_type, wildcard, extension)
-            goes_into = dirs if is_dir else files
-            if slug in goes_into:
-                action = self.collision_handler(slug, goes_into[slug], node)
+            if slug in children:
+                previous = children[slug]
+                action = self.collision_handler(slug, previous, node)
                 debug("collision: %r is claimed by both %r and %r | action: %r"
-                     , slug, goes_into[slug].fspath, node.fspath, action)
+                     , slug, previous.fspath, node.fspath, action)
                 if action == 'raise':
-                    raise SlugCollision(slug, goes_into[slug], node)
+                    raise SlugCollision(slug, previous, node)
                 if action == 'ignore_second_node':
                     continue
                 if action != 'replace_first_node':
                     raise ValueError("%r is not a valid collision action" % action)
-            goes_into[slug] = node
+            children[slug] = node
             if fspath == index:
-                files[''] = slug
-        return (files, dirs), mtime
+                children[''] = node
+        return children, mtime
 
     def dispatch(self, path, path_segments):
         """"""
@@ -664,42 +673,40 @@ class UserlandDispatcher(Dispatcher):
         node = self.tree
         max_depth = len(path_segments) - 1
         for depth, segment in enumerate(path_segments):
-            files, dirs = node.children
+            children = node.children
 
             if segment:
-                # The segment isn't empty. Look for a match in files and dirs.
-                if segment in files:
-                    debug("exact file match: %r", segment)
-                    node = files[segment]
+                # The segment isn't empty. Look for a match in children.
+                if segment in children:
+                    node = children[segment]
+                    debug("exact match: %r -> %r", segment, node)
+                    if node.type == 'directory':
+                        continue
                     if depth == max_depth:
-                        if segment == files.get(''):
+                        if node is children.get(''):
                             # The canonical path of `/index.html` is `/`
                             canonical = path[:-len(segment)]
                         return success()
                 if depth == max_depth and '.' in segment:
                     base, extension = segment.rsplit('.', 1)
-                    if base in files and files[base].type == 'dynamic':
+                    if base in children and children[base].type == 'dynamic':
                         # Base match (e.g. `foo.spt` for `/foo.json`)
-                        debug("base match: %r", base)
-                        node = files[base]
+                        node = children[base]
+                        debug("base match: %r -> %r", base, node)
                         if segment == node.fspath.rsplit(os.path.sep, 1)[-1]:
                             # Don't route a request for `/bar.html.spt` to `bar.html.spt`
                             return MISSING
                         return success()
                     extension = None
-                if segment in dirs:
-                    debug("exact directory match: %r", segment)
-                    node = dirs[segment]
-                    continue
             elif depth == max_depth:
                 # The segment is empty and it's the last one.
                 break
 
             # This segment hasn't matched anything so far, look for wildcards.
-            if LEAF_WILDCARDS in files:
-                fallback_wildleafs = (files[LEAF_WILDCARDS], depth)
+            if LEAF_WILDCARDS in children:
+                fallback_wildleafs = (children[LEAF_WILDCARDS], depth)
                 debug("found fallback wildleafs: %r", fallback_wildleafs)
-            if DIR_WILDCARD in dirs:
+            if DIR_WILDCARD in children:
                 # Try to find a wildleaf match first, so that `/foo.txt` matches
                 # `/%bar.txt.spt` instead of `/%dir/`.
                 if fallback_wildleafs and depth == max_depth:
@@ -708,7 +715,7 @@ class UserlandDispatcher(Dispatcher):
                         return result
                 # No suitable wildleaf was found, match the virtual directory.
                 # Note: empty segments are allowed on purpose.
-                node = dirs[DIR_WILDCARD]
+                node = children[DIR_WILDCARD]
                 debug("virtual directory match: %r", node.wildcard)
                 wildcards[node.wildcard] = segment
                 continue
@@ -717,15 +724,15 @@ class UserlandDispatcher(Dispatcher):
 
         if node.type == 'directory':
             debug("final node is a directory")
-            files, dirs = node.children
+            children = node.children
             canonical = path + '/' if path_segments[-1] != '' else None
             # Look for an index file
-            if '' in files:
+            if '' in children:
                 debug("index match")
-                node = files[files['']]
-            elif LEAF_WILDCARDS in files:
+                node = children['']
+            elif LEAF_WILDCARDS in children:
                 debug("wildleaf match")
-                wildleafs = files[LEAF_WILDCARDS]
+                wildleafs = children[LEAF_WILDCARDS]
                 # Legacy behavior: dispatch to the "first" wildleaf
                 node = wildleafs[min(wildleafs)]
                 wildcards[node.wildcard] = ''
