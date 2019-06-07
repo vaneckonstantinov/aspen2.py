@@ -277,7 +277,7 @@ class Dispatcher(object):
 
     def __init__(
         self, www_root, is_dynamic, indices, typecasters,
-        file_skipper=skip_hidden_files, collision_handler=legacy_collision_handler
+        file_skipper=skip_hidden_files, collision_handler=hybrid_collision_handler
     ):
         self.www_root = os.path.realpath(www_root)
         self.is_dynamic = is_dynamic
