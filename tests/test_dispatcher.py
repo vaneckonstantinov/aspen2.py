@@ -8,9 +8,11 @@ import pytest
 
 from filesystem_tree import FilesystemTree
 
-from aspen.exceptions import WildcardCollision
+from aspen.exceptions import SlugCollision, WildcardCollision
 from aspen.http.request import Path
-from aspen.request_processor.dispatcher import DISPATCHER_CLASSES, DispatchStatus
+from aspen.request_processor.dispatcher import (
+    DISPATCHER_CLASSES, DispatchStatus, legacy_collision_handler
+)
 
 
 # Helpers
@@ -243,12 +245,6 @@ def test_virtual_path_raises_on_direct_access(harness):
 def test_virtual_path_raises_404_on_direct_access(harness):
     assert_missing(harness, '/%name/foo.html')
 
-def test_virtual_path_matches_the_first(harness):
-    harness.fs.www.mk( ('%first/foo.html', "Greetings, program!")
-          , ('%second/foo.html', "WWAAAAAAAAAAAA!!!!!!!!")
-           )
-    assert_match(harness, '/1999/foo.html', '%first/foo.html', wildcards={'first': '1999'})
-
 def test_virtual_path_directory(harness):
     harness.fs.www.mk(('%first/index.html', "Greetings, program!"),)
     assert_match(harness, '/foo/', '%first/index.html', wildcards={'first': 'foo'})
@@ -327,8 +323,8 @@ def test_virtual_path_and_indirect_neg_ext(harness):
                  wildcards={'foo': 'greet'}, extension='html')
 
 
-# Collisions between path variables
-# =================================
+# Collisions
+# ==========
 
 def test_variable_name_used_twice_in_path_results_in_WildcardCollision(harness):
     harness.fs.www.mk(('%foo/bar/%foo.spt', "Hello world!"))
@@ -350,6 +346,28 @@ def test_same_dir_name_used_in_different_paths_is_okay(harness):
     )
     assert_match(harness, '/foo/bar', '%foo/bar.spt', wildcards={'foo': 'foo'})
     assert_match(harness, '/x/foo/bar', 'x/%foo/bar.spt', wildcards={'foo': 'foo'})
+
+def test_collision_between_file_and_directory(harness):
+    harness.fs.www.mk(
+        ('foo/bar.spt', ''),
+        ('foo/bar/index.spt', ''),
+    )
+    with pytest.raises(SlugCollision):
+        harness.hydrate_request_processor()
+
+def test_collision_between_two_dir_wildcards(harness):
+    harness.fs.www.mk(
+        ('%first/foo.html', "Greetings, program!"),
+        ('%second/foo.html', "WWAAAAAAAAAAAA!!!!!!!!"),
+    )
+    # Test with default collision handler, should raise an exception.
+    with pytest.raises(SlugCollision):
+        harness.hydrate_request_processor()
+    # Test with legacy collision handler, should favor the first node.
+    harness.hydrate_request_processor(
+        dispatcher_options=dict(collision_handler=legacy_collision_handler),
+    )
+    assert_match(harness, '/1999/foo.html', '%first/foo.html', wildcards={'first': '1999'})
 
 
 # trailing slash
