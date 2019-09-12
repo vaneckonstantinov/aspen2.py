@@ -56,6 +56,22 @@ class SlugCollision(Exception):
     Example: ``foo.html`` and ``foo.html.spt`` both claim ``/foo.html``.
     """
 
+    def __init__(self, slug, node1, node2):
+        self.slug = slug
+        self.node1 = node1
+        self.node2 = node2
+
+    def __str__(self):
+        return (
+            "The URL segment %r is claimed by two different nodes:\n"
+            "%s(fspath=%r, type=%r, ...) and\n"
+            "%s(fspath=%r, type=%r, ...)"
+        ) % (
+            self.slug,
+            self.node1.__class__.__name__, self.node1.fspath, self.node1.type,
+            self.node2.__class__.__name__, self.node2.fspath, self.node2.type,
+        )
+
 class WildcardCollision(Exception):
     """Raised if a filesystem path contains multiple wildcards with the same name.
 

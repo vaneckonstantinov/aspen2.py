@@ -130,7 +130,8 @@ class RequestProcessor(object):
                 HybridDispatcher if self.changes_reload else UserlandDispatcher
             )
         self.dispatcher = self.dispatcher_class(
-            self.www_root, self.is_dynamic, self.indices, self.typecasters
+            self.www_root, self.is_dynamic, self.indices, self.typecasters,
+            **kwargs.get('dispatcher_options', {})
         )
 
         # mime.types
