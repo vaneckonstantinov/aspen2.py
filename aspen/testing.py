@@ -6,6 +6,7 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+from contextlib import contextmanager
 import os
 import sys
 
@@ -124,3 +125,15 @@ class Harness(object):
         if want is None:
             return output
         return resolve_want(locals(), want)
+
+
+@contextmanager
+def chdir(path):
+    """A context manager that temporarily changes the working directory.
+    """
+    back_to = os.getcwd()
+    os.chdir(path)
+    try:
+        yield back_to
+    finally:
+        os.chdir(back_to)

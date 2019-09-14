@@ -9,6 +9,7 @@ import sys
 from pytest import raises, mark
 
 from aspen.request_processor import ConfigurationError, RequestProcessor
+from aspen.testing import chdir
 
 
 def test_defaults_to_defaults(harness):
@@ -42,11 +43,12 @@ def test_ConfigurationError_raised_if_no_cwd(harness):
 @mark.skipif(sys.platform == 'win32',
              reason="Windows file locking makes this fail")
 def test_ConfigurationError_NOT_raised_if_no_cwd_but_do_have__www_root(harness):
-    foo = os.getcwd()
-    os.chdir(harness.fs.project.resolve(''))
-    os.rmdir(os.getcwd())
-    rp = RequestProcessor(www_root=foo)
-    assert rp.www_root == foo
+    project_root = harness.fs.project.root
+    www_root = harness.fs.www.root
+    with chdir(project_root):
+        os.rmdir(project_root)
+        rp = RequestProcessor(www_root=www_root)
+        assert rp.www_root == www_root
 
 def test_processor_sees_root_option(harness):
     rp = RequestProcessor(www_root=harness.fs.project.resolve(''))
