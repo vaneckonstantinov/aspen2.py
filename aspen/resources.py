@@ -7,11 +7,8 @@ import os
 import stat
 
 
-__cache__ = dict()  # cache, keyed to filesystem path
-
-
 class Entry(object):
-    """An entry in the global resource cache.
+    """An entry in a resource cache.
     """
     __slots__ = ('fspath', 'mtime', 'resource')
 
@@ -24,36 +21,34 @@ class Entry(object):
         self.resource = resource
 
 
-def get(request_processor, fspath):
-    """Given a RequestProcessor and a filesystem path, return a Resource object (with caching).
+class Resources(object):
+    """This class implements loading resources, and caching them.
     """
 
-    # Get a cache Entry object.
-    entry = __cache__.get(fspath)
+    __slots__ = ('request_processor', 'cache')
 
-    # Process the resource.
-    if not entry or request_processor.changes_reload:
-        mtime = os.stat(fspath)[stat.ST_MTIME]
-        if getattr(entry, 'mtime', None) != mtime:  # cache miss
-            resource = load(request_processor, fspath)
-            entry = __cache__[fspath] = Entry(fspath, mtime, resource)
+    def __init__(self, request_processor):
+        self.request_processor = request_processor
+        self.cache = {}
 
-    # Return
-    # ======
-    # The caller must take care to avoid mutating any context dictionary at
-    # entry.resource.pages[0].
+    def get(self, fspath):
+        """Return a resource object, with caching.
+        """
 
-    return entry.resource
+        # Get a cache Entry object.
+        entry = self.cache.get(fspath)
 
+        # Process the resource.
+        if not entry or self.request_processor.changes_reload:
+            mtime = os.stat(fspath)[stat.ST_MTIME]
+            if getattr(entry, 'mtime', None) != mtime:  # cache miss
+                resource = self.load(fspath)
+                entry = self.cache[fspath] = Entry(fspath, mtime, resource)
 
-def load(request_processor, fspath):
-    """Given a RequestProcessor and a filesystem path, return a Resource object (w/o caching).
-    """
+        return entry.resource
 
-    Class = request_processor.get_resource_class(fspath)
-
-    # Compute and instantiate a class.
-    # ================================
-    # An instantiated resource is compiled as far as we can take it.
-
-    return Class(request_processor, fspath)
+    def load(self, fspath):
+        """Create and return a resource object, without caching.
+        """
+        Class = self.request_processor.get_resource_class(fspath)
+        return Class(self.request_processor, fspath)

@@ -18,7 +18,7 @@ from collections import defaultdict
 from . import typecasting
 from .dispatcher import DispatchStatus, HybridDispatcher, UserlandDispatcher
 from .typecasting import defaults as default_typecasters
-from .. import resources
+from ..resources import Resources
 from ..http.resource import Static
 from ..exceptions import ConfigurationError
 
@@ -145,6 +145,9 @@ class RequestProcessor(object):
         if not mimetypes.inited:
             mimetypes.init()
 
+        # create the resources cache
+        self.resources = Resources(self)
+
 
     def dispatch(self, path):
         """Call the dispatcher and inject the path variables into the given path object.
@@ -182,7 +185,7 @@ class RequestProcessor(object):
         typecasting.apply_typecasters(self.typecasters, path, context)
 
         if dispatch_result.match and dispatch_result.status == DispatchStatus.okay:
-            resource = resources.get(self, dispatch_result.match)
+            resource = self.resources.get(dispatch_result.match)
             context['querystring'] = querystring
             output = resource.render(context, dispatch_result, accept_header)
             if not isinstance(output.body, bytes):
