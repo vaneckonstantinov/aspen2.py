@@ -11,13 +11,14 @@ from inspect import isclass
 from operator import attrgetter
 import os
 import posixpath
+import warnings
 
 try:
     from os import scandir
 except ImportError:
     from scandir import scandir
 
-from ..exceptions import SlugCollision, WildcardCollision
+from ..exceptions import PossibleBreakout, SlugCollision, WildcardCollision
 
 from ..utils import auto_repr, Constant
 
@@ -370,12 +371,6 @@ class SystemDispatcher(Dispatcher):
             self.www_root, path_segments
         )
         debug(lambda: "dispatch_abstract returned: " + repr(result))
-
-        # Protect against escaping the www_root.
-        if result.match and not result.match.startswith(self.www_root):
-            # Attempted breakout, e.g. a request for `/../secrets`
-            return MISSING
-
         return result
 
 
@@ -435,6 +430,12 @@ def _dispatch_abstract(dispatcher, listnodes, is_dynamic, is_leaf, traverse, fin
             if file_skipper(entry.name, curnode):
                 # don't serve hidden files
                 continue
+            if entry.is_symlink():
+                real_path = os.path.realpath(entry.path)
+                if not real_path.startswith(startnode):
+                    # don't serve files outside `www_root`
+                    warnings.warn(PossibleBreakout(entry.path, real_path))
+                    continue
             subnodes.add(entry.name)
             if entry.name.startswith("%"):
                 if entry.is_dir():
@@ -603,6 +604,7 @@ class UserlandDispatcher(Dispatcher):
                 fspath = os.path.realpath(fspath)
                 if not fspath.startswith(self.www_root):
                     # Prevent escaping the www_root
+                    warnings.warn(PossibleBreakout(entry.path, fspath))
                     continue
             is_dir = entry.is_dir()
             if is_dir:

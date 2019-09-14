@@ -50,6 +50,25 @@ class NotFound(Exception):
         self.message = message or "not found"
 
 
+class AttemptedBreakout(Exception):
+    """Raised when a request is dispatched to a symlinked file which is outside
+    :attr:`~aspen.request_processor.DefaultConfiguration.www_root`.
+    """
+
+    def __init__(self, sym_path, real_path):
+        self.sym_path = sym_path
+        self.real_path = real_path
+
+    def __str__(self):
+        return "%r is a symlink to %r" % (self.sym_path, self.real_path)
+
+
+class PossibleBreakout(AttemptedBreakout, Warning):
+    """A warning emitted when a symlink that points outside
+    :attr:`~aspen.request_processor.DefaultConfiguration.www_root` is detected.
+    """
+
+
 class SlugCollision(Exception):
     """Raised if two files claim the same URL path.
 

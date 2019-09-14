@@ -1,15 +1,35 @@
+import os.path
+
 import mimeparse
 import mimetypes
 
-from ..exceptions import NegotiationFailure, NotFound
+from ..exceptions import AttemptedBreakout, NegotiationFailure, NotFound
 from ..output import Output
+
+
+def open_resource(www_root, resource_path):
+    """Open a resource in read-only binary mode, after checking for symlinks.
+
+    :raises AttemptedBreakout:
+        if the :arg:`resource_path` points to a file outside the :arg:`www_root`
+
+    This function doesn't fully protect against attackers who have the ability
+    to create and delete symlinks inside the `www_root` whenever they want, but
+    it makes the attack more difficult and detectable.
+    """
+    if not os.path.isabs(resource_path):
+        resource_path = os.path.join(www_root, resource_path)
+    real_path = os.path.realpath(resource_path)
+    if not real_path.startswith(www_root.rstrip(os.path.sep) + os.path.sep):
+        raise AttemptedBreakout(resource_path, real_path)
+    return open(real_path, 'rb')
 
 
 class Static(object):
     """Model a static HTTP resource.
     """
 
-    __slots__ = ('fspath', 'raw', 'media_type', 'charset')
+    __slots__ = ('request_processor', 'fspath', 'raw', 'media_type', 'charset')
 
     def __init__(self, request_processor, fspath):
         raw = None
@@ -18,8 +38,9 @@ class Static(object):
             request_processor.charset_static
         )
         if read_file:
-            with open(fspath, 'rb') as f:
+            with open_resource(request_processor.www_root, fspath) as f:
                 raw = f.read()
+        self.request_processor = request_processor
         self.fspath = fspath
         self.raw = raw if request_processor.store_static_files_in_ram else None
         self.media_type = request_processor.guess_media_type(fspath)
@@ -40,7 +61,7 @@ class Static(object):
         """
         output = Output(media_type=self.media_type, charset=self.charset)
         if self.raw is None:
-            with open(self.fspath, 'rb') as f:
+            with open_resource(self.request_processor.www_root, self.fspath) as f:
                 output.body = f.read()
         else:
             output.body = self.raw
