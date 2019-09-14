@@ -429,17 +429,22 @@ def _dispatch_abstract(dispatcher, listnodes, is_dynamic, is_leaf, traverse, fin
         # check all the possibilities:
         # node.html, node.html.spt, node.spt, node.html/, %node.html/ %*.html.spt, %*.spt
 
-        # don't serve hidden files
-        parent_subnodes = subnodes
-        subnodes = set([ n for n in listnodes(curnode) if not file_skipper(n, curnode) ])
+        parent_subnodes, subnodes = subnodes, set()
+        wild_leaf_ns, wild_nonleaf_ns = [], []
+        for entry in scandir(curnode):
+            if file_skipper(entry.name, curnode):
+                # don't serve hidden files
+                continue
+            subnodes.add(entry.name)
+            if entry.name.startswith("%"):
+                if entry.is_dir():
+                    wild_nonleaf_ns.append(entry.name)
+                elif is_dynamic(entry.path):
+                    wild_leaf_ns.append(entry.name)
+        wild_leaf_ns.sort()
+        wild_nonleaf_ns.sort()
 
         node_noext, node_ext = splitext(node)
-
-        # only maybe because non-spt files aren't wild
-        maybe_wild_nodes = [ n for n in sorted(subnodes) if n.startswith("%") ]
-
-        wild_leaf_ns = [ n for n in maybe_wild_nodes if is_leaf_node(n) and is_dynamic_node(n) ]
-        wild_nonleaf_ns = [ n for n in maybe_wild_nodes if not is_leaf_node(n) ]
 
         # store all the fallback possibilities
         remaining = reduce(posixpath.join, nodepath[depth:])
