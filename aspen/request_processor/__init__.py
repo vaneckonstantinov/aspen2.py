@@ -207,6 +207,21 @@ class RequestProcessor(object):
         return self.dynamic_classes_by_file_extension.get(extension, Static)
 
 
+    def guess_media_type(self, filename):
+        """Guess the media type of a file by looking at its extension.
+
+        This method is a small wrapper around :func:`mimetypes.guess_type`. It
+        returns :attr:`~DefaultConfiguration.media_type_default` if the guessing
+        fails.
+        """
+        media_type = mimetypes.guess_type(filename, strict=False)[0]
+        if not media_type:
+            media_type = self.media_type_default
+        elif media_type == 'application/json':
+            media_type = self.media_type_json
+        return media_type
+
+
 class DefaultConfiguration(object):
     """Default configuration values.
     """

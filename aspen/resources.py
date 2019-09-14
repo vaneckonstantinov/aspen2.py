@@ -3,11 +3,8 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import mimetypes
 import os
 import stat
-
-from .http.resource import Static
 
 
 __cache__ = dict()  # cache, keyed to filesystem path
@@ -55,28 +52,8 @@ def load(request_processor, fspath):
 
     Class = request_processor.get_resource_class(fspath)
 
-    # Load bytes.
-    # ===========
-    # Dynamic files are loaded according to their encoding and turned into
-    # unicode strings internally. Static files might be binary, so we don't
-    # decode them.
-
-    with open(fspath, 'rb') as fh:
-        raw = fh.read()
-
-    # Compute a media type.
-    # =====================
-    # For a negotiated resource we will ignore this.
-
-    guess_with = fspath
-    if Class is not Static:
-        guess_with = guess_with.rsplit('.', 1)[0]
-    fs_media_type = mimetypes.guess_type(guess_with, strict=False)[0]
-    if fs_media_type == 'application/json':
-        fs_media_type = request_processor.media_type_json
-
     # Compute and instantiate a class.
     # ================================
     # An instantiated resource is compiled as far as we can take it.
 
-    return Class(request_processor, fspath, raw, fs_media_type)
+    return Class(request_processor, fspath)

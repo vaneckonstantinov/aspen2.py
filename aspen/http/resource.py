@@ -9,14 +9,20 @@ class Static(object):
     """Model a static HTTP resource.
     """
 
-    __slots__ = ('fspath', 'raw', 'fs_media_type', 'media_type', 'charset')
+    __slots__ = ('fspath', 'raw', 'media_type', 'charset')
 
-    def __init__(self, request_processor, fspath, raw, fs_media_type):
-        assert type(raw) is bytes  # sanity check
+    def __init__(self, request_processor, fspath):
+        raw = None
+        read_file = (
+            request_processor.store_static_files_in_ram or
+            request_processor.charset_static
+        )
+        if read_file:
+            with open(fspath, 'rb') as f:
+                raw = f.read()
         self.fspath = fspath
         self.raw = raw if request_processor.store_static_files_in_ram else None
-        self.fs_media_type = fs_media_type
-        self.media_type = fs_media_type or request_processor.media_type_default
+        self.media_type = request_processor.guess_media_type(fspath)
         self.charset = None
         if request_processor.charset_static:
             try:
