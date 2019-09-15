@@ -48,6 +48,7 @@ for dispatcher_class in aspen.request_processor.dispatcher.DISPATCHER_CLASSES:
             aspen.request_processor.default_indices,
             aspen.request_processor.typecasting.defaults
         )
+        dispatcher.build_dispatch_tree()
         for url in URLS:
             dispatch = lambda: dispatcher.dispatch(url, url.split('/'))
             time = timeit(dispatch, number=1000)
