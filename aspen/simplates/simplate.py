@@ -91,9 +91,6 @@ class Simplate(Dynamic):
 
     Args:
         fspath (str): the absolute filesystem path of this simplate
-        raw (bytes): raw content of this simplate as bytes
-        fs_media_type (str): the content type derived from the extension in the
-                             simplate's filesystem name, if it has one
 
     """
 
@@ -103,13 +100,15 @@ class Simplate(Dynamic):
 
     defaults = None # type: SimplateDefaults
 
-    def __init__(self, request_processor, fspath, raw, fs_media_type):
+    def __init__(self, request_processor, fspath):
         self.request_processor = request_processor
         self.fspath = fspath
-        self.default_media_type = fs_media_type or request_processor.media_type_default
+        self.default_media_type = request_processor.guess_media_type(fspath.rsplit('.', 1)[0])
 
         self.renderers = {}         # mapping of media type to Renderer objects
         self.available_types = []   # ordered sequence of media types
+        with open(fspath, 'rb') as fh:
+            raw = fh.read()
         pages = self.parse_into_pages(_decode(raw))
         self.compile_pages(pages)
         self.page_one, self.page_two = pages[0], pages[1]

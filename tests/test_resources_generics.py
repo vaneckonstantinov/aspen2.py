@@ -19,15 +19,15 @@ def check_page_content(raw, comp_pages):
     that comparison is ignored.
     '''
 
-    #Convert to single-element list
+    # Convert to single-element list
     if not isinstance(comp_pages, list):
         comp_pages = [comp_pages]
 
-    #Convert all non-tuples to tuples
+    # Convert all non-tuples to tuples
     comp_pages = [item if isinstance(item, tuple) else (item, None)
                   for item in comp_pages]
 
-    #execute resources.split
+    # Split into pages
     pages = list(pagination.split(raw))
 
     assert len(pages) == len(comp_pages)

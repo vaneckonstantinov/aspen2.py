@@ -18,7 +18,7 @@ from collections import defaultdict
 from . import typecasting
 from .dispatcher import DispatchStatus, HybridDispatcher, UserlandDispatcher
 from .typecasting import defaults as default_typecasters
-from .. import resources
+from ..resources import Resources
 from ..http.resource import Static
 from ..exceptions import ConfigurationError
 
@@ -145,6 +145,9 @@ class RequestProcessor(object):
         if not mimetypes.inited:
             mimetypes.init()
 
+        # create the resources cache
+        self.resources = Resources(self)
+
 
     def dispatch(self, path):
         """Call the dispatcher and inject the path variables into the given path object.
@@ -182,7 +185,7 @@ class RequestProcessor(object):
         typecasting.apply_typecasters(self.typecasters, path, context)
 
         if dispatch_result.match and dispatch_result.status == DispatchStatus.okay:
-            resource = resources.get(self, dispatch_result.match)
+            resource = self.resources.get(dispatch_result.match)
             context['querystring'] = querystring
             output = resource.render(context, dispatch_result, accept_header)
             if not isinstance(output.body, bytes):
@@ -205,6 +208,21 @@ class RequestProcessor(object):
         parts = fspath.split('.')
         extension = parts[-1] if len(parts) > 1 else None
         return self.dynamic_classes_by_file_extension.get(extension, Static)
+
+
+    def guess_media_type(self, filename):
+        """Guess the media type of a file by looking at its extension.
+
+        This method is a small wrapper around :func:`mimetypes.guess_type`. It
+        returns :attr:`~DefaultConfiguration.media_type_default` if the guessing
+        fails.
+        """
+        media_type = mimetypes.guess_type(filename, strict=False)[0]
+        if not media_type:
+            media_type = self.media_type_default
+        elif media_type == 'application/json':
+            media_type = self.media_type_json
+        return media_type
 
 
 class DefaultConfiguration(object):

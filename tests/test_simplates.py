@@ -17,93 +17,89 @@ from aspen.simplates.renderers.stdlib_percent import Factory as PercentFactory
 
 
 @fixture
-def get(harness):
-    def get(**_kw):
-        kw = dict( request_processor = harness.request_processor
-                 , fspath = ''
-                 , raw = b'[---]\n[---] text/plain via stdlib_template\n'
-                 , fs_media_type = ''
-                  )
-        kw.update(_kw)
-        return Simplate(**kw)
+def make_simplate(harness):
+    def get(fspath='index.spt', raw=b'[---]\n[---] text/plain via stdlib_template\n'):
+        harness.fs.www.mk((fspath, raw, False))
+        return Simplate(harness.request_processor, harness.fs.www.resolve(fspath))
     yield get
 
 
-def test_dynamic_resource_is_instantiable(harness):
-    request_processor = harness.request_processor
-    fspath = ''
-    raw = b'[---]\n[---] text/plain via stdlib_template\n'
-    media_type = ''
-    actual = Simplate(request_processor, fspath, raw, media_type).__class__
+def test_dynamic_resource_is_instantiable(make_simplate):
+    actual = make_simplate().__class__
     assert actual is Simplate
 
 
-def test_duplicate_media_type_causes_SyntaxError(get):
+def test_duplicate_media_type_causes_SyntaxError(make_simplate):
     with raises(SyntaxError):
-        get(raw=b"[---]\n[---] text/plain\n[---] text/plain\n")
+        make_simplate(raw=b"[---]\n[---] text/plain\n[---] text/plain\n")
 
 
 # compile_page
 
-def test_compile_page_compiles_empty_page(get):
-    page = get().compile_page(Page('', 'text/html'))
+def test_compile_page_compiles_empty_page(make_simplate):
+    page = make_simplate().compile_page(Page('', 'text/html'))
     actual = page[0]({}), page[1]
     assert actual == ('', 'text/html')
 
-def test_compile_page_compiles_page(get):
-    page = get().compile_page(Page('foo bar', 'text/html'))
+def test_compile_page_compiles_page(make_simplate):
+    page = make_simplate().compile_page(Page('foo bar', 'text/html'))
     actual = page[0]({}), page[1]
     assert actual == ('foo bar', 'text/html')
 
 
 # _parse_specline
 
-def test_parse_specline_parses_specline(get):
-    factory, media_type = get()._parse_specline('media/type via stdlib_template')
+def test_parse_specline_parses_specline(make_simplate):
+    factory, media_type = make_simplate()._parse_specline('media/type via stdlib_template')
     actual = (factory.__class__, media_type)
     assert actual == (TemplateFactory, 'media/type')
 
-def test_parse_specline_doesnt_require_renderer(get):
-    factory, media_type = get()._parse_specline('media/type')
+def test_parse_specline_doesnt_require_renderer(make_simplate):
+    factory, media_type = make_simplate()._parse_specline('media/type')
     actual = (factory.__class__, media_type)
     assert actual == (PercentFactory, 'media/type')
 
-def test_parse_specline_doesnt_require_media_type(get, harness):
-    factory, media_type = get()._parse_specline('via stdlib_template')
+def test_parse_specline_doesnt_require_media_type(harness, make_simplate):
+    factory, media_type = make_simplate()._parse_specline('via stdlib_template')
     actual = (factory.__class__, media_type)
     assert actual == (TemplateFactory, harness.request_processor.media_type_default)
 
-def test_parse_specline_raises_SyntaxError_if_renderer_is_malformed(get):
-    raises(SyntaxError, get()._parse_specline, 'stdlib_template media/type')
+def test_parse_specline_raises_SyntaxError_if_renderer_is_malformed(make_simplate):
+    with raises(SyntaxError):
+        make_simplate()._parse_specline('stdlib_template media/type')
 
-def test_parse_specline_raises_SyntaxError_if_media_type_is_malformed(get):
-    raises(SyntaxError, get()._parse_specline, 'media-type via stdlib_template')
+def test_parse_specline_raises_SyntaxError_if_media_type_is_malformed(make_simplate):
+    with raises(SyntaxError):
+        make_simplate()._parse_specline('media-type via stdlib_template')
 
-def test_parse_specline_cant_mistake_malformed_media_type_for_renderer(get):
-    raises(SyntaxError, get()._parse_specline, 'media-type')
+def test_parse_specline_cant_mistake_malformed_media_type_for_renderer(make_simplate):
+    with raises(SyntaxError):
+        make_simplate()._parse_specline('media-type')
 
-def test_parse_specline_cant_mistake_malformed_renderer_for_media_type(get):
-    raises(SyntaxError, get()._parse_specline, 'stdlib_template')
+def test_parse_specline_cant_mistake_malformed_renderer_for_media_type(make_simplate):
+    with raises(SyntaxError):
+        make_simplate()._parse_specline('stdlib_template')
 
-def test_parse_specline_enforces_order(get):
-    raises(SyntaxError, get()._parse_specline, 'stdlib_template via media/type')
+def test_parse_specline_enforces_order(make_simplate):
+    with raises(SyntaxError):
+        make_simplate()._parse_specline('stdlib_template via media/type')
 
-def test_parse_specline_obeys_default_by_media_type(get):
-    resource = get()
+def test_parse_specline_obeys_default_by_media_type(make_simplate):
+    resource = make_simplate()
     resource.default_renderers_by_media_type['media/type'] = 'glubber'
     err = raises(ValueError, resource._parse_specline, 'media/type').value
     msg = err.args[0]
     assert msg.startswith("Unknown renderer for media/type: glubber."), msg
 
-def test_parse_specline_obeys_default_by_media_type_default(get):
-    resource = get()
+def test_parse_specline_obeys_default_by_media_type_default(make_simplate):
+    resource = make_simplate()
     resource.default_renderers_by_media_type.default_factory = lambda: 'glubber'
     err = raises(ValueError, resource._parse_specline, 'media/type').value
     msg = err.args[0]
     assert msg.startswith("Unknown renderer for media/type: glubber.")
 
-def test_get_renderer_factory_can_raise_syntax_error(get):
-    resource = get()
+def test_get_renderer_factory_can_raise_syntax_error(make_simplate):
+    resource = make_simplate()
     resource.default_renderers_by_media_type['media/type'] = 'glubber'
     err = raises( SyntaxError
                        , resource._get_renderer_factory

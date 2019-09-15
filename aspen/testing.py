@@ -11,7 +11,6 @@ import sys
 
 from filesystem_tree import FilesystemTree
 
-from . import resources
 from .http.request import Path, Querystring
 from .request_processor import RequestProcessor
 from .request_processor.dispatcher import TestDispatcher
@@ -25,13 +24,11 @@ def teardown():
 
     - reset the current working directory
     - remove FSFIX = %{tempdir}/fsfix
-    - reset Aspen's global state
     - clear out sys.path_importer_cache
 
     """
     os.chdir(CWD)
     # Reset some process-global caches. Hrm ...
-    resources.__cache__ = {}
     sys.path_importer_cache = {} # see test_weird.py
 
 teardown() # start clean
