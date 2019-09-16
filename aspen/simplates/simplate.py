@@ -10,7 +10,7 @@ from six import PY2
 
 from ..output import Output
 from .pagination import split_and_escape, parse_specline, Page
-from aspen.http.resource import Dynamic
+from aspen.http.resource import Dynamic, open_resource
 
 
 DEFAULT_ENCODING = 'ascii' if PY2 else 'utf8'
@@ -107,7 +107,7 @@ class Simplate(Dynamic):
 
         self.renderers = {}         # mapping of media type to Renderer objects
         self.available_types = []   # ordered sequence of media types
-        with open(fspath, 'rb') as fh:
+        with open_resource(request_processor.www_root, fspath) as fh:
             raw = fh.read()
         pages = self.parse_into_pages(_decode(raw))
         self.compile_pages(pages)

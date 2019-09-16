@@ -11,13 +11,14 @@ from inspect import isclass
 from operator import attrgetter
 import os
 import posixpath
+import warnings
 
 try:
     from os import scandir
 except ImportError:
     from scandir import scandir
 
-from ..exceptions import SlugCollision, WildcardCollision
+from ..exceptions import PossibleBreakout, SlugCollision, WildcardCollision
 
 from ..utils import auto_repr, Constant
 
@@ -370,12 +371,6 @@ class SystemDispatcher(Dispatcher):
             self.www_root, path_segments
         )
         debug(lambda: "dispatch_abstract returned: " + repr(result))
-
-        # Protect against escaping the www_root.
-        if result.match and not result.match.startswith(self.www_root):
-            # Attempted breakout, e.g. a request for `/../secrets`
-            return MISSING
-
         return result
 
 
@@ -429,17 +424,28 @@ def _dispatch_abstract(dispatcher, listnodes, is_dynamic, is_leaf, traverse, fin
         # check all the possibilities:
         # node.html, node.html.spt, node.spt, node.html/, %node.html/ %*.html.spt, %*.spt
 
-        # don't serve hidden files
-        parent_subnodes = subnodes
-        subnodes = set([ n for n in listnodes(curnode) if not file_skipper(n, curnode) ])
+        parent_subnodes, subnodes = subnodes, set()
+        wild_leaf_ns, wild_nonleaf_ns = [], []
+        for entry in scandir(curnode):
+            if file_skipper(entry.name, curnode):
+                # don't serve hidden files
+                continue
+            if entry.is_symlink():
+                real_path = os.path.realpath(entry.path)
+                if not real_path.startswith(startnode):
+                    # don't serve files outside `www_root`
+                    warnings.warn(PossibleBreakout(entry.path, real_path))
+                    continue
+            subnodes.add(entry.name)
+            if entry.name.startswith("%"):
+                if entry.is_dir():
+                    wild_nonleaf_ns.append(entry.name)
+                elif is_dynamic(entry.path):
+                    wild_leaf_ns.append(entry.name)
+        wild_leaf_ns.sort()
+        wild_nonleaf_ns.sort()
 
         node_noext, node_ext = splitext(node)
-
-        # only maybe because non-spt files aren't wild
-        maybe_wild_nodes = [ n for n in sorted(subnodes) if n.startswith("%") ]
-
-        wild_leaf_ns = [ n for n in maybe_wild_nodes if is_leaf_node(n) and is_dynamic_node(n) ]
-        wild_nonleaf_ns = [ n for n in maybe_wild_nodes if not is_leaf_node(n) ]
 
         # store all the fallback possibilities
         remaining = reduce(posixpath.join, nodepath[depth:])
@@ -598,6 +604,7 @@ class UserlandDispatcher(Dispatcher):
                 fspath = os.path.realpath(fspath)
                 if not fspath.startswith(self.www_root):
                     # Prevent escaping the www_root
+                    warnings.warn(PossibleBreakout(entry.path, fspath))
                     continue
             is_dir = entry.is_dir()
             if is_dir:

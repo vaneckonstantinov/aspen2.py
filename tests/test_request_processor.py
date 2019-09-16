@@ -6,13 +6,15 @@ from __future__ import unicode_literals
 import os
 
 from aspen.request_processor import RequestProcessor
+from aspen.testing import chdir
 
 
-def test_basic():
-    rp = RequestProcessor()
-    expected = os.getcwd()
-    actual = rp.www_root
-    assert actual == expected
+def test_basic(harness):
+    with chdir(harness.fs.www.root):
+        rp = RequestProcessor()
+        expected = os.getcwd()
+        actual = rp.www_root
+        assert actual == expected
 
 def test_processor_can_process(harness):
     output = harness.simple('[---]\n[---]\nGreetings, program!', 'index.html.spt')
