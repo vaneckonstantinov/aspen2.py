@@ -43,7 +43,10 @@ else
         git push
         git push --tags
 
-        python setup.py sdist --formats=zip
+        umask 002
+        git ls-files -z | xargs -0 chmod u=rwX,g=rX,o=rX
+
+        python setup.py sdist
         python setup.py bdist_wheel --universal
 
         twine check dist/aspen-$1*
