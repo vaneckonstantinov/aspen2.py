@@ -16,5 +16,6 @@ exceptions that Aspen raises.
     dispatcher
     typecasting
     simplates
+    output
     testing
     exceptions
