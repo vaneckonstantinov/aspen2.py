@@ -1,10 +1,3 @@
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
-
-from six import text_type
-
 from aspen.http.request import Path, Querystring
 
 
@@ -21,7 +14,7 @@ def test_path_has_raw_set():
 
 def test_path_raw_is_unicode():
     path = Path("/bar.html")
-    assert isinstance(path.raw, text_type)
+    assert isinstance(path.raw, str)
 
 def test_path_has_decoded_set():
     path = Path("/b%c3%a4r.html")
@@ -29,7 +22,7 @@ def test_path_has_decoded_set():
 
 def test_path_decoded_is_unicode():
     path = Path("/bar.html")
-    assert isinstance(path.decoded, text_type)
+    assert isinstance(path.decoded, str)
 
 def test_path_unquotes_and_decodes_UTF_8():
     path = Path("/%e2%98%84.html")
@@ -92,7 +85,7 @@ def test_querystring_has_raw_set():
 
 def test_querystring_raw_is_unicode():
     querystring = Querystring("baz=buz")
-    assert isinstance(querystring.raw, text_type)
+    assert isinstance(querystring.raw, str)
 
 def test_querystring_has_decoded_set():
     querystring = Querystring("baz=buz")
@@ -100,7 +93,7 @@ def test_querystring_has_decoded_set():
 
 def test_querystring_decoded_is_unicode():
     querystring = Querystring("baz=buz")
-    assert isinstance(querystring.decoded, text_type)
+    assert isinstance(querystring.decoded, str)
 
 def test_querystring_unquotes_and_decodes_UTF_8():
     querystring = Querystring("baz=%e2%98%84")

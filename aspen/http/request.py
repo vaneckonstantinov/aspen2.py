@@ -1,10 +1,4 @@
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
-
-from six import PY2, text_type as str
-from six.moves.urllib.parse import parse_qs, unquote, unquote_plus
+from urllib.parse import parse_qs, unquote, unquote_plus
 
 from .mapping import Mapping
 
@@ -14,7 +8,7 @@ def _decode(o, errors='strict'):
 
 
 def path_decode(bs):
-    return _decode(unquote(bs.encode('ascii') if PY2 else bs))
+    return _decode(unquote(bs))
 
 
 class PathPart(str):
@@ -102,22 +96,12 @@ class Querystring(Mapping):
         """Takes a string of type application/x-www-form-urlencoded.
         """
         # urllib needs bytestrings in py2 and unicode strings in py3
-        raw_str = raw.encode('ascii') if PY2 else raw
 
-        self.decoded = _decode(unquote_plus(raw_str), errors=errors)
+        self.decoded = _decode(unquote_plus(raw), errors=errors)
         self.raw = raw
 
         common_kw = dict(keep_blank_values=True, strict_parsing=False)
-        if PY2:
-            # in python 2 parse_qs does its own unquote_plus'ing ...
-            as_dict = parse_qs(raw_str, **common_kw)
-            # ... but doesn't decode to unicode.
-            for k, vals in list(as_dict.items()):
-                as_dict[_decode(k, errors=errors)] = [
-                    _decode(v, errors=errors) for v in vals
-                ]
-        else:
-            # in python 3 parse_qs does the decoding
-            as_dict = parse_qs(raw_str, errors=errors, **common_kw)
+        
+        as_dict = parse_qs(raw, errors=errors, **common_kw)
 
         Mapping.__init__(self, as_dict)

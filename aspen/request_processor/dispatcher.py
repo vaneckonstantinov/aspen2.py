@@ -1,11 +1,6 @@
 """
 This module implements finding the file that matches a request path.
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
-
 from functools import reduce
 from inspect import isclass
 from operator import attrgetter

@@ -20,8 +20,6 @@ To get help on fabricate functions:
 
 """
 
-from __future__ import with_statement, print_function, unicode_literals
-
 # fabricate version number
 __version__ = '1.26'
 
@@ -49,11 +47,6 @@ except ImportError:
             raise NotImplementedError("multiprocessing module not available, can't do parallel builds")
     multiprocessing = MultiprocessingModule()
 
-PY3 = sys.version_info[0] == 3
-if PY3:
-    string_types = str
-else:
-    string_types = basestring
 
 # so you can do "from fabricate import *" to simplify your build script
 __all__ = ['setup', 'run', 'autoclean', 'main', 'shell', 'fabricate_version',
@@ -65,7 +58,6 @@ __all__ = ['setup', 'run', 'autoclean', 'main', 'shell', 'fabricate_version',
 import textwrap
 
 __doc__ += "Exported functions are:\n" + '  ' + '\n  '.join(textwrap.wrap(', '.join(__all__), 80))
-
 
 
 FAT_atime_resolution = 24*60*60     # resolution on FAT filesystems (seconds)
@@ -127,7 +119,7 @@ def args_to_list(args):
         if isinstance(arg, (list, tuple)):
             arglist.extend(args_to_list(arg))
         else:
-            if not isinstance(arg, string_types):
+            if not isinstance(arg, str):
                 arg = str(arg)
             arglist.append(arg)
     return arglist
@@ -415,9 +407,6 @@ class AtimesRunner(Runner):
             and after access times to determine dependencies. """
 
         # For Python pre-2.5, ensure os.stat() returns float atimes
-        old_stat_float = os.stat_float_times()
-        os.stat_float_times(True)
-
         originals = self.file_times()
         if self.atimes == 2:
             befores = originals
@@ -464,7 +453,6 @@ class AtimesRunner(Runner):
                 if original != afters.get(name, None):
                     self._utime(name, original[0], original[1])
 
-        os.stat_float_times(old_stat_float)  # restore stat_float_times value
         return deps, outputs
 
 class StraceProcess(object):
@@ -1183,7 +1171,7 @@ class Builder(object):
 
             This function is for compatiblity with memoize.py and is
             deprecated. Use run() instead. """
-        if isinstance(command, string_types):
+        if isinstance(command, str):
             args = shlex.split(command)
         else:
             args = args_to_list(command)
@@ -1329,7 +1317,7 @@ class Builder(object):
         try:
             self.runner = self._runner_map[runner](self)
         except KeyError:
-            if isinstance(runner, string_types):
+            if isinstance(runner, str):
                 # For backwards compatibility, allow runner to be the
                 # name of a method in a derived class:
                 self.runner = getattr(self, runner)

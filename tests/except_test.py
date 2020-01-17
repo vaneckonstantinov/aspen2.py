@@ -5,11 +5,6 @@ without raise Exception: 0.94 seconds
 with raise Exception: 9.26 seconds
 
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
-
 import time
 
 if __name__ == '__main__':

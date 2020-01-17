@@ -1,12 +1,6 @@
 """
 This module handles the parsing of path variables.
 """
-
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
-
 from ..exceptions import TypecastError
 
 
