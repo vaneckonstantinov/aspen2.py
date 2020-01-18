@@ -1,19 +1,12 @@
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
-
 from io import BytesIO
 import re
-
-from six import PY2
 
 from ..output import Output
 from .pagination import split_and_escape, parse_specline, Page
 from aspen.http.resource import Dynamic, open_resource
 
 
-DEFAULT_ENCODING = 'ascii' if PY2 else 'utf8'
+DEFAULT_ENCODING = 'utf8'
 
 
 renderer_re = re.compile(r'[a-z0-9.-_]+$')

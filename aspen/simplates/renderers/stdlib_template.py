@@ -1,13 +1,8 @@
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
-
-from . import Renderer, Factory
+from . import Renderer as BaseRenderer, Factory as BaseFactory
 from string import Template
 
 
-class Renderer(Renderer):
+class Renderer(BaseRenderer):
 
     def compile(self, filepath, padded):
         return Template(padded)
@@ -16,5 +11,5 @@ class Renderer(Renderer):
         return self.compiled.substitute(context)
 
 
-class Factory(Factory):
+class Factory(BaseFactory):
     Renderer = Renderer

@@ -1,12 +1,8 @@
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
-
-from . import Renderer, Factory
+from . import Renderer as BaseRenderer, Factory as BaseFactory
 from .. import json_
 
-class Renderer(Renderer):
+
+class Renderer(BaseRenderer):
 
     def render_content(self, context):
         output = context['output']
@@ -18,6 +14,5 @@ class Renderer(Renderer):
         return r
 
 
-class Factory(Factory):
+class Factory(BaseFactory):
     Renderer = Renderer
-

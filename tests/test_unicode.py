@@ -1,11 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
-
-from pytest import raises
-from six import PY2
 
 
 def test_with_non_ascii_bytes_and_without_encoding(harness):
@@ -15,12 +8,8 @@ def test_with_non_ascii_bytes_and_without_encoding(harness):
         [------------------] text/plain
         %(text)s
     """, 'utf8'))
-    if PY2:
-        with raises(UnicodeDecodeError):
-            harness.hit('/')
-    else:
-        output = harness.hit('/')
-        assert output.text.strip() == 'א'
+    output = harness.hit('/')
+    assert output.text.strip() == 'א'
 
 def test_non_ascii_bytes_work_with_encoding(harness):
     expected = 'א'.encode('utf8')
