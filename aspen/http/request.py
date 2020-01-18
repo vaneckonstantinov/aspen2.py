@@ -99,9 +99,6 @@ class Querystring(Mapping):
 
         self.decoded = _decode(unquote_plus(raw), errors=errors)
         self.raw = raw
-
-        common_kw = dict(keep_blank_values=True, strict_parsing=False)
-        
-        as_dict = parse_qs(raw, errors=errors, **common_kw)
-
-        Mapping.__init__(self, as_dict)
+        Mapping.__init__(self, parse_qs(
+            raw, errors=errors, keep_blank_values=True, strict_parsing=False
+        ))
