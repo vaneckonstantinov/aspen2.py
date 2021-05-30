@@ -15,14 +15,11 @@ except ImportError:
 # Allow arbitrary encoders to be registered.
 # ==========================================
 # One of the difficulties with JSON in Python is that pretty quickly one hits a
-# class or type that needs extra work to decode to JSON. For example, support
-# for the decimal.Decimal class was added in simplejson 2.1, which isn't in the
-# stdlib version as of 2.7/3.2. Support for classes from the datetime module
-# isn't in simplejson as of 2.3.2. Since Aspen takes on ownership of JSON
-# encoding, we need to give Aspen users a way to register (and unregister, I
-# guess) new encoders. You can do this by calling dumps with the cls keyword,
-# but we call dumps for you for JSON resources, so we want a way to influence
-# decoding that doesn't depend on dumps. And this is that way:
+# class or type that needs extra work to decode to JSON. Since Aspen takes on
+# ownership of JSON encoding, we need to give Aspen users a way to register (and
+# unregister, I guess) new encoders. You can do this by calling dumps with the
+# cls keyword, but we call dumps for you for JSON resources, so we want a way to
+# influence decoding that doesn't depend on dumps. And this is that way:
 
 encoders = {}
 def register_encoder(cls, encode):
@@ -53,9 +50,7 @@ class FriendlyEncoder(_json.JSONEncoder):
     """Add support for additional types to the default JSON encoder.
     """
     def default(self, obj):
-        cls = obj.__class__ # Use this instead of type(obj) because that
-                            # isn't consistent between new- and old-style
-                            # classes, and this is.
+        cls = obj.__class__
         encode = encoders.get(cls, super(FriendlyEncoder, self).default)
         return encode(obj)
 

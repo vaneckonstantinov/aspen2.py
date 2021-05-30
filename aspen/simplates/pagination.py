@@ -10,7 +10,7 @@ ESCAPED_SPLITTER = re.compile(ESCAPED_SPLITTER, re.MULTILINE)
 SPECLINE_SPLIT = re.compile(SPECLINE_SPLIT)
 
 
-class Page(object):
+class Page:
     __slots__ = ('header', 'content', 'offset')
 
     def __init__(self, content, header='', offset=0):

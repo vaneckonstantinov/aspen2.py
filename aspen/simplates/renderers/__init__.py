@@ -43,7 +43,7 @@ def factories(configuration):
 # ==============
 # The base is actually functional. It's a pass-through.
 
-class Renderer(object):
+class Renderer:
     """The base class of renderers.
     """
 
@@ -97,7 +97,7 @@ class Renderer(object):
         return self.raw  # pass-through
 
 
-class Factory(object):
+class Factory:
     """The base class of renderer factories.
     """
 

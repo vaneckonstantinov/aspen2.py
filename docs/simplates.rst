@@ -50,12 +50,6 @@ Content sections may have a "specline" after the ``[---]`` separator. The
 format of the specline is ``content-type via renderer``. The syntax of the
 content sections depends on the renderer. The logic sections are Python.
 
-.. note::
-
-    Simplates under Python 2.7 use the following :mod:`__future__` features:
-    :mod:`absolute_import`, :mod:`division`, :mod:`print_function`, and
-    :mod:`unicode_literals`.
-
 A simplate may have one or more sections. Here are the rules for determining
 which section is what:
 
@@ -127,9 +121,9 @@ Aspen includes five renderers out of the box:
    `template-style`_ string replacement
 
 
-.. _format-style: https://docs.python.org/3.5/library/string.html#format-string-syntax
-.. _percent-style: https://docs.python.org/3.5/library/stdtypes.html#printf-style-string-formatting
-.. _template-style: https://docs.python.org/3.5/library/string.html#template-strings
+.. _format-style: https://docs.python.org/3/library/string.html#format-string-syntax
+.. _percent-style: https://docs.python.org/3/library/stdtypes.html#printf-style-string-formatting
+.. _template-style: https://docs.python.org/3/library/string.html#template-strings
 
 .. note::
 

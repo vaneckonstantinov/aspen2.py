@@ -49,7 +49,7 @@ def resolve_want(available, want):
     return out
 
 
-class FileSystem(object):
+class FileSystem:
     __slots__ = ('project', 'www')
 
     def __init__(self):
@@ -57,7 +57,7 @@ class FileSystem(object):
         self.www = FilesystemTree()
 
 
-class Harness(object):
+class Harness:
     """A harness to be used in the Aspen test suite itself. Probably not useful to you.
     """
 

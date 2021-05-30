@@ -2,7 +2,7 @@ from .utils import auto_repr
 
 
 @auto_repr
-class Output(object):
+class Output:
     """The result of rendering a resource.
     """
 

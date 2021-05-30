@@ -24,7 +24,7 @@ default_indices = [
 ]
 
 
-class RequestProcessor(object):
+class RequestProcessor:
     """A core request processor designed for integration into a host framework.
 
     The ``kwargs`` are for configuration, see :class:`DefaultConfiguration`
@@ -222,7 +222,7 @@ class RequestProcessor(object):
         return media_type
 
 
-class DefaultConfiguration(object):
+class DefaultConfiguration:
     """Default configuration values.
     """
 

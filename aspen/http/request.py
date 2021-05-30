@@ -3,14 +3,6 @@ from urllib.parse import parse_qs, unquote, unquote_plus
 from .mapping import Mapping
 
 
-def _decode(o, errors='strict'):
-    return o.decode('utf8', errors=errors) if isinstance(o, bytes) else o
-
-
-def path_decode(bs):
-    return _decode(unquote(bs))
-
-
 class PathPart(str):
     """Represents a segment of a URL path.
 
@@ -52,13 +44,13 @@ def extract_rfc2396_params(path):
     for component in pathsegs:
         parts = component.split(';')
         params = Mapping()
-        segment = path_decode(parts[0])
+        segment = unquote(parts[0])
         for p in parts[1:]:
             if '=' in p:
                 k, v = p.split('=', 1)
             else:
                 k, v = p, ''
-            params.add(path_decode(k), path_decode(v))
+            params.add(unquote(k), unquote(v))
         segments_with_params.append(PathPart(segment, params))
     return segments_with_params
 
@@ -66,21 +58,21 @@ def extract_rfc2396_params(path):
 def split_path_no_params(path):
     """This splits a path into parts on "/" only (no split on ";" or ",").
     """
-    return [PathPart(path_decode(s)) for s in path.lstrip('/').split('/')]
+    return [PathPart(unquote(s)) for s in path.lstrip('/').split('/')]
 
 
 class Path(Mapping):
     """Represent the path of a resource.
 
     Attributes:
-        raw: the unparsed form of the path - :class:`bytes`
+        raw: the unparsed form of the path - :class:`str`
         decoded: the decoded form of the path - :class:`str`
         parts: the segments of the path - :class:`list` of :class:`PathPart` objects
     """
 
     def __init__(self, raw, split_path=extract_rfc2396_params):
         self.raw = raw
-        self.decoded = path_decode(raw)
+        self.decoded = unquote(raw)
         self.parts = split_path(raw)
 
 
@@ -88,16 +80,14 @@ class Querystring(Mapping):
     """Represent an HTTP querystring.
 
     Attributes:
-        raw: the unparsed form of the querystring - :class:`bytes`
+        raw: the unparsed form of the querystring - :class:`str`
         decoded: the decoded form of the querystring - :class:`str`
     """
 
     def __init__(self, raw, errors='replace'):
         """Takes a string of type application/x-www-form-urlencoded.
         """
-        # urllib needs bytestrings in py2 and unicode strings in py3
-
-        self.decoded = _decode(unquote_plus(raw), errors=errors)
+        self.decoded = unquote_plus(raw)
         self.raw = raw
         Mapping.__init__(self, parse_qs(
             raw, errors=errors, keep_blank_values=True, strict_parsing=False

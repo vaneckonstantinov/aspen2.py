@@ -1,4 +1,3 @@
-# encoding: utf8
 from pytest import raises
 
 from aspen.http.mapping import Mapping

@@ -33,7 +33,7 @@ def open_resource(request_processor, resource_path):
     return open(real_path, 'rb')
 
 
-class Static(object):
+class Static:
     """Model a static HTTP resource.
     """
 
@@ -76,7 +76,7 @@ class Static(object):
         return output
 
 
-class Dynamic(object):
+class Dynamic:
     """Model a dynamic HTTP resource.
     """
 

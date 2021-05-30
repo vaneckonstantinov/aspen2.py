@@ -33,12 +33,6 @@ ASPEN_DEBUG = 'ASPEN_DEBUG' in os.environ
 debug = debug_stdout if ASPEN_DEBUG else debug_noop
 
 
-def get_mtime_ns(fspath):
-    # For compatibility with Python < 3.3
-    st = os.stat(fspath)
-    return getattr(st, 'st_mtime_ns', int(st.st_mtime * 1000000000))
-
-
 def splitext(name):
     return name.rsplit('.', 1) if '.' in name else [name, None]
 
@@ -59,7 +53,7 @@ def strip_matching_ext(a, b):
     return a, b
 
 
-class DispatchStatus(object):
+class DispatchStatus:
     """The attributes of this class are constants that represent dispatch statuses."""
 
     okay = Constant('okay')
@@ -73,7 +67,7 @@ class DispatchStatus(object):
 
 
 @auto_repr
-class DispatchResult(object):
+class DispatchResult:
     """The result of a dispatch operation."""
 
     __slots__ = ('status', 'match', 'wildcards', 'extension', 'canonical')
@@ -124,7 +118,7 @@ MISSING = DispatchResult(DispatchStatus.missing, None, None, None, None)
 
 
 @auto_repr
-class FileNode(object):
+class FileNode:
     """Represents a file in a dispatch tree."""
 
     __slots__ = ('fspath', 'type', 'wildcard', 'extension')
@@ -144,7 +138,7 @@ class FileNode(object):
 
 
 @auto_repr
-class DirectoryNode(object):
+class DirectoryNode:
     """Represents a directory in a dispatch tree."""
 
     __slots__ = ('fspath', 'wildcard', 'children')
@@ -163,7 +157,7 @@ class DirectoryNode(object):
 
 
 @auto_repr
-class LiveDirectoryNode(object):
+class LiveDirectoryNode:
     """Dynamically represents a directory in a dispatch tree."""
 
     __slots__ = ('fspath', 'wildcard', '_children', 'mtime', 'dispatcher')
@@ -188,7 +182,7 @@ class LiveDirectoryNode(object):
 
     @property
     def children(self):
-        mtime = get_mtime_ns(self.fspath)
+        mtime = os.stat(self.fspath).st_mtime_ns
         if mtime != self.mtime:
             dirnames = self.fspath[len(self.dispatcher.www_root)+1:].split(os.path.sep)
             varnames = {
@@ -258,7 +252,7 @@ def skip_nothing(name, dirpath):
 # Dispatcher classes
 # ==================
 
-class Dispatcher(object):
+class Dispatcher:
     """The abstract base class of dispatchers.
 
     Args
@@ -588,7 +582,7 @@ class UserlandDispatcher(Dispatcher):
         """This method recursively builds a dispacth subtree.
         """
         children = {}
-        mtime = get_mtime_ns(dirpath)
+        mtime = os.stat(dirpath).st_mtime_ns
         index = self.find_index(dirpath)
         for entry in sorted(scandir(dirpath), key=attrgetter('name')):
             name = entry.name
@@ -797,7 +791,7 @@ class HybridDispatcher(UserlandDispatcher):
         return LiveDirectoryNode(fspath, wildcard, children, mtime, self)
 
 
-class TestDispatcher(object):
+class TestDispatcher:
     """
     This pseudo-dispatcher calls all the other dispatchers and checks that their
     results are identical. It's only meant to be used in Aspen's own tests.

@@ -4,11 +4,12 @@ def __repr__(self):
     return '{}({})' % ({})
 """
 
+
 def auto_repr(cls):
     """Generates a `__repr__` method for the given class, using `__slots__`.
 
     >>> @auto_repr
-    ... class Foo(object):
+    ... class Foo:
     ...     __slots__ = ['bar']
     ...     def __init__(self, bar):
     ...         self.bar = bar
@@ -30,7 +31,7 @@ def auto_repr(cls):
     return cls
 
 
-class Constant(object):
+class Constant:
     """A simple class that creates lightweight constants.
 
     >>> c = Constant('OK')

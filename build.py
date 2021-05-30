@@ -7,12 +7,9 @@ import sys
 import os.path
 from fabricate import ExecutionError, main, run, shell, autoclean
 
+
 # Core Executables
 # ================
-
-# See https://github.com/AspenWeb/pando.py/issues/542
-USE_PY_VENV = sys.version_info > (3, 3)
-
 
 def _virt(cmd, envdir='env'):
     envdir = _env(envdir)
@@ -48,17 +45,7 @@ def __env(envdir):
         # We've already built our own virtualenv.
         return envdir
 
-    if USE_PY_VENV:
-        # use built-in venv module
-        run(sys.executable, '-m', 'venv', envdir)
-    else:
-        # use virtualenv instead
-        try:
-            import virtualenv
-        except ImportError:
-            # install it when missing
-            run(sys.executable, '-m', 'pip', 'install', '--user', 'virtualenv')
-        run(sys.executable, '-m', 'virtualenv', envdir)
+    run(sys.executable, '-m', 'venv', envdir)
     return envdir
 
 

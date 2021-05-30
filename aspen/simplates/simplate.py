@@ -65,7 +65,7 @@ def _decode(raw):
     return fulltext.decode(encoding)
 
 
-class SimplateDefaults(object):
+class SimplateDefaults:
     def __init__(self, renderers_by_media_type, renderer_factories, initial_context):
         """
         Things that are usually the same across all simplates:
