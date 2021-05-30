@@ -47,11 +47,11 @@ Aspen is available on `PyPI`_::
 .. toctree::
     :maxdepth: 2
 
-    dispatch 
-    simplates 
+    dispatch
+    simplates
     plugins
     wrappers
-    reference/index 
+    reference/index
 
 
 **********
