@@ -1,6 +1,5 @@
 import datetime
 
-
 # Find a json module.
 # ===================
 # The standard library includes simplejson as json since 2.6, but without the
@@ -22,6 +21,8 @@ except ImportError:
 # influence decoding that doesn't depend on dumps. And this is that way:
 
 encoders = {}
+
+
 def register_encoder(cls, encode):
     """Register the encode function for cls.
 
@@ -31,11 +32,13 @@ def register_encoder(cls, encode):
     """
     encoders[cls] = encode
 
+
 def unregister_encoder(cls):
     """Given a class, remove any encoder that has been registered for it.
     """
     if cls in encoders:
         del encoders[cls]
+
 
 # http://docs.python.org/library/json.html
 register_encoder(complex, lambda obj: [obj.real, obj.imag])
@@ -61,6 +64,7 @@ class FriendlyEncoder(_json.JSONEncoder):
 def load(*a, **kw):
     return _json.load(*a, **kw)
 
+
 def dump(*a, **kw):
     if 'cls' not in kw:
         kw['cls'] = FriendlyEncoder
@@ -71,8 +75,10 @@ def dump(*a, **kw):
         kw['indent'] = 4
     return _json.dump(*a, **kw)
 
+
 def loads(*a, **kw):
     return _json.loads(*a, **kw)
+
 
 def dumps(*a, **kw):
     if 'cls' not in kw:
@@ -83,4 +89,3 @@ def dumps(*a, **kw):
     if 'indent' not in kw:
         kw['indent'] = 4
     return _json.dumps(*a, **kw)
-

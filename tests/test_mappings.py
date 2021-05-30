@@ -82,9 +82,13 @@ def test_mapping_deleting_a_key_removes_it_entirely():
 
 def test_accessing_missing_key_calls_keyerror():
     m = Mapping()
-    class Foobar(Exception): pass
+
+    class Foobar(Exception):
+        pass
+
     def raise_foobar(self):
         raise Foobar
+
     m.keyerror = raise_foobar
     raises(Foobar, lambda k: m[k], 'foo')
     raises(Foobar, m.ones, 'foo')

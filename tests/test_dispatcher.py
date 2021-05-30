@@ -10,6 +10,13 @@ from aspen.request_processor.dispatcher import (
 )
 
 
+NEGOTIATED_SIMPLATE = """[-----]
+[-----] text/plain
+Greetings, program!
+[-----] text/html
+<h1>Greetings, Program!</h1>"""
+
+
 # Helpers
 # =======
 
@@ -44,12 +51,6 @@ def assert_wildcards(harness, request_path, expected_vals):
 def dispatch(harness, request_path):
     return harness.request_processor.dispatch(Path(request_path))
 
-NEGOTIATED_SIMPLATE="""[-----]
-[-----] text/plain
-Greetings, program!
-[-----] text/html
-<h1>Greetings, Program!</h1>"""
-
 
 # dispatcher.dispatch
 # ===================
@@ -59,25 +60,25 @@ def test_dispatcher_returns_a_result(dispatcher_class):
     www = FilesystemTree()
     www.mk(('index.html', 'Greetings, program!'),)
     dispatcher = dispatcher_class(
-        www_root    = www.root,
-        is_dynamic  = lambda n: n.endswith('.spt'),
-        indices     = ['index.html'],
-        typecasters = {},
+        www_root=www.root,
+        is_dynamic=lambda n: n.endswith('.spt'),
+        indices=['index.html'],
+        typecasters={},
     )
     dispatcher.build_dispatch_tree()
     result = dispatcher.dispatch('/', [''])
     assert result.status == DispatchStatus.okay
     assert result.match == os.path.join(www.root, 'index.html')
-    assert result.wildcards == None
+    assert result.wildcards is None
 
 @pytest.mark.parametrize('dispatcher_class', DISPATCHER_CLASSES)
 def test_dispatcher_returns_unindexed_for_unindexed_directory(dispatcher_class):
     www = FilesystemTree()
     dispatcher = dispatcher_class(
-        www_root    = www.root,
-        is_dynamic  = lambda n: n.endswith('.spt'),
-        indices     = [],
-        typecasters = {},
+        www_root=www.root,
+        is_dynamic=lambda n: n.endswith('.spt'),
+        indices=[],
+        typecasters={},
     )
     dispatcher.build_dispatch_tree()
     r = dispatcher.dispatch('/', [''])
@@ -94,10 +95,10 @@ def test_dispatch_when_filesystem_has_been_modified():
     dispatchers = []
     for dispatcher_class in DISPATCHER_CLASSES:
         dispatchers.append(dispatcher_class(
-            www_root    = www.root,
-            is_dynamic  = lambda n: n.endswith('.spt'),
-            indices     = ['index.html'],
-            typecasters = {},
+            www_root=www.root,
+            is_dynamic=lambda n: n.endswith('.spt'),
+            indices=['index.html'],
+            typecasters={},
         ))
         dispatchers[-1].build_dispatch_tree()
     # Now add an index file and try to dispatch
@@ -189,21 +190,24 @@ def test_indirect_negotiation_skips_two_dots(harness):
     assert_match(harness, 'foo.bar.html', 'foo.bar.spt', extension='html')
 
 def test_indirect_negotiation_prefers_rendered(harness):
-    harness.fs.www.mk( ('foo.html', "Greetings, program!")
-          , ('foo', "blah blah blah")
-           )
+    harness.fs.www.mk(
+        ('foo.html', "Greetings, program!"),
+        ('foo', "blah blah blah"),
+    )
     assert_match(harness, 'foo.html', 'foo.html')
 
 def test_indirect_negotiation_really_prefers_rendered(harness):
-    harness.fs.www.mk( ('foo.html', "Greetings, program!")
-          , ('foo.', "blah blah blah")
-           )
+    harness.fs.www.mk(
+        ('foo.html', "Greetings, program!"),
+        ('foo.', "blah blah blah"),
+    )
     assert_match(harness, 'foo.html', 'foo.html')
 
 def test_indirect_negotiation_really_prefers_rendered_2(harness):
-    harness.fs.www.mk( ('foo.html', "Greetings, program!")
-          , ('foo', "blah blah blah")
-           )
+    harness.fs.www.mk(
+        ('foo.html', "Greetings, program!"),
+        ('foo', "blah blah blah"),
+    )
     assert_match(harness, 'foo.html', 'foo.html')
 
 def test_indirect_negotation_doesnt_do_dirs(harness):
@@ -227,7 +231,7 @@ def test_virtual_path_is_virtual(harness):
 
 def test_virtual_path_sets_path(harness):
     harness.fs.www.mk(('%bar/foo.spt', NEGOTIATED_SIMPLATE),)
-    assert_wildcards(harness, '/blah/foo.html', {'bar': 'blah'} )
+    assert_wildcards(harness, '/blah/foo.html', {'bar': 'blah'})
 
 def test_virtual_path_sets_unicode_path(harness):
     harness.fs.www.mk(('%bar/foo.html', "Greetings, program!"),)
@@ -276,9 +280,10 @@ def test_virtual_path_file_key_val_percent(harness):
     assert_wildcards(harness, '/foo/%25blah', {'bar': '%blah'})
 
 def test_virtual_path_file_not_dir(harness):
-    harness.fs.www.mk( ('%foo/bar.html', "Greetings from bar!")
-          , ('%baz.html.spt', NEGOTIATED_SIMPLATE)
-           )
+    harness.fs.www.mk(
+        ('%foo/bar.html', "Greetings from bar!"),
+        ('%baz.html.spt', NEGOTIATED_SIMPLATE),
+    )
     assert_match(harness, '/bal.html', '%baz.html.spt', wildcards={'baz': 'bal'})
 
 def test_virtual_path_when_dir_is_more_specific(harness):
@@ -306,9 +311,10 @@ def test_fallback_to_wildleaf_in_parent_directory(harness):
 # ==============================
 
 def test_virtual_path__and_indirect_neg_file_not_dir(harness):
-    harness.fs.www.mk( ('%foo/bar.html', "Greetings from bar!")
-          , ('%baz.spt', NEGOTIATED_SIMPLATE)
-           )
+    harness.fs.www.mk(
+        ('%foo/bar.html', "Greetings from bar!"),
+        ('%baz.spt', NEGOTIATED_SIMPLATE),
+    )
     assert_match(harness, '/bal.html', '%baz.spt', wildcards={'baz': 'bal.html'})
 
 def test_virtual_path_and_indirect_neg_noext(harness):
@@ -482,12 +488,13 @@ def test_path_part_params_greedy_simplate(harness):
 
 def test_virtual_path_parts_can_be_empty(harness):
     harness.fs.www.mk(('foo/%bar/index.html.spt', NEGOTIATED_SIMPLATE),)
-    assert_wildcards(harness, '/foo//' , {'bar': ''})
+    assert_wildcards(harness, '/foo//', {'bar': ''})
 
 def test_file_matches_in_face_of_dir(harness):
-    harness.fs.www.mk( ('%page/index.html.spt', NEGOTIATED_SIMPLATE)
-          , ('%value.txt.spt', NEGOTIATED_SIMPLATE)
-           )
+    harness.fs.www.mk(
+        ('%page/index.html.spt', NEGOTIATED_SIMPLATE),
+        ('%value.txt.spt', NEGOTIATED_SIMPLATE),
+    )
     assert_wildcards(harness, '/baz.txt', {'value': 'baz'})
 
 def test_file_doesnt_match_if_extensions_dont_match(harness):
@@ -498,15 +505,17 @@ def test_file_doesnt_match_if_extensions_dont_match(harness):
     assert_wildcards(harness, '/baz.html', {'page': 'baz.html'})
 
 def test_file_matches_extension(harness):
-    harness.fs.www.mk( ('%value.json.spt', '[-----]\n[-----]\n{"Greetings,": "program!"}')
-          , ('%value.txt.spt', NEGOTIATED_SIMPLATE)
-           )
+    harness.fs.www.mk(
+        ('%value.json.spt', '[-----]\n[-----]\n{"Greetings,": "program!"}'),
+        ('%value.txt.spt', NEGOTIATED_SIMPLATE),
+    )
     assert_match(harness, '/baz.json', "%value.json.spt", wildcards={'value': 'baz'})
 
 def test_file_matches_other_extension(harness):
-    harness.fs.www.mk( ('%value.json.spt', '[-----]\n[-----]\n{"Greetings,": "program!"}')
-          , ('%value.txt.spt', NEGOTIATED_SIMPLATE)
-           )
+    harness.fs.www.mk(
+        ('%value.json.spt', '[-----]\n[-----]\n{"Greetings,": "program!"}'),
+        ('%value.txt.spt', NEGOTIATED_SIMPLATE),
+    )
     assert_match(harness, '/baz.txt', "%value.txt.spt", wildcards={'value': 'baz'})
 
 
@@ -522,9 +531,10 @@ def test_normal_file_with_no_extension_works(harness):
     assert_match(harness, '/baz.txt', '%value.spt', wildcards={'value': 'baz.txt'})
 
 def test_file_with_no_extension_matches(harness):
-    harness.fs.www.mk( ('%value.spt', NEGOTIATED_SIMPLATE)
-          , ('value', '{"Greetings,": "program!"}')
-           )
+    harness.fs.www.mk(
+        ('%value.spt', NEGOTIATED_SIMPLATE),
+        ('value', '{"Greetings,": "program!"}'),
+    )
     assert_match(harness, '/baz', '%value.spt', wildcards={'value': 'baz'})
 
 def test_dont_serve_hidden_files(harness):

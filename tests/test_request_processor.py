@@ -20,5 +20,10 @@ def test_user_can_influence_render_context(harness):
 
 def test_resources_can_import_from_project_root(harness):
     harness.fs.project.mk(('foo.py', 'bar = "baz"'))
-    assert harness.simple( "from foo import bar\n[---]\n[---]\nGreetings, %(bar)s!"
-                         , 'index.html.spt').text == "Greetings, baz!"
+    r = harness.simple("""
+        from foo import bar
+        [---]
+        [---]
+        Greetings, %(bar)s!
+    """, 'index.html.spt')
+    assert r.text == "Greetings, baz!\n"

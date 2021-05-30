@@ -9,4 +9,3 @@ class Renderer(Renderer):
 
 class Factory(Factory):
     Renderer = Renderer
-

@@ -44,11 +44,10 @@ def __dump():
 
 def test_weirdness():
     try:
-        #print
         foo = os.path.join(FSFIX, 'foo')
         foo = os.path.realpath(foo)
         if foo not in sys.path:
-            log("inserting into sys.path", foo )
+            log("inserting into sys.path", foo)
             sys.path.insert(0, foo)
 
         log("making directory", FSFIX)
@@ -82,13 +81,11 @@ def test_weirdness():
             import bar
             bar  # shut up pyflakes
             log("succeeded")
-        except:
+        except Exception:
             log("failed")
             raise
     finally:
         rm()
-
-    #print
 
 if __name__ == '__main__':
     test_weirdness()

@@ -1,13 +1,11 @@
 import sys
 import pkg_resources
 
+
 # Built-in renderers
-BUILTIN_RENDERERS = [ 'stdlib_format'
-                    , 'stdlib_percent'
-                    , 'stdlib_template'
-                    , 'json_dump'
-                    , 'jsonp_dump'
-                     ]
+BUILTIN_RENDERERS = [
+    'stdlib_format', 'stdlib_percent', 'stdlib_template', 'json_dump', 'jsonp_dump',
+]
 
 RENDERERS = BUILTIN_RENDERERS[:]
 
@@ -15,6 +13,7 @@ for entrypoint in pkg_resources.iter_entry_points(group='aspen.renderers'):
     RENDERERS.append(entrypoint.name)
 
 RENDERERS.sort()
+
 
 def factories(configuration):
     """return a dict of render factory names to the factories themselves"""

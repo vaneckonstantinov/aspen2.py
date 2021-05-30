@@ -16,34 +16,38 @@ def test_barely_working(harness):
     assert output.media_type == 'text/html'
 
 def test_charset_static_barely_working(harness):
-    output = harness.simple( ('Greetings, program!', 'utf16')
-                           , 'index.html'
-                           , request_processor_configuration={'charset_static': 'utf16'}
-                            )
+    output = harness.simple(
+        ('Greetings, program!', 'utf16'),
+        'index.html',
+        request_processor_configuration={'charset_static': 'utf16'},
+    )
     assert output.media_type == 'text/html'
     assert output.charset == 'utf16'
 
 def test_charset_static_checks_encoding(harness):
-    output = harness.simple( ('Greetings, program!', 'utf16')
-                           , 'index.html'
-                           , request_processor_configuration={'charset_static': 'utf8'}
-                            )
+    output = harness.simple(
+        ('Greetings, program!', 'utf16'),
+        'index.html',
+        request_processor_configuration={'charset_static': 'utf8'},
+    )
     assert output.media_type == 'text/html'
     assert output.charset is None
 
 def test_charset_static_None(harness):
-    output = harness.simple( 'Greetings, program!'
-                           , 'index.html'
-                           , request_processor_configuration={'charset_static': None}
-                            )
+    output = harness.simple(
+        'Greetings, program!',
+        'index.html',
+        request_processor_configuration={'charset_static': None},
+    )
     assert output.media_type == 'text/html'
     assert output.charset is None
 
 def test_encode_output_as_barely_working(harness):
-    output = harness.simple( '[---]\n[---]\nGreetings, program!'
-                           , 'index.html.spt'
-                           , request_processor_configuration={'encode_output_as': 'ascii'}
-                            )
+    output = harness.simple(
+        '[---]\n[---]\nGreetings, program!',
+        'index.html.spt',
+        request_processor_configuration={'encode_output_as': 'ascii'},
+    )
     assert output.media_type == 'text/html'
     assert output.charset == 'ascii'
 
@@ -52,15 +56,15 @@ def test_resource_pages_work(harness):
     assert actual == "Greetings, bar!"
 
 def test_resource_dunder_all_limits_vars(harness):
-    actual = raises( KeyError
-                   , harness.simple
-                   , "[---]\nfoo = 'bar'\n"
-                     "__all__ = []\n"
-                     "[---------]\n"
-                     "Greetings, %(foo)s!"
-                    ).value
-    # in production, KeyError is turned into a 500 by an outer wrapper
-    assert type(actual) == KeyError
+    with raises(KeyError) as x:
+        harness.simple("""
+            [---]
+            foo = 'bar'
+            __all__ = []
+            [---------]
+            Greetings, %(foo)s!
+        """)
+    assert type(x.value) == KeyError
 
 def test_path_part_params_are_available(harness):
     output = harness.simple("""
@@ -91,8 +95,7 @@ def test_negotiated_resource_doesnt_break(harness):
         Greetings, %(foo)s!
         [-----------] text/html
         <h1>Greetings, %(foo)s!</h1>
-        """
-        , filepath='index.spt').text
+    """, filepath='index.spt').text
     assert actual == expected
 
 def test_request_processor_is_in_context(harness):
@@ -104,9 +107,10 @@ def test_request_processor_is_in_context(harness):
     assert output.text == 'It worked.'
 
 def test_unknown_mimetype_yields_default_mimetype(harness):
-    output = harness.simple( 'Greetings, program!'
-                             , filepath='foo.flugbaggity'
-                              )
+    output = harness.simple(
+        'Greetings, program!',
+        filepath='foo.flugbaggity',
+    )
     assert output.media_type == 'text/plain'
 
 def test_templating_without_script_works(harness):
@@ -131,7 +135,8 @@ def test_offset_calculation_advanced(harness):
         '\n\n\n[---]\n'
         'cheese\n[---]\n'
         '\n\n\n\n\n\n[---]\n'
-        'Monkey\nHead\n') #Be careful: this is implicit concation, not a tuple
+        'Monkey\nHead\n'
+    )  # Note: this is implicit concation, not a tuple
     check_offsets(raw, [0, 4, 6, 13])
 
 

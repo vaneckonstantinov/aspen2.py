@@ -41,10 +41,9 @@ def test_path_has_parts():
 # ===========
 
 def _extract_params(path):
-#    return dispatcher.extract_rfc2396_params(path.lstrip('/').split('/'))
-    params = [ segment.params for segment in path.parts ]
-    segments = [ str(segment) for segment in path.parts ]
-    return ( segments, params )
+    params = [segment.params for segment in path.parts]
+    segments = [str(segment) for segment in path.parts]
+    return segments, params
 
 def test_extract_path_params_with_none():
     path = Path("/foo/bar")
@@ -55,18 +54,25 @@ def test_extract_path_params_with_none():
 def test_extract_path_params_simple():
     path = Path("/foo;a=1;b=2;c/bar;a=2;b=1")
     actual = _extract_params(path)
-    expected = (['foo', 'bar'], [{'a':['1'], 'b':['2'], 'c':['']}, {'a':['2'], 'b':['1']}])
+    expected = (
+        ['foo', 'bar'],
+        [{'a': ['1'], 'b': ['2'], 'c': ['']}, {'a': ['2'], 'b': ['1']}]
+    )
     assert actual == expected
 
 def test_extract_path_params_complex():
     path = Path("/foo;a=1;b=2,3;c;a=2;b=4/bar;a=2,ab;b=1")
     actual = _extract_params(path)
-    expected = (['foo', 'bar'], [{'a':['1','2'], 'b':['2,3', '4'], 'c':['']}, {'a':[ '2,ab' ], 'b':['1']}])
+    expected = (
+        ['foo', 'bar'],
+        [{'a': ['1', '2'], 'b': ['2,3', '4'], 'c': ['']}, {'a': ['2,ab'], 'b': ['1']}]
+    )
     assert actual == expected
 
 def test_path_params_api():
     path = Path("/foo;a=1;b=2;b=3;c/bar;a=2,ab;b=1")
-    parts, params = (['foo', 'bar'], [{'a':['1'], 'b':['2', '3'], 'c':['']}, {'a':[ '2,ab' ], 'b':['1']}])
+    parts = ['foo', 'bar']
+    params = [{'a': ['1'], 'b': ['2', '3'], 'c': ['']}, {'a': ['2,ab'], 'b': ['1']}]
     assert path.parts == parts, path.parts
     assert path.parts[0].params == params[0]
     assert path.parts[1].params == params[1]

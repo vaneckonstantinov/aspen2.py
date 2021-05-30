@@ -44,7 +44,6 @@ class RequestProcessor:
 
         # XXX register codecs here
 
-
         # Configure from defaults and kwargs.
         # ===================================
 
@@ -54,7 +53,6 @@ class RequestProcessor:
                 self.__dict__[name] = kwargs[name]
             else:
                 self.__dict__[name] = copy(default)
-
 
         # Set some attributes.
         # ====================
@@ -111,7 +109,7 @@ class RequestProcessor:
         Simplate.default_renderers_by_media_type = defaultdict(lambda: self.renderer_default)
         Simplate.default_renderers_by_media_type[self.media_type_json] = 'json_dump'
 
-        initial_context = { 'request_processor': self }
+        initial_context = {'request_processor': self}
         Simplate.defaults = SimplateDefaults(
             Simplate.default_renderers_by_media_type,
             Simplate.renderer_factories,
@@ -145,7 +143,6 @@ class RequestProcessor:
         # create the resources cache
         self.resources = Resources(self)
 
-
     def dispatch(self, path):
         """Call the dispatcher and inject the path variables into the given path object.
 
@@ -160,7 +157,6 @@ class RequestProcessor:
             for k, v in dispatch_result.wildcards.items():
                 path[k] = v
         return dispatch_result
-
 
     def process(self, path, querystring, accept_header, context):
         """Process a request.
@@ -192,12 +188,10 @@ class RequestProcessor:
 
         return dispatch_result, None, None
 
-
     def is_dynamic(self, fspath):
         """Given a filesystem path, return a boolean.
         """
         return self.get_resource_class(fspath) is not Static
-
 
     def get_resource_class(self, fspath):
         """Given a filesystem path, return a resource class.
@@ -205,7 +199,6 @@ class RequestProcessor:
         parts = fspath.split('.')
         extension = parts[-1] if len(parts) > 1 else None
         return self.dynamic_classes_by_file_extension.get(extension, Static)
-
 
     def guess_media_type(self, filename):
         """Guess the media type of a file by looking at its extension.

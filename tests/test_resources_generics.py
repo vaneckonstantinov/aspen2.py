@@ -1,7 +1,7 @@
 from aspen.simplates import pagination
 
-#SPLIT TESTS
-############
+# SPLIT TESTS
+# ===========
 
 def check_page_content(raw, comp_pages):
     '''
@@ -29,9 +29,11 @@ def check_page_content(raw, comp_pages):
 
     for generated_page, (content, header) in zip(pages, comp_pages):
         if content is not None:
-            assert generated_page.content == content, repr(generated_page.content) + " should be " + repr(content)
+            assert generated_page.content == content, \
+                repr(generated_page.content) + " should be " + repr(content)
         if header is not None:
-            assert generated_page.header == header, repr(generated_page.header) + " should be " + repr(header)
+            assert generated_page.header == header, \
+                repr(generated_page.header) + " should be " + repr(header)
 
 def test_empty_content():
     check_page_content('', '')
@@ -59,7 +61,7 @@ def test_two_page_breaks():
 
 def test_no_inline_page_break():
     content = 'this is an[---]inline page break'
-    check_page_content(content,  [None])
+    check_page_content(content, [None])
 
 def test_headers():
     raw = '''\
@@ -75,8 +77,10 @@ page3
         ('page3\n', 'header3')]
 
     check_page_content(raw, pages)
-#ESCAPE TESTS
-#############
+
+
+# ESCAPE TESTS
+# ============
 
 def check_escape(content_to_escape, expected):
     actual = pagination.escape(content_to_escape)
@@ -115,8 +119,9 @@ def test_escaped_pages():
 '''
     check_page_content(raw, ['1\n', '2\n\\[---]\n3\n'])
 
-#SPECLINE TESTS
-###############
+
+# SPECLINE TESTS
+# ==============
 
 def check_specline(header, media_type, renderer):
     assert pagination.parse_specline(header) == (media_type, renderer)
@@ -137,16 +142,18 @@ def test_basic_specline():
     check_specline('media/type via renderer', 'media/type', 'renderer')
 
 def test_funky_whitespace():
-    check_specline( '  media/type    via   renderer  '
-                  , 'media/type'
-                  , 'renderer'
-                   )
+    check_specline(
+        '  media/type    via   renderer  ',
+        'media/type',
+        'renderer'
+    )
 
 def test_whitespace_in_fields():
-    check_specline( 'media type via content renderer'
-                  , 'media type'
-                  , 'content renderer'
-                   )
+    check_specline(
+        'media type via content renderer',
+        'media type',
+        'content renderer'
+    )
 
 def test_extra_funky_whitespace():
     header = '   this is a  type   via some sort   of renderer    '

@@ -29,6 +29,7 @@ def debug_stdout(msg, *args):
     except Exception:
         print("DEBUG: " + repr(r))
 
+
 ASPEN_DEBUG = 'ASPEN_DEBUG' in os.environ
 debug = debug_stdout if ASPEN_DEBUG else debug_noop
 
@@ -363,7 +364,10 @@ class SystemDispatcher(Dispatcher):
         return result
 
 
-def _dispatch_abstract(dispatcher, listnodes, is_dynamic, is_leaf, traverse, find_index, startnode, nodepath):
+def _dispatch_abstract(
+    dispatcher, listnodes, is_dynamic, is_leaf, traverse, find_index, startnode,
+    nodepath,
+):
     """Given a list of nodenames (in 'nodepath'), return a DispatchResult.
 
     We try to traverse the directed graph rooted at 'startnode' using the
@@ -395,8 +399,12 @@ def _dispatch_abstract(dispatcher, listnodes, is_dynamic, is_leaf, traverse, fin
     curnode = startnode
     subnodes = None
     extension, canonical = None, None
-    is_dynamic_node = lambda n: is_dynamic(traverse(curnode, n))
-    is_leaf_node = lambda n: is_leaf(traverse(curnode, n))
+
+    def is_dynamic_node(n):
+        return is_dynamic(traverse(curnode, n))
+
+    def is_leaf_node(n):
+        return is_leaf(traverse(curnode, n))
 
     def get_wildleaf_fallback():
         lastnode_ext = splitext(nodepath[-1])[1]
@@ -632,8 +640,8 @@ class UserlandDispatcher(Dispatcher):
             if slug in children:
                 previous = children[slug]
                 action = self.collision_handler(slug, previous, node)
-                debug("collision: %r is claimed by both %r and %r | action: %r"
-                     , slug, previous.fspath, node.fspath, action)
+                debug("collision: %r is claimed by both %r and %r | action: %r",
+                      slug, previous.fspath, node.fspath, action)
                 if action == 'raise':
                     raise SlugCollision(slug, previous, node)
                 if action == 'ignore_second_node':

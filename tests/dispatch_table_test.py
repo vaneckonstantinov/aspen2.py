@@ -9,7 +9,9 @@ from aspen.http.request import Path
 from aspen.request_processor.dispatcher import DispatchStatus
 from aspen.testing import Harness
 
+
 tablefile = os.path.join(os.path.dirname(__file__), 'dispatch_table_data.rst')
+
 
 def find_cols(defline, header_char='='):
     """
@@ -19,7 +21,7 @@ def find_cols(defline, header_char='='):
     Note that this is a braindead simple version that only understands
     header_chars and spaces (no other whitespace)
     """
-    i = 0;
+    i = 0
     colstarts = []
     colends = []
     while i < len(defline):
@@ -31,7 +33,7 @@ def find_cols(defline, header_char='='):
             else:
                 break
         else:
-            nextend = defline.find(' ',i)
+            nextend = defline.find(' ', i)
             if nextend >= 0:
                 colends.append(nextend)
                 i = nextend
@@ -40,6 +42,7 @@ def find_cols(defline, header_char='='):
                 break
 
     return list(zip(colstarts, colends))
+
 
 def fields_from(dataline, cols):
     """
@@ -51,8 +54,9 @@ def fields_from(dataline, cols):
         fields.append(dataline[start:fin].strip())
     return fields
 
+
 def get_table_entries():
-    table = open(tablefile,'r').readlines()
+    table = open(tablefile, 'r').readlines()
 
     while table[0][:1] == '#':  # skip comment lines
         table = table[1:]
@@ -67,14 +71,16 @@ def get_table_entries():
     # We 'know' that table[0] == table[2], both header deflines, so skip down
     results = []
     for line in table[3:]:
-        if line.strip() == tabledefline: break # found ending header, ignore the rest
-        if line.strip().startswith('#'): continue # skip comment lines
+        if line.strip() == tabledefline:
+            break  # found ending header, ignore the rest
+        if line.strip().startswith('#'):
+            continue  # skip comment lines
         fields = fields_from(line, cols)
-        files = [ x for i, x in enumerate(inputfiles) if fields[i] == 'X' ]
+        files = [x for i, x in enumerate(inputfiles) if fields[i] == 'X']
         expected = fields[len(inputfiles):]
-        results += [ (files, r, expected[i])
-                     for i, r in enumerate(requests) ]
+        results += [(files, r, expected[i]) for i, r in enumerate(requests)]
     return results
+
 
 def get_result(harness, request_uri):
     url_path = Path(request_uri)
@@ -100,26 +106,29 @@ def get_result(harness, request_uri):
         result = '-'
     return result
 
+
 GENERIC_SPT = """
 [-----]
 [-----] text/plain
 Greetings, Program!
 """
 
+
 @pytest.mark.parametrize("files,request_uri,expected", get_table_entries())
 def test_all_table_entries(harness, files, request_uri, expected):
     # set up the specified files
-    realfiles = tuple([ f if f.endswith('/') else (f, GENERIC_SPT) for f in files ])
+    realfiles = tuple([f if f.endswith('/') else (f, GENERIC_SPT) for f in files])
     harness.fs.www.mk(*realfiles)
     result = get_result(harness, request_uri)
-    assert result == expected, "Requesting %r, got %r instead of %r" % (request_uri, result, expected)
+    assert result == expected, \
+        "Requesting %r, got %r instead of %r" % (request_uri, result, expected)
 
 
 if __name__ == '__main__':
     # output the table with answers the current dispatcher gives
     # currently this has to be run manually with:
     #    ./env/bin/python tests/dispatch_table_test | grep -v ^pid
-    table = open(tablefile,'r').readlines()
+    table = open(tablefile, 'r').readlines()
 
     tabledefline = table[0].strip()
     cols = find_cols(tabledefline)
@@ -133,15 +142,17 @@ if __name__ == '__main__':
         print(line)
     # We 'know' that table[0] == table[2], both header deflines, so skip down
     for line in table[3:]:
-        if line.strip() == tabledefline: break # found ending header, ignore the rest
-        if line.strip().startswith('#'): continue # skip comment lines
+        if line.strip() == tabledefline:
+            break  # found ending header, ignore the rest
+        if line.strip().startswith('#'):
+            continue  # skip comment lines
         fields = fields_from(line, cols)
-        files = [ x for i, x in enumerate(inputfiles) if fields[i] == 'X' ]
+        files = [x for i, x in enumerate(inputfiles) if fields[i] == 'X']
         expected = fields[len(inputfiles):]
         resultcolstart = cols[answercol][0]
-        resultline = line[:resultcolstart] # input files
+        resultline = line[:resultcolstart]  # input files
         harness = Harness()
-        realfiles = tuple([ f if f.endswith('/') else (f, GENERIC_SPT) for f in files ])
+        realfiles = tuple([f if f.endswith('/') else (f, GENERIC_SPT) for f in files])
         harness.fs.www.mk(*realfiles)
         for i, request_uri in enumerate(requests):
             result = get_result(harness, request_uri)
