@@ -1,69 +1,14 @@
-from io import BytesIO
 import re
+import tokenize
 from typing import Any, Callable, Dict
 
+from ..http.resource import Dynamic, check_resource_path
 from ..output import Output
 from .pagination import split_and_escape, parse_specline, Page
-from aspen.http.resource import Dynamic, open_resource
-
-
-DEFAULT_ENCODING = 'utf8'
 
 
 renderer_re = re.compile(r'[a-z0-9.-_]+$')
 media_type_re = re.compile(r'[A-Za-z0-9.+*-]+/[A-Za-z0-9.+*-]+$')
-
-
-def _decode(raw):
-    """Decode the raw bytes of a simplate.
-
-    As per PEP 263, decode raw data according to the encoding specified in the
-    first couple lines of the data, or using the default encoding (ASCII in
-    Python 2, UTF-8 in Python 3 per PEP 3120).
-
-    Raises: :class:`UnicodeDecodeError` if decoding fails.
-    """
-    assert type(raw) is bytes  # sanity check
-
-    decl_re = re.compile(br'^[ \t\f]*#.*coding[:=][ \t]*([-\w.]+)')
-
-    def get_declaration(line):
-        match = decl_re.match(line)
-        if match:
-            return match.group(1)
-        return None
-
-    encoding = None
-    fulltext = b''
-    sio = BytesIO(raw)
-    for line in (sio.readline(), sio.readline()):
-        potential = get_declaration(line)
-        if potential is not None:
-            if encoding is None:
-
-                # If both lines match, use the first. This matches Python's
-                # observed behavior.
-
-                encoding = potential
-                munged = b'# encoding set to ' + encoding + b'\n'
-
-            else:
-
-                # But always munge any encoding line. We can't simply remove
-                # the line, because we want to preserve the line numbering.
-                # However, later on when we ask Python to exec a unicode
-                # object, we'll get a SyntaxError if we have a well-formed
-                # `coding: # ` line in it.
-
-                munged = b'# encoding NOT set to ' + potential + b'\n'
-
-            line = line.split(b'#')[0] + munged
-
-        fulltext += line
-    fulltext += sio.read()
-    sio.close()
-    encoding = encoding.decode('ascii') if encoding else DEFAULT_ENCODING
-    return fulltext.decode(encoding)
 
 
 class SimplateDefaults:
@@ -107,9 +52,8 @@ class Simplate(Dynamic):
 
         self.renderers = {}         # mapping of media type to Renderer objects
         self.available_types = []   # ordered sequence of media types
-        with open_resource(request_processor, fspath) as fh:
-            raw = fh.read()
-        pages = self.parse_into_pages(_decode(raw))
+        with tokenize.open(check_resource_path(request_processor, fspath)) as fh:
+            pages = self.parse_into_pages(fh.read())
         self.compile_pages(pages)
         self.page_one, self.page_two = pages[0], pages[1]
         for renderer, media_type in pages[2:]:
