@@ -1,11 +1,5 @@
 from os.path import dirname, join
 
-try:
-    import setuptools  # noqa
-except ImportError:
-    from ez_setup import use_setuptools
-    use_setuptools()
-
 from setuptools import find_packages, setup
 
 version = open('version.txt').read()
@@ -17,10 +11,10 @@ classifiers = [ 'Development Status :: 4 - Beta'
               , 'License :: OSI Approved :: MIT License'
               , 'Natural Language :: English'
               , 'Operating System :: OS Independent'
-              , 'Programming Language :: Python :: 3.5'
               , 'Programming Language :: Python :: 3.6'
               , 'Programming Language :: Python :: 3.7'
               , 'Programming Language :: Python :: 3.8'
+              , 'Programming Language :: Python :: 3.9'
               , 'Programming Language :: Python :: Implementation :: CPython'
               , 'Topic :: Internet :: WWW/HTTP :: WSGI :: Application'
                ]

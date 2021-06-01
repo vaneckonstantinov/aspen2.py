@@ -5,9 +5,10 @@ from ..exceptions import TypecastError
 
 
 #: Aspen's default typecasters.
-defaults = { 'int': lambda pathpart, context: int(pathpart)
-           , 'float': lambda pathpart, context: float(pathpart)
-            }
+defaults = {
+    'int': lambda pathpart, context: int(pathpart),
+    'float': lambda pathpart, context: float(pathpart),
+}
 
 
 def apply_typecasters(typecasters, path_vars, context):
@@ -30,6 +31,5 @@ def apply_typecasters(typecasters, path_vars, context):
                     for v in path_vars.all(part):
                         path_vars.add(var, typecasters[ext](v, context))
                     path_vars.popall(part)
-                except:
+                except Exception:
                     raise TypecastError(ext)
-

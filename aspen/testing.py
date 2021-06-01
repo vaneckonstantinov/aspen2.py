@@ -25,9 +25,10 @@ def teardown():
     """
     os.chdir(CWD)
     # Reset some process-global caches. Hrm ...
-    sys.path_importer_cache = {} # see test_weird.py
+    sys.path_importer_cache = {}  # see test_weird.py
 
-teardown() # start clean
+
+teardown()  # start clean
 
 
 def resolve_want(available, want):
@@ -49,7 +50,7 @@ def resolve_want(available, want):
     return out
 
 
-class FileSystem(object):
+class FileSystem:
     __slots__ = ('project', 'www')
 
     def __init__(self):
@@ -57,7 +58,7 @@ class FileSystem(object):
         self.www = FilesystemTree()
 
 
-class Harness(object):
+class Harness:
     """A harness to be used in the Aspen test suite itself. Probably not useful to you.
     """
 
@@ -71,18 +72,21 @@ class Harness(object):
 
     def hydrate_request_processor(self, **kwargs):
         if (self._request_processor is None) or kwargs:
-            _kwargs = { 'www_root': self.fs.www.root
-                      , 'project_root': self.fs.project.root
-                      , 'dispatcher_class': TestDispatcher
-                       }
+            _kwargs = {
+                'www_root': self.fs.www.root,
+                'project_root': self.fs.project.root,
+                'dispatcher_class': TestDispatcher,
+            }
             _kwargs.update(kwargs)
             self._request_processor = RequestProcessor(**_kwargs)
         return self._request_processor
 
     request_processor = property(hydrate_request_processor)
 
-    def simple(self, contents='Greetings, program!', filepath='index.html.spt', uripath=None,
-            querystring='', request_processor_configuration=None, **kw):
+    def simple(
+        self, contents='Greetings, program!', filepath='index.html.spt', uripath=None,
+        querystring='', request_processor_configuration=None, **kw
+    ):
         """A helper to create a file and hit it through our machinery.
         """
         if filepath is not None:

@@ -23,6 +23,17 @@ def open_resource(request_processor, resource_path):
     to create and delete symlinks inside the resource directories whenever they
     want, but it makes the attack more difficult and detectable.
     """
+    return open(check_resource_path(request_processor, resource_path), 'rb')
+
+
+def check_resource_path(request_processor, resource_path):
+    """Return the “real” path of a file (i.e. a path without symlinks).
+
+    :raises AttemptedBreakout:
+        if the :obj:`resource_path` points to a file that isn't inside any of
+        the known
+        :attr:`~aspen.request_processor.DefaultConfiguration.resource_directories`
+    """
     real_path = os.path.realpath(resource_path)
     is_outside = all(
         not _is_subpath(real_path, resource_dir)
@@ -30,10 +41,10 @@ def open_resource(request_processor, resource_path):
     )
     if is_outside:
         raise AttemptedBreakout(resource_path, real_path)
-    return open(real_path, 'rb')
+    return real_path
 
 
-class Static(object):
+class Static:
     """Model a static HTTP resource.
     """
 
@@ -76,7 +87,7 @@ class Static(object):
         return output
 
 
-class Dynamic(object):
+class Dynamic:
     """Model a dynamic HTTP resource.
     """
 

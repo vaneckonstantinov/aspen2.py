@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-
-
 def test_with_non_ascii_bytes_and_without_encoding(harness):
     harness.fs.www.mk(('index.spt', """
         [------------------]

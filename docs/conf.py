@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-#
 # Aspen documentation build configuration file, originally created by
 # sphinx-quickstart on Mon Feb 24 15:00:43 2014.
 #

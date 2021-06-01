@@ -10,7 +10,7 @@ ESCAPED_SPLITTER = re.compile(ESCAPED_SPLITTER, re.MULTILINE)
 SPECLINE_SPLIT = re.compile(SPECLINE_SPLIT)
 
 
-class Page(object):
+class Page:
     __slots__ = ('header', 'content', 'offset')
 
     def __init__(self, content, header='', offset=0):
@@ -43,11 +43,13 @@ def split(raw):
     content = raw[current_index:]
     yield Page(content, header, line_offset)
 
+
 def escape(content):
     '''Pure escape method. This function defines the logic to properly convert
     escaped splitter patterns in a string
     '''
     return ESCAPED_SPLITTER.sub(r'\1\2', content)
+
 
 def split_and_escape(raw):
     '''This function defines the logic to split and escape a string.
@@ -56,6 +58,7 @@ def split_and_escape(raw):
         page.content = escape(page.content)
         yield page
 
+
 def parse_specline(header):
     '''Attempt to parse the header in a page returned from split(...) as a
     specline. Returns a tuple (content_type, renderer)
@@ -63,8 +66,8 @@ def parse_specline(header):
     parts = SPECLINE_SPLIT.split(header, 1) + ['']
     return parts[0].strip(), parts[1].strip()
 
+
 def can_split(raw, splitter=SPLITTER):
     '''Determine if a text block would be split by a splitter
     '''
     return bool(SPLITTER.search(raw))
-

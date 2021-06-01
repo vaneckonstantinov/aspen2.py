@@ -1,72 +1,24 @@
-from io import BytesIO
 import re
+import tokenize
+from typing import Any, Callable, Dict
 
+from ..http.resource import Dynamic, check_resource_path
 from ..output import Output
 from .pagination import split_and_escape, parse_specline, Page
-from aspen.http.resource import Dynamic, open_resource
-
-
-DEFAULT_ENCODING = 'utf8'
 
 
 renderer_re = re.compile(r'[a-z0-9.-_]+$')
 media_type_re = re.compile(r'[A-Za-z0-9.+*-]+/[A-Za-z0-9.+*-]+$')
 
 
-def _decode(raw):
-    """Decode the raw bytes of a simplate.
+class SimplateDefaults:
 
-    As per PEP 263, decode raw data according to the encoding specified in the
-    first couple lines of the data, or using the default encoding (ASCII in
-    Python 2, UTF-8 in Python 3 per PEP 3120).
-
-    Raises: :class:`UnicodeDecodeError` if decoding fails.
-    """
-    assert type(raw) is bytes  # sanity check
-
-    decl_re = re.compile(br'^[ \t\f]*#.*coding[:=][ \t]*([-\w.]+)')
-
-    def get_declaration(line):
-        match = decl_re.match(line)
-        if match:
-            return match.group(1)
-        return None
-
-    encoding = None
-    fulltext = b''
-    sio = BytesIO(raw)
-    for line in (sio.readline(), sio.readline()):
-        potential = get_declaration(line)
-        if potential is not None:
-            if encoding is None:
-
-                # If both lines match, use the first. This matches Python's
-                # observed behavior.
-
-                encoding = potential
-                munged = b'# encoding set to ' + encoding + b'\n'
-
-            else:
-
-                # But always munge any encoding line. We can't simply remove
-                # the line, because we want to preserve the line numbering.
-                # However, later on when we ask Python to exec a unicode
-                # object, we'll get a SyntaxError if we have a well-formed
-                # `coding: # ` line in it.
-
-                munged = b'# encoding NOT set to ' + potential + b'\n'
-
-            line = line.split(b'#')[0] + munged
-
-        fulltext += line
-    fulltext += sio.read()
-    sio.close()
-    encoding = encoding.decode('ascii') if encoding else DEFAULT_ENCODING
-    return fulltext.decode(encoding)
-
-
-class SimplateDefaults(object):
-    def __init__(self, renderers_by_media_type, renderer_factories, initial_context):
+    def __init__(
+        self,
+        renderers_by_media_type: Dict[str, str],
+        renderer_factories: Dict[str, Callable],
+        initial_context: Dict[str, Any],
+    ):
         """
         Things that are usually the same across all simplates:
 
@@ -74,9 +26,9 @@ class SimplateDefaults(object):
         renderer_factories - dict[renderer_name] -> renderer_factory
         initial_context - initial context passed into the 'run-once' page
         """
-        self.renderers_by_media_type = renderers_by_media_type # type: Dict[str, str]
-        self.renderer_factories = renderer_factories           # type: Dict[str, Callable]
-        self.initial_context = initial_context                 # type: Dict[str, object]
+        self.renderers_by_media_type = renderers_by_media_type
+        self.renderer_factories = renderer_factories
+        self.initial_context = initial_context
 
 
 class Simplate(Dynamic):
@@ -91,7 +43,7 @@ class Simplate(Dynamic):
         'fspath', 'default_media_type', 'renderers', 'page_one', 'page_two',
     )
 
-    defaults = None # type: SimplateDefaults
+    defaults: SimplateDefaults
 
     def __init__(self, request_processor, fspath):
         self.request_processor = request_processor
@@ -100,9 +52,8 @@ class Simplate(Dynamic):
 
         self.renderers = {}         # mapping of media type to Renderer objects
         self.available_types = []   # ordered sequence of media types
-        with open_resource(request_processor, fspath) as fh:
-            raw = fh.read()
-        pages = self.parse_into_pages(_decode(raw))
+        with tokenize.open(check_resource_path(request_processor, fspath)) as fh:
+            pages = self.parse_into_pages(fh.read())
         self.compile_pages(pages)
         self.page_one, self.page_two = pages[0], pages[1]
         for renderer, media_type in pages[2:]:
@@ -110,7 +61,6 @@ class Simplate(Dynamic):
                 raise SyntaxError("Two content pages defined for %s." % media_type)
             self.available_types.append(media_type)
             self.renderers[media_type] = renderer
-
 
     def render_for_type(self, media_type, context):
         """Render the simplate.
@@ -137,7 +87,7 @@ class Simplate(Dynamic):
 
         if '__all__' in context:
             # templates will only see variables named in __all__
-            context = dict([ (k, context[k]) for k in context['__all__'] ])
+            context = dict((k, context[k]) for k in context['__all__'])
 
         # load the renderer
         render = self.renderers[media_type]
@@ -146,31 +96,30 @@ class Simplate(Dynamic):
 
         return output
 
-
     def parse_into_pages(self, decoded):
         """Given a bytestring that is the entire simplate, return a list of pages.
 
         If there's one page, it's a template.
 
-        If there's more than one page, the first page is always python and the last is always a template.
+        If there's more than one page, the first page is always python and the
+        last is always a template.
 
-        If there's more than two pages, the second page is python *unless it has a specline*, which makes it a template.
+        If there's more than two pages, the second page is python *unless it has
+        a specline*, which makes it a template.
 
         """
-
         pages = list(split_and_escape(decoded))
         npages = len(pages)
-        blank = [ Page('') ]
+        blank = [Page('')]
 
         if npages == 1:
             pages = blank + blank + pages
         elif npages == 2:
             pages = blank + pages
-        elif pages[1].header: # it's got a header, so it's a template
+        elif pages[1].header:  # it's got a header, so it's a template
             pages = blank + pages
 
         return pages
-
 
     def compile_pages(self, pages):
         """Given a list of pages, replace the pages with objects.
@@ -195,14 +144,13 @@ class Simplate(Dynamic):
         context.update(self.defaults.initial_context)
 
         one = compile(one.padded_content, self.fspath, 'exec')
-        exec(one, context)    # mutate context
+        exec(one, context)     # mutate context
         one = context          # store it
 
         two = compile(two.padded_content, self.fspath, 'exec')
 
         pages[:2] = (one, two)
         pages[2:] = [self.compile_page(page) for page in pages[2:]]
-
 
     def compile_page(self, page):
         """Given a :class:`Page`, return a :obj:`(renderer, media_type)` pair.
@@ -255,13 +203,12 @@ class Simplate(Dynamic):
         # Return.
         return (make_renderer, media_type)
 
-
     def _get_renderer_factory(self, media_type, renderer):
         """Given two bytestrings, return a renderer factory or None.
         """
         factories = self.defaults.renderer_factories
         if renderer_re.match(renderer) is None:
-            possible =', '.join(sorted(factories.keys()))
+            possible = ', '.join(sorted(factories.keys()))
             msg = ("Malformed renderer %s. It must match %s. Possible "
                    "renderers (might need third-party libs): %s.")
             raise SyntaxError(msg % (renderer, renderer_re.pattern, possible))

@@ -2,7 +2,7 @@ import os
 import stat
 
 
-class Entry(object):
+class Entry:
     """An entry in a resource cache.
     """
     __slots__ = ('fspath', 'mtime', 'resource')
@@ -16,7 +16,7 @@ class Entry(object):
         self.resource = resource
 
 
-class Resources(object):
+class Resources:
     """This class implements loading resources, and caching them.
     """
 

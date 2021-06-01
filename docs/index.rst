@@ -20,7 +20,7 @@ specific web framework, see the docs for `django-aspen`_, `Flask-Aspen`_, or
 .. _Pando: http://pando.aspen.io/
 .. _project homepage: http://aspen.io/
 
-This version of Aspen has been tested with Python 2.7, 3.4, and 3.5, on both
+This version of Aspen has been tested with Python 3.6, 3.7, 3.8 and 3.9, on both
 Ubuntu and Windows.
 
 Aspen's source code is on `GitHub`_, and is `MIT-licensed`_.
@@ -47,11 +47,11 @@ Aspen is available on `PyPI`_::
 .. toctree::
     :maxdepth: 2
 
-    dispatch 
-    simplates 
+    dispatch
+    simplates
     plugins
     wrappers
-    reference/index 
+    reference/index
 
 
 **********

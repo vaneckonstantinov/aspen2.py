@@ -89,6 +89,7 @@ class SlugCollision(Exception):
             self.node2.__class__.__name__, self.node2.fspath, self.node2.type,
         )
 
+
 class WildcardCollision(Exception):
     """Raised if a filesystem path contains multiple wildcards with the same name.
 

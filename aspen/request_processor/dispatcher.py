@@ -29,14 +29,9 @@ def debug_stdout(msg, *args):
     except Exception:
         print("DEBUG: " + repr(r))
 
+
 ASPEN_DEBUG = 'ASPEN_DEBUG' in os.environ
 debug = debug_stdout if ASPEN_DEBUG else debug_noop
-
-
-def get_mtime_ns(fspath):
-    # For compatibility with Python < 3.3
-    st = os.stat(fspath)
-    return getattr(st, 'st_mtime_ns', int(st.st_mtime * 1000000000))
 
 
 def splitext(name):
@@ -59,7 +54,7 @@ def strip_matching_ext(a, b):
     return a, b
 
 
-class DispatchStatus(object):
+class DispatchStatus:
     """The attributes of this class are constants that represent dispatch statuses."""
 
     okay = Constant('okay')
@@ -73,7 +68,7 @@ class DispatchStatus(object):
 
 
 @auto_repr
-class DispatchResult(object):
+class DispatchResult:
     """The result of a dispatch operation."""
 
     __slots__ = ('status', 'match', 'wildcards', 'extension', 'canonical')
@@ -124,7 +119,7 @@ MISSING = DispatchResult(DispatchStatus.missing, None, None, None, None)
 
 
 @auto_repr
-class FileNode(object):
+class FileNode:
     """Represents a file in a dispatch tree."""
 
     __slots__ = ('fspath', 'type', 'wildcard', 'extension')
@@ -144,7 +139,7 @@ class FileNode(object):
 
 
 @auto_repr
-class DirectoryNode(object):
+class DirectoryNode:
     """Represents a directory in a dispatch tree."""
 
     __slots__ = ('fspath', 'wildcard', 'children')
@@ -163,7 +158,7 @@ class DirectoryNode(object):
 
 
 @auto_repr
-class LiveDirectoryNode(object):
+class LiveDirectoryNode:
     """Dynamically represents a directory in a dispatch tree."""
 
     __slots__ = ('fspath', 'wildcard', '_children', 'mtime', 'dispatcher')
@@ -188,7 +183,7 @@ class LiveDirectoryNode(object):
 
     @property
     def children(self):
-        mtime = get_mtime_ns(self.fspath)
+        mtime = os.stat(self.fspath).st_mtime_ns
         if mtime != self.mtime:
             dirnames = self.fspath[len(self.dispatcher.www_root)+1:].split(os.path.sep)
             varnames = {
@@ -258,7 +253,7 @@ def skip_nothing(name, dirpath):
 # Dispatcher classes
 # ==================
 
-class Dispatcher(object):
+class Dispatcher:
     """The abstract base class of dispatchers.
 
     Args
@@ -369,7 +364,10 @@ class SystemDispatcher(Dispatcher):
         return result
 
 
-def _dispatch_abstract(dispatcher, listnodes, is_dynamic, is_leaf, traverse, find_index, startnode, nodepath):
+def _dispatch_abstract(
+    dispatcher, listnodes, is_dynamic, is_leaf, traverse, find_index, startnode,
+    nodepath,
+):
     """Given a list of nodenames (in 'nodepath'), return a DispatchResult.
 
     We try to traverse the directed graph rooted at 'startnode' using the
@@ -401,8 +399,12 @@ def _dispatch_abstract(dispatcher, listnodes, is_dynamic, is_leaf, traverse, fin
     curnode = startnode
     subnodes = None
     extension, canonical = None, None
-    is_dynamic_node = lambda n: is_dynamic(traverse(curnode, n))
-    is_leaf_node = lambda n: is_leaf(traverse(curnode, n))
+
+    def is_dynamic_node(n):
+        return is_dynamic(traverse(curnode, n))
+
+    def is_leaf_node(n):
+        return is_leaf(traverse(curnode, n))
 
     def get_wildleaf_fallback():
         lastnode_ext = splitext(nodepath[-1])[1]
@@ -588,7 +590,7 @@ class UserlandDispatcher(Dispatcher):
         """This method recursively builds a dispacth subtree.
         """
         children = {}
-        mtime = get_mtime_ns(dirpath)
+        mtime = os.stat(dirpath).st_mtime_ns
         index = self.find_index(dirpath)
         for entry in sorted(scandir(dirpath), key=attrgetter('name')):
             name = entry.name
@@ -638,8 +640,8 @@ class UserlandDispatcher(Dispatcher):
             if slug in children:
                 previous = children[slug]
                 action = self.collision_handler(slug, previous, node)
-                debug("collision: %r is claimed by both %r and %r | action: %r"
-                     , slug, previous.fspath, node.fspath, action)
+                debug("collision: %r is claimed by both %r and %r | action: %r",
+                      slug, previous.fspath, node.fspath, action)
                 if action == 'raise':
                     raise SlugCollision(slug, previous, node)
                 if action == 'ignore_second_node':
@@ -797,7 +799,7 @@ class HybridDispatcher(UserlandDispatcher):
         return LiveDirectoryNode(fspath, wildcard, children, mtime, self)
 
 
-class TestDispatcher(object):
+class TestDispatcher:
     """
     This pseudo-dispatcher calls all the other dispatchers and checks that their
     results are identical. It's only meant to be used in Aspen's own tests.

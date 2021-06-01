@@ -1,12 +1,10 @@
-# -*- coding: utf-8 -*-
-import pytest
 from pytest import raises, fixture
 
 from aspen.exceptions import NegotiationFailure, NotFound
 from aspen.http.resource import mimetypes
-from aspen.simplates.simplate import _decode
 from aspen.simplates.simplate import Simplate
 from aspen.simplates.pagination import Page
+from aspen.simplates.renderers import Renderer, Factory
 from aspen.simplates.renderers.stdlib_template import Factory as TemplateFactory
 from aspen.simplates.renderers.stdlib_percent import Factory as PercentFactory
 
@@ -96,12 +94,9 @@ def test_parse_specline_obeys_default_by_media_type_default(make_simplate):
 def test_get_renderer_factory_can_raise_syntax_error(make_simplate):
     resource = make_simplate()
     resource.default_renderers_by_media_type['media/type'] = 'glubber'
-    err = raises( SyntaxError
-                       , resource._get_renderer_factory
-                       , 'media/type'
-                       , 'oo*gle'
-                        ).value
-    msg = err.args[0]
+    with raises(SyntaxError) as x:
+        resource._get_renderer_factory('media/type', 'oo*gle')
+    msg = x.value.args[0]
     assert msg.startswith("Malformed renderer oo*gle. It must match")
 
 
@@ -153,8 +148,12 @@ def test_render_negotation_failures_include_available_types(harness):
     assert actual == expected
 
 def test_treat_media_type_variants_as_equivalent(harness):
-    _guess_type = mimetypes.guess_type
-    mimetypes.guess_type = lambda url, **kw: ('application/x-javascript' if url.endswith('.js') else '', None)
+    guess_type = mimetypes.guess_type
+
+    def _guess_type(url, **kw):
+        return ('application/x-javascript' if url.endswith('.js') else '', None)
+
+    mimetypes.guess_type = _guess_type
     try:
         output = harness.simple(
             filepath='foobar.spt',
@@ -163,10 +162,8 @@ def test_treat_media_type_variants_as_equivalent(harness):
         )
         assert output.media_type == "application/javascript"
     finally:
-        mimetypes.guess_type = _guess_type
+        mimetypes.guess_type = guess_type
 
-
-from aspen.simplates.renderers import Renderer, Factory
 
 class Glubber(Renderer):
     def render_content(self, context):
@@ -320,93 +317,3 @@ python_code = True
 [---]
 Template""")
     assert output.text == 'Template'
-
-
-# _decode
-
-def test_decode_can_take_encoding_from_first_line():
-    actual = _decode("""\
-    # -*- coding: utf8 -*-
-    text = u'א'
-    """.encode('utf8'))
-    expected = """\
-    # encoding set to utf8
-    text = u'א'
-    """
-    assert actual == expected
-
-def test_decode_can_take_encoding_from_second_line():
-    actual = _decode("""\
-    #!/blah/blah
-    # -*- coding: utf8 -*-
-    text = u'א'
-    """.encode('utf8'))
-    expected = """\
-    #!/blah/blah
-    # encoding set to utf8
-    text = u'א'
-    """
-    assert actual == expected
-
-def test_decode_prefers_first_line_to_second():
-    actual = _decode("""\
-    # -*- coding: utf8 -*-
-    # -*- coding: ascii -*-
-    text = u'א'
-    """.encode('utf8'))
-    expected = """\
-    # encoding set to utf8
-    # encoding NOT set to ascii
-    text = u'א'
-    """
-    assert actual == expected
-
-def test_decode_ignores_third_line():
-    actual = _decode("""\
-    # -*- coding: utf8 -*-
-    # -*- coding: ascii -*-
-    # -*- coding: cornnuts -*-
-    text = u'א'
-    """.encode('utf8'))
-    expected = """\
-    # encoding set to utf8
-    # encoding NOT set to ascii
-    # -*- coding: cornnuts -*-
-    text = u'א'
-    """
-    assert actual == expected
-
-formats = [ '-*- coding: utf8 -*-'
-          , '-*- encoding: utf8 -*-'
-          , 'coding: utf8'
-          , '  coding: utf8'
-          , '\tencoding: utf8'
-          , '\t flubcoding=utf8'
-           ]
-@pytest.mark.parametrize('fmt', formats)
-def test_decode_can_take_encoding_from_various_line_formats(fmt):
-    actual = _decode("""\
-    # {0}
-    text = u'א'
-    """.format(fmt).encode('utf8'))
-    expected = """\
-    # encoding set to utf8
-    text = u'א'
-    """
-    assert actual == expected
-
-formats = [ '-*- coding : utf8 -*-'
-          , 'foo = 0 -*- encoding: utf8 -*-'
-          , '  coding : utf8'
-          , 'encoding : utf8'
-          , '  flubcoding =utf8'
-          , 'coding: '
-           ]
-@pytest.mark.parametrize('fmt', formats)
-def test_decode_cant_take_encoding_from_bad_line_formats(fmt):
-    def test():
-        raw = """\
-        # {0}
-        text = u'א'
-        """.format(fmt).encode('utf8')
-        raises(UnicodeDecodeError, _decode, raw)
